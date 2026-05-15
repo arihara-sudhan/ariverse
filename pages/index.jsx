@@ -30,7 +30,9 @@ export default function HomePage({ profileLinks }) {
         <section className="hero" id="about">
           <section className="intro">
             <p className="eyebrow">Personal Space</p>
-            <h1>I am Ari, a boy hails from The South, aiming beyond The Sky</h1>
+            <h1>
+              I am Ari, a boy hails from The South, aiming beyond <span className="no-wrap">The Sky</span>
+            </h1>
             <p className="summary">
               A minimal monochrome space for ideas, projects, and notes. Built with calm rhythm,
               balanced typography, and room to breathe.

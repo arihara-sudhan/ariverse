@@ -1,9 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+
 :root {
   --bg: #f6f6f5;
   --surface: #ffffff;
   --text: #131313;
   --muted: #646464;
   --line: #d7d7d7;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --font-headline: "Inter", "Segoe UI", sans-serif;
 }
 
 @font-face {
@@ -29,7 +33,9 @@ body {
   min-height: 100vh;
   background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 42%);
   color: var(--text);
-  font-family: "Newsreader", "Times New Roman", serif;
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 ::-webkit-scrollbar {
@@ -60,6 +66,10 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.no-wrap {
+  white-space: nowrap;
 }
 
 .site {
@@ -118,7 +128,9 @@ a {
   margin: 0.4rem 0 0;
   font-size: clamp(2rem, 5vw, 3.4rem);
   line-height: 1.16;
-  font-weight: 600;
+  font-family: var(--font-headline);
+  font-weight: 900;
+  letter-spacing: -0.03em;
 }
 
 .eyebrow {
@@ -136,6 +148,7 @@ a {
   color: #3f3f3f;
   line-height: 1.75;
   font-size: 1.03rem;
+  font-weight: 500;
 }
 
 .photo-block {
@@ -483,7 +496,9 @@ a {
   margin: 0.4rem 0 0;
   font-size: clamp(1.45rem, 3.2vw, 2.35rem);
   line-height: 1.2;
-  font-weight: 600;
+  font-family: var(--font-headline);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .binomial-layout {

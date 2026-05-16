@@ -1,5 +1,7 @@
-﻿import { isAdminRequest } from '../../../lib/adminAuth';
+import { isAdminRequest } from '../../../lib/adminAuth';
 import { addProfileLink, listProfileLinks, setProfileLinkHidden } from '../../../lib/adminData';
+
+const LINK_CATEGORIES = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'];
 
 function toCleanText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -19,13 +21,19 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const label = toCleanText(req.body?.label);
     const href = toCleanText(req.body?.href);
+    const category = toCleanText(req.body?.category).toUpperCase();
 
     if (!label || !href) {
       res.status(400).json({ error: 'Label and URL are required.' });
       return;
     }
 
-    const link = await addProfileLink({ label, href });
+    if (!LINK_CATEGORIES.includes(category)) {
+      res.status(400).json({ error: 'Category must be PROFESSIONAL, PASSIONAL, or HOBBYAL.' });
+      return;
+    }
+
+    const link = await addProfileLink({ label, href, category });
     res.status(201).json({ link });
     return;
   }

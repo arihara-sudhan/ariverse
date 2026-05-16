@@ -23,6 +23,7 @@ export default function AdminPage({ isAuthed, initialLinks }) {
   const [links, setLinks] = useState(initialLinks);
   const [label, setLabel] = useState('');
   const [href, setHref] = useState('');
+  const [category, setCategory] = useState('PROFESSIONAL');
   const [saving, setSaving] = useState(false);
 
   async function login(event) {
@@ -54,7 +55,7 @@ export default function AdminPage({ isAuthed, initialLinks }) {
     const res = await fetch('/api/admin/links', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label, href }),
+      body: JSON.stringify({ label, href, category }),
     });
 
     const data = await res.json();
@@ -68,6 +69,7 @@ export default function AdminPage({ isAuthed, initialLinks }) {
     setLinks((prev) => [...prev, data.link]);
     setLabel('');
     setHref('');
+    setCategory('PROFESSIONAL');
     setSaving(false);
   }
 
@@ -137,6 +139,17 @@ export default function AdminPage({ isAuthed, initialLinks }) {
                   onChange={(event) => setHref(event.target.value)}
                   required
                 />
+                <label htmlFor="new-category">Category</label>
+                <select
+                  id="new-category"
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                  required
+                >
+                  <option value="PROFESSIONAL">PROFESSIONAL</option>
+                  <option value="PASSIONAL">PASSIONAL</option>
+                  <option value="HOBBYAL">HOBBYAL</option>
+                </select>
                 <button type="submit" disabled={saving}>
                   {saving ? 'Adding...' : 'Add Link'}
                 </button>
@@ -158,6 +171,7 @@ export default function AdminPage({ isAuthed, initialLinks }) {
                         </Link>
                       )}
                       <p>{link.href}</p>
+                      <p>{link.category || 'PASSIONAL'}</p>
                       <p>{hidden ? 'Hidden on homepage' : 'Visible on homepage'}</p>
                       <button
                         type="button"

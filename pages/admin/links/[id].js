@@ -34,10 +34,12 @@ export async function getServerSideProps({ req, params }) {
 
 export default function LinkAdminPage({ link, initialItems }) {
   const isBinomialSection = link.label === 'Binomial Names';
+  const isClayPlaySection = link.label === 'Clay Play';
   const [items, setItems] = useState(initialItems || []);
   const [error, setError] = useState('');
   const [editingItemId, setEditingItemId] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState([]);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [kavithaiFrom, setKavithaiFrom] = useState('');
   const [markdownText, setMarkdownText] = useState('');
@@ -63,6 +65,15 @@ export default function LinkAdminPage({ link, initialItems }) {
     return data.imageUrl;
   }
 
+  async function uploadMultipleImages(files, title) {
+    const uploaded = [];
+    for (const file of files) {
+      const url = await uploadImage(file, title);
+      uploaded.push(url);
+    }
+    return uploaded;
+  }
+
   async function addItem(event) {
     event.preventDefault();
     setSaving(true);
@@ -74,6 +85,7 @@ export default function LinkAdminPage({ link, initialItems }) {
       body: JSON.stringify({
         linkId: link.id,
         imageUrl: isBinomialSection ? '' : imageUrl,
+        imageUrls: isClayPlaySection ? imageUrls : undefined,
         youtubeUrl: isBinomialSection ? youtubeUrl : '',
         markdownText,
         kavithaiFrom,
@@ -89,6 +101,7 @@ export default function LinkAdminPage({ link, initialItems }) {
 
     setItems((prev) => [...prev, data.item]);
     setImageUrl('');
+    setImageUrls([]);
     setYoutubeUrl('');
     setKavithaiFrom('');
     setMarkdownText('');
@@ -136,7 +149,9 @@ export default function LinkAdminPage({ link, initialItems }) {
           <p className="contact-note"><Link href="/admin">Back to Admin</Link></p>
 
           <form className="contact-card" onSubmit={addItem}>
-            <label htmlFor="item-kavithai-from">{isBinomialSection ? 'Entry Name' : 'Kavithai Name'}</label>
+            <label htmlFor="item-kavithai-from">
+              {isBinomialSection ? 'Entry Name' : isClayPlaySection ? 'Title' : 'Kavithai Name'}
+            </label>
             <input
               id="item-kavithai-from"
               value={kavithaiFrom}
@@ -158,19 +173,28 @@ export default function LinkAdminPage({ link, initialItems }) {
               </>
             ) : (
               <>
-                <label htmlFor="item-image-upload">Upload image</label>
+                <label htmlFor="item-image-upload">
+                  {isClayPlaySection ? 'Upload images' : 'Upload image'}
+                </label>
                 <input
                   id="item-image-upload"
                   type="file"
                   accept="image/*"
+                  multiple={isClayPlaySection}
                   onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
+                    const files = Array.from(event.target.files || []);
+                    if (files.length === 0) return;
                     setUploading(true);
                     setError('');
                     try {
-                      const uploadedUrl = await uploadImage(file, kavithaiFrom);
-                      setImageUrl(uploadedUrl);
+                      if (isClayPlaySection) {
+                        const uploadedUrls = await uploadMultipleImages(files, kavithaiFrom);
+                        setImageUrls((prev) => [...prev, ...uploadedUrls]);
+                        setImageUrl((prev) => prev || uploadedUrls[0] || '');
+                      } else {
+                        const uploadedUrl = await uploadImage(files[0], kavithaiFrom);
+                        setImageUrl(uploadedUrl);
+                      }
                     } catch (uploadError) {
                       setError(uploadError.message || 'Upload failed.');
                     } finally {
@@ -178,11 +202,31 @@ export default function LinkAdminPage({ link, initialItems }) {
                     }
                   }}
                 />
-                {imageUrl && <p className="contact-note">Uploaded: {imageUrl}</p>}
+                {isClayPlaySection ? (
+                  imageUrls.length > 0 ? (
+                    <div className="admin-upload-list">
+                      {imageUrls.map((url) => (
+                        <div key={url} className="admin-upload-item">
+                          <span>{url}</span>
+                          <button
+                            type="button"
+                            onClick={() => setImageUrls((prev) => prev.filter((item) => item !== url))}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null
+                ) : (
+                  imageUrl && <p className="contact-note">Uploaded: {imageUrl}</p>
+                )}
               </>
             )}
 
-            <label htmlFor="item-markdown">{isBinomialSection ? 'Caption' : 'Markdown (.md) content'}</label>
+            <label htmlFor="item-markdown">
+              {isBinomialSection ? 'Caption' : isClayPlaySection ? 'Write-up' : 'Markdown (.md) content'}
+            </label>
             <textarea
               id="item-markdown"
               rows="7"
@@ -211,11 +255,13 @@ export default function LinkAdminPage({ link, initialItems }) {
 
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
-                    <label htmlFor={`edit-name-${item.id}`}>{isBinomialSection ? 'Entry Name' : 'Kavithai Name'}</label>
+                    <label htmlFor={`edit-name-${item.id}`}>
+                      {isBinomialSection ? 'Entry Name' : isClayPlaySection ? 'Title' : 'Kavithai Name'}
+                    </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isBinomialSection ? 'Entry Name' : 'Kavithai Name'}
+                      placeholder={isBinomialSection ? 'Entry Name' : isClayPlaySection ? 'Title' : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
 
@@ -237,22 +283,56 @@ export default function LinkAdminPage({ link, initialItems }) {
                           id={`edit-image-${item.id}`}
                           type="file"
                           accept="image/*"
+                          multiple={isClayPlaySection}
                           onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (!file) return;
+                            const files = Array.from(event.target.files || []);
+                            if (files.length === 0) return;
                             setError('');
                             try {
-                              const uploadedUrl = await uploadImage(file, item.kavithaiFrom);
-                              updateLocalItem(item.id, { imageUrl: uploadedUrl });
+                              if (isClayPlaySection) {
+                                const uploadedUrls = await uploadMultipleImages(files, item.kavithaiFrom);
+                                const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+                                const nextUrls = [...currentUrls, ...uploadedUrls];
+                                updateLocalItem(item.id, {
+                                  imageUrl: nextUrls[0] || '',
+                                  imageUrls: nextUrls,
+                                });
+                              } else {
+                                const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom);
+                                updateLocalItem(item.id, { imageUrl: uploadedUrl });
+                              }
                             } catch (uploadError) {
                               setError(uploadError.message || 'Upload failed.');
                             }
                           }}
                         />
+                        {isClayPlaySection && Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? (
+                          <div className="admin-upload-list">
+                            {item.imageUrls.map((url) => (
+                              <div key={`${item.id}-${url}`} className="admin-upload-item">
+                                <span>{url}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextUrls = item.imageUrls.filter((entryUrl) => entryUrl !== url);
+                                    updateLocalItem(item.id, {
+                                      imageUrl: nextUrls[0] || '',
+                                      imageUrls: nextUrls,
+                                    });
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
                       </>
                     )}
 
-                    <label htmlFor={`edit-markdown-${item.id}`}>{isBinomialSection ? 'Caption' : 'Poem'}</label>
+                    <label htmlFor={`edit-markdown-${item.id}`}>
+                      {isBinomialSection ? 'Caption' : isClayPlaySection ? 'Write-up' : 'Poem'}
+                    </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}
                       rows="8"

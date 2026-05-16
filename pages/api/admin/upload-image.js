@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { put } from '@vercel/blob';
 import formidable from 'formidable';
 import { isAdminRequest } from '../../../lib/adminAuth';
@@ -35,6 +36,12 @@ function toFileNameBase(value) {
   return slug || `img-${Date.now()}`;
 }
 
+function toFileBaseFromOriginalName(fileName) {
+  const raw = typeof fileName === 'string' ? fileName : '';
+  const base = raw.replace(/\.[^/.]+$/, '');
+  return toFileNameBase(base);
+}
+
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -55,14 +62,16 @@ export default async function handler(req, res) {
       return;
     }
 
-    const ext = path.extname(file.originalFilename || '') || '.png';
+    const ext = (path.extname(file.originalFilename || '') || '.png').toLowerCase();
     const section = Array.isArray(fields?.section) ? fields.section[0] : fields?.section;
     const title = Array.isArray(fields?.title) ? fields.title[0] : fields?.title;
     const folder = toFolderName(section);
-    const baseName = toFileNameBase(title);
-    const fileName = `${folder}/${baseName}${ext}`;
+    const titleFolder = toFolderName(title);
+    const baseName = toFileBaseFromOriginalName(file.originalFilename || '');
+    const fileName = `${folder}/${titleFolder}/${baseName}${ext}`;
+    const fileBuffer = await readFile(file.filepath);
 
-    const blob = await put(fileName, file.filepath, {
+    const blob = await put(fileName, fileBuffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
       addRandomSuffix: true,

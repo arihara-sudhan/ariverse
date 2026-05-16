@@ -6,8 +6,14 @@
   --text: #131313;
   --muted: #646464;
   --line: #d7d7d7;
-  --font-body: "Inter", "Segoe UI", sans-serif;
-  --font-headline: "Inter", "Segoe UI", sans-serif;
+  --color-gradient-ink: #1a1a1a;
+  --color-gradient-ember: #8a5a18;
+  --color-gradient-amber: #b9852a;
+  --color-gradient-gold: #d4af37;
+  --color-gradient-sun: #f3d77a;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-sans);
+  --font-headline: var(--font-sans);
 }
 
 @font-face {
@@ -125,12 +131,98 @@ a {
 }
 
 .intro h1 {
-  margin: 0.4rem 0 0;
+  margin: 0.22rem 0 0;
   font-size: clamp(2rem, 5vw, 3.4rem);
   line-height: 1.16;
   font-family: var(--font-headline);
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.03em;
+}
+
+.intro-title-main {
+  display: block;
+  font-size: clamp(3.2rem, 8.8vw, 5.6rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  text-transform: none;
+  background: linear-gradient(
+    90deg,
+    var(--color-gradient-ink) 0%,
+    var(--color-gradient-ink) 30%,
+    var(--color-gradient-ember) 38%,
+    var(--color-gradient-amber) 44%,
+    var(--color-gradient-gold) 48%,
+    var(--color-gradient-sun) 50%,
+    var(--color-gradient-gold) 52%,
+    var(--color-gradient-amber) 56%,
+    var(--color-gradient-ember) 62%,
+    var(--color-gradient-ink) 70%,
+    var(--color-gradient-ink) 100%
+  );
+  background-size: 350% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  animation: goldenSweep 24s linear infinite;
+}
+
+.intro-title-sub {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 1.2rem;
+  line-height: 1.65;
+  font-weight: 500;
+  color: #6a6a6a;
+  max-width: 640px;
+  text-wrap: pretty;
+  letter-spacing: -0.005em;
+}
+
+.intro-title-note {
+  margin: 0.8rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  max-width: 640px;
+  text-wrap: balance;
+}
+
+.type-caret {
+  margin-left: 0.1rem;
+  animation: blinkCaret 1s steps(1, end) infinite;
+}
+
+.quote-band {
+  padding: 0.2rem 0;
+  text-align: center;
+}
+
+.quote-line {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.quote-everything {
+  margin-left: 0.3rem;
+  color: #111111;
+}
+
+.quote-strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #c40000;
+}
+
+.quote-author {
+  margin: 0.65rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
 }
 
 .eyebrow {
@@ -153,8 +245,9 @@ a {
 
 .photo-block {
   margin: 0;
-  border: 1px solid #111111;
-  border-radius: 10px;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  background: #ffffff;
   overflow: hidden;
   animation: riseIn 760ms ease;
 }
@@ -233,12 +326,81 @@ a {
 
 .feature {
   border-radius: 12px;
-  padding-top: 1.8rem;
+  border: 1px solid #d7d7d7;
   background: #ffffff;
+  padding: 1rem;
+  padding-top: 1.8rem;
   display: grid;
   grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.15fr);
   gap: 1.8rem;
   align-items: start;
+}
+
+.category-sections {
+  display: grid;
+  gap: 0.85rem;
+  background: transparent;
+  width: 100%;
+  margin: 0;
+}
+
+.category-band {
+  padding: 1.2rem 1rem;
+  background: #ffffff;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+}
+
+.category-content {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem 1.2rem;
+  align-items: start;
+}
+
+.category-copy p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  max-width: 46ch;
+}
+
+.category-band h2 {
+  margin: 0 0 0.8rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+.category-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.category-links a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.42rem 0.72rem;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.83rem;
+  font-weight: 600;
+  line-height: 1.2;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.category-links a {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+.category-links a:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
 }
 
 .ai-with-ari {
@@ -461,6 +623,39 @@ a {
   flex-wrap: wrap;
 }
 
+.admin-upload-list {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-upload-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.38rem 0.5rem;
+}
+
+.admin-upload-item span {
+  font-size: 0.78rem;
+  color: #3a3a3a;
+  word-break: break-all;
+}
+
+.admin-upload-item button {
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+}
+
 .admin-item-action-btn {
   position: static;
   min-width: 64px;
@@ -482,7 +677,7 @@ a {
 
 .feature-image {
   margin: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -547,8 +742,55 @@ a {
   line-height: 1.72;
 }
 
-.contact-card {
+.clay-play-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.clay-play-list h1,
+#clay-play-title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  text-align: center;
+}
+
+.clay-play-entry {
+  border: 1px solid #e1e1e1;
   border-radius: 10px;
+  padding: 0.95rem;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.clay-play-entry h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+}
+
+.clay-play-entry p {
+  margin: 0.55rem 0 0;
+  line-height: 1.72;
+}
+
+.clay-play-gallery {
+  margin-top: 0.9rem;
+  column-count: 2;
+  column-gap: 0;
+}
+
+.clay-play-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #d7d7d7;
+  margin: 0;
+  break-inside: avoid;
+}
+
+.contact-card {
+  border-radius: 8px;
+  border: none;
   padding: 1rem;
   background: #fcfcfc;
 }
@@ -570,7 +812,8 @@ a {
 }
 
 .contact-card input,
-.contact-card textarea {
+.contact-card textarea,
+.contact-card select {
   width: 100%;
   border: 1px solid #cfcfcf;
   border-radius: 8px;
@@ -587,7 +830,8 @@ a {
 }
 
 .contact-card input:focus,
-.contact-card textarea:focus {
+.contact-card textarea:focus,
+.contact-card select:focus {
   outline: none;
   border-color: #8d8d8d;
 }
@@ -782,14 +1026,68 @@ a {
   }
 
   .hero {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
   }
 
+  .intro {
+    display: contents;
+  }
+
+  .intro .eyebrow,
+  .intro h1 {
+    order: 1;
+  }
+
+  .intro h1 {
+    margin-top: 0;
+  }
+
+  .intro-title-main {
+    font-size: clamp(3.6rem, 12vw, 5.2rem);
+  }
+
+  .photo-block {
+    order: 2;
+    width: min(100%, 620px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .intro .summary {
+    order: 3;
+    margin-top: 0;
+  }
+
+  .intro-title-note {
+    order: 3;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+
   .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    flex-wrap: nowrap;
+  }
+
+  .brand {
+    font-size: 1rem;
+  }
+
+  .nav {
+    gap: 0.65rem;
+    flex-wrap: nowrap;
+  }
+
+  .nav a {
+    font-size: 0.8rem;
   }
 
   .link-group {
@@ -799,6 +1097,10 @@ a {
   .feature {
     grid-template-columns: 1fr;
     gap: 1.2rem;
+  }
+
+  .category-content {
+    grid-template-columns: 1fr;
   }
 
   .binomial-layout {
@@ -813,6 +1115,10 @@ a {
 
   .binomial-video {
     height: auto;
+  }
+
+  .clay-play-gallery {
+    column-count: 1;
   }
 
   .ai-channel-head {
@@ -913,6 +1219,26 @@ a {
   }
   100% {
     left: 118%;
+    opacity: 0;
+  }
+}
+
+@keyframes goldenSweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes blinkCaret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  46%,
+  100% {
     opacity: 0;
   }
 }

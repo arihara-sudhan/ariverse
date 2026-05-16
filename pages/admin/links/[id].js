@@ -35,7 +35,15 @@ export async function getServerSideProps({ req, params }) {
 export default function LinkAdminPage({ link, initialItems }) {
   const isBinomialSection = link.label === 'Binomial Names';
   const isClayPlaySection = link.label === 'Clay Play';
-  const [items, setItems] = useState(initialItems || []);
+  const [items, setItems] = useState(
+    (initialItems || []).map((item) => ({
+      ...item,
+      markdownText:
+        typeof item.markdownText === 'string' && item.markdownText.trim()
+          ? item.markdownText
+          : item.description || '',
+    })),
+  );
   const [error, setError] = useState('');
   const [editingItemId, setEditingItemId] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
@@ -45,6 +53,17 @@ export default function LinkAdminPage({ link, initialItems }) {
   const [markdownText, setMarkdownText] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dragState, setDragState] = useState({ scope: '', itemId: null, fromIndex: -1 });
+
+  function reorderList(list, fromIndex, toIndex) {
+    if (!Array.isArray(list)) return [];
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return list;
+    if (fromIndex >= list.length || toIndex >= list.length) return list;
+    const next = [...list];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
+  }
 
   async function uploadImage(file, title) {
     const formData = new FormData();
@@ -109,15 +128,31 @@ export default function LinkAdminPage({ link, initialItems }) {
   }
 
   async function saveItem(item) {
+    const payload = {
+      ...item,
+      linkId: item.linkId || link.id,
+    };
+
+    if (isClayPlaySection) {
+      const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+      payload.imageUrls = currentUrls.length > 0 ? currentUrls : item.imageUrl ? [item.imageUrl] : [];
+      payload.imageUrl = item.imageUrl || payload.imageUrls[0] || '';
+    }
+
     const res = await fetch('/api/admin/link-items', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
-      setError('Could not save item.');
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || 'Could not save item.');
+      return false;
     }
+
+    setError('');
+    return true;
   }
 
   async function deleteItem(id) {
@@ -205,8 +240,21 @@ export default function LinkAdminPage({ link, initialItems }) {
                 {isClayPlaySection ? (
                   imageUrls.length > 0 ? (
                     <div className="admin-upload-list">
-                      {imageUrls.map((url) => (
-                        <div key={url} className="admin-upload-item">
+                      {imageUrls.map((url, index) => (
+                        <div
+                          key={url}
+                          className="admin-upload-item"
+                          draggable
+                          onDragStart={() => setDragState({ scope: 'new', itemId: null, fromIndex: index })}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            if (dragState.scope !== 'new') return;
+                            setImageUrls((prev) => reorderList(prev, dragState.fromIndex, index));
+                            setDragState({ scope: '', itemId: null, fromIndex: -1 });
+                          }}
+                          onDragEnd={() => setDragState({ scope: '', itemId: null, fromIndex: -1 })}
+                        >
                           <span>{url}</span>
                           <button
                             type="button"
@@ -308,8 +356,32 @@ export default function LinkAdminPage({ link, initialItems }) {
                         />
                         {isClayPlaySection && Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? (
                           <div className="admin-upload-list">
-                            {item.imageUrls.map((url) => (
-                              <div key={`${item.id}-${url}`} className="admin-upload-item">
+                            {item.imageUrls.map((url, index) => (
+                              <div
+                                key={`${item.id}-${url}-${index}`}
+                                className="admin-upload-item"
+                                draggable
+                                onDragStart={() =>
+                                  setDragState({
+                                    scope: 'edit',
+                                    itemId: item.id,
+                                    fromIndex: index,
+                                  })
+                                }
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  if (dragState.scope !== 'edit' || dragState.itemId !== item.id) return;
+                                  const nextUrls = reorderList(item.imageUrls, dragState.fromIndex, index);
+                                  updateLocalItem(item.id, {
+                                    imageUrl: nextUrls[0] || '',
+                                    imageUrls: nextUrls,
+                                  });
+                                  setDragState({ scope: '', itemId: null, fromIndex: -1 });
+                                }}
+                                onDragEnd={() => setDragState({ scope: '', itemId: null, fromIndex: -1 })}
+                              >
+                                <img className="admin-upload-thumb" src={url} alt="Clay preview" />
                                 <span>{url}</span>
                                 <button
                                   type="button"
@@ -336,7 +408,7 @@ export default function LinkAdminPage({ link, initialItems }) {
                     <textarea
                       id={`edit-markdown-${item.id}`}
                       rows="8"
-                      value={item.markdownText || ''}
+                      value={item.markdownText || item.description || ''}
                       onChange={(event) => updateLocalItem(item.id, { markdownText: event.target.value })}
                     />
                   </div>
@@ -349,8 +421,10 @@ export default function LinkAdminPage({ link, initialItems }) {
                         type="button"
                         className="playlist-watch-btn admin-item-action-btn"
                         onClick={async () => {
-                          await saveItem(item);
-                          setEditingItemId(null);
+                          const didSave = await saveItem(item);
+                          if (didSave) {
+                            setEditingItemId(null);
+                          }
                         }}
                       >
                         Save

@@ -1,5 +1,6 @@
 import Header from '../src/components/Header';
 import { getProfileLinkByLabel, listLinkItems } from '../lib/adminData';
+import { useRef, useState } from 'react';
 
 export async function getServerSideProps() {
   const clayLink = await getProfileLinkByLabel('Clay Play');
@@ -19,6 +20,34 @@ export async function getServerSideProps() {
 }
 
 export default function ClayPlayPage({ entries }) {
+  const imageMetricsRef = useRef({});
+  const [galleryHeightByEntry, setGalleryHeightByEntry] = useState({});
+
+  const handleClayImageLoad = (entryId, index, event) => {
+    const img = event.currentTarget;
+    const width = img.clientWidth;
+    if (!width || !img.naturalWidth || !img.naturalHeight) return;
+
+    if (!imageMetricsRef.current[entryId]) {
+      imageMetricsRef.current[entryId] = {};
+    }
+
+    imageMetricsRef.current[entryId][index] = {
+      renderedHeight: (width * img.naturalHeight) / img.naturalWidth,
+    };
+
+    const renderedHeights = Object.values(imageMetricsRef.current[entryId]).map(
+      (metric) => metric.renderedHeight,
+    );
+    if (renderedHeights.length === 0) return;
+
+    const minRenderedHeight = Math.floor(Math.min(...renderedHeights));
+    setGalleryHeightByEntry((current) => {
+      if (current[entryId] === minRenderedHeight) return current;
+      return { ...current, [entryId]: minRenderedHeight };
+    });
+  };
+
   return (
     <div className="site">
       <Header subPage />
@@ -40,12 +69,28 @@ export default function ClayPlayPage({ entries }) {
                 {(Array.isArray(entry.imageUrls) ? entry.imageUrls : []).length > 0 ? (
                   <div className="clay-play-gallery">
                     {(Array.isArray(entry.imageUrls) ? entry.imageUrls : []).map((url, index) => (
-                      <img
+                      <a
                         key={`${entry.id}-${url}-${index}`}
-                        className="clay-play-image"
-                        src={url}
-                        alt={`${entry.kavithaiFrom || 'Clay Play image'} ${index + 1}`}
-                      />
+                        className="clay-play-image-link"
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Open ${entry.kavithaiFrom || 'Clay Play'} image ${index + 1}`}
+                        style={
+                          galleryHeightByEntry[entry.id]
+                            ? { height: `${galleryHeightByEntry[entry.id]}px` }
+                            : undefined
+                        }
+                      >
+                        <img
+                          className="clay-play-image"
+                          src={url}
+                          alt={`${entry.kavithaiFrom || 'Clay Play image'} ${index + 1}`}
+                          loading="lazy"
+                          decoding="async"
+                          onLoad={(event) => handleClayImageLoad(entry.id, index, event)}
+                        />
+                      </a>
                     ))}
                   </div>
                 ) : null}

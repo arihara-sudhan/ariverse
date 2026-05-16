@@ -4,18 +4,8 @@ import { useEffect, useState } from 'react';
 const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/hero/ari.png';
 const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/hero/glory-lily.jpg';
 const WELCOME_MESSAGES = [
-  { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்!' },
-  { lang: 'en', text: 'Welcome to ARIVERSE!' },
-  { lang: 'ml', text: 'അരിവേഴ്‌സിലേക്ക് സ്വാഗതം!' },
-  { lang: 'te', text: 'ఆరివర్స్‌కు స్వాగతం!' },
-  { lang: 'kn', text: 'ಆರಿವರ್ಸ್‌ಗೆ ಸ್ವಾಗತ!' },
-  { lang: 'hi', text: 'अरिवर्स में आपका स्वागत है!' },
-  { lang: 'ar', text: 'مرحبًا بكم في أرِفيرس!' },
-  { lang: 'el', text: 'Καλώς ήρθατε στο Αρίβερς!' },
-  { lang: 'he', text: 'ברוכים הבאים לאריוורס!' },
-  { lang: 'fr', text: 'Bienvenue dans l’ARIVERSE!' },
-  { lang: 'de', text: 'Willkommen im ARIVERSE!' },
-  { lang: 'es', text: 'Bienvenido al ARIVERSE!' },
+  { lang: 'en', text: 'Welcome to ARIVERSE...' },
+  { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
 ];
 
 export async function getServerSideProps() {
@@ -123,8 +113,8 @@ export default function HomePage({ profileLinks }) {
             <h1>
               <span className="intro-title-main">I am ARI</span>
               <span className="intro-title-sub">
-                I am Aravind Ariharasudhan, a boy hails from the South, aiming beyond The Sky. Each day, I try
-                to reach the buds of knowledge dwelling in this vast universe, waiting to be touched by ME.
+                A boy hails from the South, aiming beyond The Sky. Each day, I try
+                reaching the buds of knowledge in this vast universe, waiting for my touch.
                 With insatiable curiosity, I learn, love, live, and teach. This is my world, which I shape
                 meticulously.
               </span>

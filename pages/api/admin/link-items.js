@@ -72,6 +72,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     const id = Number(req.body?.id);
+    const linkId = Number(req.body?.linkId);
     const imageUrl = toCleanText(req.body?.imageUrl);
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
@@ -99,7 +100,16 @@ export default async function handler(req, res) {
       return;
     }
 
-    await updateLinkItem({ id, imageUrl, imageUrls, youtubeUrl, markdownText, kavithaiFrom, imageAlign });
+    await updateLinkItem({
+      id,
+      linkId: Number.isInteger(linkId) && linkId > 0 ? linkId : existing?.linkId,
+      imageUrl,
+      imageUrls,
+      youtubeUrl,
+      markdownText,
+      kavithaiFrom,
+      imageAlign,
+    });
     res.status(200).json({ ok: true });
     return;
   }

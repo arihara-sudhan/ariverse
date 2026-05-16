@@ -85,7 +85,11 @@ export default function HomePage({ profileLinks }) {
 
   const groupedLinks = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'].map((category) => {
     const items = safeLinks
-      .filter((link) => (link.category || 'PASSIONAL').toUpperCase() === category)
+      .filter((link) => {
+        const normalizedCategory =
+          link.label === 'Experiments' ? 'PROFESSIONAL' : (link.category || 'PASSIONAL').toUpperCase();
+        return normalizedCategory === category;
+      })
       .sort((a, b) => {
         const aIdx = orderIndex.has(a.label) ? orderIndex.get(a.label) : Number.MAX_SAFE_INTEGER;
         const bIdx = orderIndex.has(b.label) ? orderIndex.get(b.label) : Number.MAX_SAFE_INTEGER;
@@ -151,12 +155,18 @@ export default function HomePage({ profileLinks }) {
                 </div>
                 <div className="category-links">
                   {group.items.map((link) => {
-                    const isExternal = link.href.startsWith('http');
+                    const resolvedHref =
+                      link.label === 'Resume'
+                        ? 'https://arihara-sudhan.github.io/resume/resume.pdf'
+                        : link.label === 'Thirukkural'
+                          ? 'https://arihara-sudhan.github.io/uyir-kural/'
+                        : link.href;
+                    const isExternal = resolvedHref.startsWith('http');
 
                     return (
                       <a
                         key={link.id}
-                        href={link.href}
+                        href={resolvedHref}
                         target={isExternal ? '_blank' : undefined}
                         rel={isExternal ? 'noreferrer' : undefined}
                       >

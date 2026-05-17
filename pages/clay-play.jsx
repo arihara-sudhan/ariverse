@@ -1,27 +1,33 @@
 import Header from '../src/components/Header';
-import { getProfileLinkByLabel, listLinkItems } from '../lib/adminData';
+import SectionHero from '../src/components/SectionHero';
+import { getProfileLinkByLabel, getSectionHero, listLinkItems } from '../lib/adminData';
 import { useRef, useState } from 'react';
+
+const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 
 export async function getServerSideProps() {
   const clayLink = await getProfileLinkByLabel('Clay Play');
   if (!clayLink) {
-    return { props: { entries: [] } };
+    return { props: { entries: [], hero: { heading: 'Clay Play', imageUrl: '' } } };
   }
 
   const entries = (await listLinkItems(clayLink.id)).filter(
     (item) => String(item.kavithaiFrom || '').trim() && String(item.markdownText || '').trim(),
   );
+  const hero = await getSectionHero(clayLink.id, 'Clay Play');
 
   return {
     props: {
       entries,
+      hero,
     },
   };
 }
 
-export default function ClayPlayPage({ entries }) {
+export default function ClayPlayPage({ entries, hero }) {
   const imageMetricsRef = useRef({});
   const [galleryHeightByEntry, setGalleryHeightByEntry] = useState({});
+  const heroQuote = String(hero?.quote || '').trim() || DEFAULT_CLAY_QUOTE;
 
   const handleClayImageLoad = (entryId, index, event) => {
     const img = event.currentTarget;
@@ -53,7 +59,15 @@ export default function ClayPlayPage({ entries }) {
       <Header subPage />
       <main className="content">
         <section aria-labelledby="clay-play-title">
-          <h1 id="clay-play-title">Clay Play</h1>
+          <SectionHero
+            heading={hero?.heading}
+            description={hero?.description}
+            imageUrl={hero?.imageUrl}
+            fallbackHeading="Clay Play"
+          >
+            <p className="clay-play-quote">"{heroQuote}"</p>
+          </SectionHero>
+          <h1 id="clay-play-title" style={{ display: 'none' }}>Clay Play</h1>
           {entries.length === 0 ? <p className="contact-note">No clay play write-ups yet.</p> : null}
 
           <div className="clay-play-list">

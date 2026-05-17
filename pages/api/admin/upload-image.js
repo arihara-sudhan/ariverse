@@ -65,10 +65,14 @@ export default async function handler(req, res) {
     const ext = (path.extname(file.originalFilename || '') || '.png').toLowerCase();
     const section = Array.isArray(fields?.section) ? fields.section[0] : fields?.section;
     const title = Array.isArray(fields?.title) ? fields.title[0] : fields?.title;
+    const category = Array.isArray(fields?.category) ? fields.category[0] : fields?.category;
+    const subcategory = Array.isArray(fields?.subcategory) ? fields.subcategory[0] : fields?.subcategory;
     const folder = toFolderName(section);
     const titleFolder = toFolderName(title);
+    const categoryFolder = toFolderName(category);
+    const subcategoryFolder = toFolderName(subcategory);
     const baseName = toFileBaseFromOriginalName(file.originalFilename || '');
-    const fileName = `${folder}/${titleFolder}/${baseName}${ext}`;
+    const fileName = `${folder}/${categoryFolder}/${subcategoryFolder}/${titleFolder}/${baseName}${ext}`;
     const fileBuffer = await readFile(file.filepath);
 
     const blob = await put(fileName, fileBuffer, {

@@ -71,8 +71,7 @@ export default function HomePage({ profileLinks }) {
     'Guest Lectures',
     'AI with ARI (YouTube)',
     'Experiments',
-    'Learnings',
-    'Books Written',
+    'My Books',
     'AriZone (Blog)',
     'Thirukkural',
     'Clay Play',
@@ -86,8 +85,7 @@ export default function HomePage({ profileLinks }) {
   const groupedLinks = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'].map((category) => {
     const items = safeLinks
       .filter((link) => {
-        const normalizedCategory =
-          link.label === 'Experiments' ? 'PROFESSIONAL' : (link.category || 'PASSIONAL').toUpperCase();
+        const normalizedCategory = (link.category || 'PASSIONAL').toUpperCase();
         return normalizedCategory === category;
       })
       .sort((a, b) => {
@@ -158,9 +156,9 @@ export default function HomePage({ profileLinks }) {
                     const resolvedHref =
                       link.label === 'Resume'
                         ? 'https://arihara-sudhan.github.io/resume/resume.pdf'
-                        : link.label === 'Thirukkural'
-                          ? 'https://arihara-sudhan.github.io/uyir-kural/'
-                        : link.href;
+                        : link.label === 'Books Read'
+                            ? '/ari-read-books'
+                          : link.href;
                     const isExternal = resolvedHref.startsWith('http');
 
                     return (

@@ -18,6 +18,16 @@ function toImageUrls(value) {
   return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
 }
 
+function isValidBooksCategory(category) {
+  return category === 'ENGLISH' || category === 'TAMIL';
+}
+
+function isValidBooksSubcategory(category, subcategory) {
+  if (category === 'ENGLISH') return subcategory === 'FICTION' || subcategory === 'NON_FICTION';
+  if (category === 'TAMIL') return subcategory === 'புனைவு' || subcategory === 'புனைவிலி';
+  return false;
+}
+
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -41,12 +51,16 @@ export default async function handler(req, res) {
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
+    const category = toCleanText(req.body?.category).toUpperCase();
+    const subcategory = toCleanText(req.body?.subcategory);
     const imageUrls = toImageUrls(req.body?.imageUrls);
     const imageAlign = toCleanText(req.body?.imageAlign).toLowerCase() === 'right' ? 'right' : 'left';
     const binomialLink = await getProfileLinkByLabel('Binomial Names');
     const clayPlayLink = await getProfileLinkByLabel('Clay Play');
+    const booksReadLink = await getProfileLinkByLabel('Books Read');
     const isBinomial = Boolean(binomialLink && binomialLink.id === linkId);
     const isClayPlay = Boolean(clayPlayLink && clayPlayLink.id === linkId);
+    const isBooksRead = Boolean(booksReadLink && booksReadLink.id === linkId);
 
     if (!Number.isInteger(linkId) || linkId <= 0 || !markdownText || !kavithaiFrom) {
       res.status(400).json({ error: 'Invalid payload.' });
@@ -62,10 +76,18 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'At least one image is required for Clay Play entries.' });
       return;
     }
+    if (isBooksRead && !imageUrl) {
+      res.status(400).json({ error: 'Cover image is required for Books Read entries.' });
+      return;
+    }
+    if (isBooksRead && (!isValidBooksCategory(category) || !isValidBooksSubcategory(category, subcategory))) {
+      res.status(400).json({ error: 'Invalid category/subcategory for Books Read.' });
+      return;
+    }
 
     const item = isBinomial
       ? await addBinomialItem({ linkId, name: kavithaiFrom, youtubeUrl, caption: markdownText })
-      : await addLinkItem({ linkId, imageUrl, imageUrls, markdownText, kavithaiFrom, imageAlign });
+      : await addLinkItem({ linkId, imageUrl, imageUrls, markdownText, kavithaiFrom, imageAlign, category, subcategory });
     res.status(201).json({ item });
     return;
   }
@@ -77,13 +99,17 @@ export default async function handler(req, res) {
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
+    const category = toCleanText(req.body?.category).toUpperCase();
+    const subcategory = toCleanText(req.body?.subcategory);
     const imageUrls = toImageUrls(req.body?.imageUrls);
     const imageAlign = toCleanText(req.body?.imageAlign).toLowerCase() === 'right' ? 'right' : 'left';
     const binomialLink = await getProfileLinkByLabel('Binomial Names');
     const clayPlayLink = await getProfileLinkByLabel('Clay Play');
+    const booksReadLink = await getProfileLinkByLabel('Books Read');
     const existing = await getLinkItemById(id);
     const isBinomial = Boolean(existing && binomialLink && existing.linkId === binomialLink.id);
     const isClayPlay = Boolean(existing && clayPlayLink && existing.linkId === clayPlayLink.id);
+    const isBooksRead = Boolean(existing && booksReadLink && existing.linkId === booksReadLink.id);
 
     if (!Number.isInteger(id) || id <= 0 || !markdownText || !kavithaiFrom) {
       res.status(400).json({ error: 'Invalid payload.' });
@@ -99,6 +125,14 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'At least one image is required for Clay Play entries.' });
       return;
     }
+    if (isBooksRead && !imageUrl) {
+      res.status(400).json({ error: 'Cover image is required for Books Read entries.' });
+      return;
+    }
+    if (isBooksRead && (!isValidBooksCategory(category) || !isValidBooksSubcategory(category, subcategory))) {
+      res.status(400).json({ error: 'Invalid category/subcategory for Books Read.' });
+      return;
+    }
 
     await updateLinkItem({
       id,
@@ -109,6 +143,8 @@ export default async function handler(req, res) {
       markdownText,
       kavithaiFrom,
       imageAlign,
+      category,
+      subcategory,
     });
     res.status(200).json({ ok: true });
     return;

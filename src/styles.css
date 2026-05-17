@@ -169,7 +169,7 @@ a {
 
 .intro-title-sub {
   display: block;
-  margin-top: 0.45rem;
+  margin: 0.45rem 0 0;
   font-size: 1.2rem;
   line-height: 1.65;
   font-weight: 500;
@@ -763,11 +763,197 @@ a {
   gap: 1rem;
 }
 
+.section-hero {
+  margin-bottom: 1rem;
+}
+
+.section-hero-media {
+  margin: 0 0 0.75rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #d7d7d7;
+  background: #f4f4f4;
+}
+
+.section-hero-media img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
+.section-hero-title {
+  margin: 0;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.section-hero-description {
+  margin: 0.55rem 0 0;
+  color: #404040;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.admin-hero-inline-form {
+  margin-top: 0.7rem;
+}
+
+.books-read-list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.books-read-stat {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.5rem;
+}
+
+.books-read-stat-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 0;
+}
+
+.books-read-stat-number {
+  font-size: clamp(1.9rem, 5.5vw, 3.1rem);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  color: #1f5f34;
+}
+
+.books-read-stat-text {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  transform: translateY(0);
+}
+
+.books-read-stat-top {
+  font-size: clamp(1.9rem, 5.5vw, 3.1rem);
+  letter-spacing: 0.1em;
+  font-weight: 800;
+}
+
+.books-read-filters {
+  margin-top: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.books-filter-btn,
+.books-subfilter-btn {
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.books-filter-btn.is-active,
+.books-subfilter-btn.is-active {
+  background: #111111;
+  color: #ffffff;
+}
+
+.books-read-subfilters {
+  margin-top: 0.3rem;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.books-read-hero-meta {
+  margin-top: 0.55rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.books-read-filter-panel {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+}
+
+.books-read-meta-mobile {
+  display: none;
+}
+
+.books-read-meta-desktop {
+  display: block;
+}
+
+.books-read-card {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 1.4rem;
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #ffffff;
+  align-items: start;
+}
+
+.books-read-cover {
+  margin: 0;
+  align-self: start;
+}
+
+.books-read-cover img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.books-read-copy h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+
+.books-read-caption {
+  margin-top: 0.4rem;
+}
+
+.books-read-caption p {
+  margin: 0.45rem 0 0;
+  color: #222222;
+  font-size: 0.92rem;
+  line-height: 1.58;
+}
+
 .clay-play-list h1,
 #clay-play-title {
   margin: 0 0 1rem;
   font-size: clamp(1.6rem, 3vw, 2.2rem);
   text-align: center;
+}
+
+.clay-play-quote {
+  margin: 0.5rem 0 1rem;
+  max-width: 50ch;
+  text-align: left;
+  font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+  font-weight: 700;
+  font-style: italic;
+  color: #111111;
 }
 
 .clay-play-entry {
@@ -815,6 +1001,98 @@ a {
 
 .clay-play-image-link:hover .clay-play-image {
   transform: scale(1.02);
+}
+
+.ariyin-poems-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.ariyin-hero-heading {
+  display: block;
+  text-align: left;
+  max-width: 14ch;
+}
+
+.ariyin-hero-small {
+  display: block;
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: normal;
+  color: #1a1a1a;
+}
+
+.ariyin-hero-big {
+  display: block;
+  font-size: clamp(2.1rem, 5.2vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.56;
+  letter-spacing: normal;
+  margin-top: 0.18rem;
+  padding-right: 0.08em;
+  background: linear-gradient(
+    90deg,
+    var(--color-gradient-ink) 0%,
+    var(--color-gradient-ink) 30%,
+    var(--color-gradient-ember) 38%,
+    var(--color-gradient-amber) 44%,
+    var(--color-gradient-gold) 48%,
+    var(--color-gradient-sun) 50%,
+    var(--color-gradient-gold) 52%,
+    var(--color-gradient-amber) 56%,
+    var(--color-gradient-ember) 62%,
+    var(--color-gradient-ink) 70%,
+    var(--color-gradient-ink) 100%
+  );
+  background-size: 350% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  animation: goldenSweep 24s linear infinite;
+}
+
+@media (max-width: 700px) {
+  .ariyin-hero-heading {
+    max-width: 100%;
+  }
+
+  .ariyin-hero-big {
+    font-size: clamp(1.9rem, 12vw, 3rem);
+    line-height: 1.6;
+  }
+}
+
+.ariyin-poem-entry {
+  border: 1px solid #e1e1e1;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #ffffff;
+}
+
+.ariyin-poem-entry-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ariyin-poem-image-wrap {
+  margin: 0;
+}
+
+.ariyin-poem-image {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.ariyin-poem-entry h2 {
+  margin: 0.65rem 0 0;
+  font-size: 1rem;
+  line-height: 1.3;
 }
 
 .contact-card {
@@ -886,6 +1164,10 @@ a {
 .tamil-text,
 :lang(ta) {
   font-family: "TamilFont", "Noto Sans Tamil", "Latha", sans-serif;
+  letter-spacing: normal !important;
+  text-transform: none;
+  font-variant-ligatures: common-ligatures;
+  font-feature-settings: "liga" 1, "clig" 1;
 }
 
 .kavithai-hero {
@@ -930,12 +1212,6 @@ a {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 520ms ease-in, transform 520ms ease-in;
-}
-
-.kavithai-top-nav.is-hidden {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
 }
 
 .kavithai-top-nav a {
@@ -1097,6 +1373,20 @@ a {
     text-align: center;
   }
 
+  .section-hero.description-after-image-mobile .section-hero-mobile-after-image {
+    order: 3;
+    width: min(100%, 620px);
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .intro .clay-play-quote {
+    order: 3;
+    width: min(100%, 620px);
+    margin: 0 auto;
+    text-align: left;
+  }
+
 
   .topbar {
     flex-direction: row;
@@ -1148,6 +1438,29 @@ a {
 
   .clay-play-gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .books-read-card {
+    grid-template-columns: 1fr;
+  }
+
+  .books-read-cover {
+    width: 95%;
+    max-width: none;
+    margin: 0 auto;
+  }
+
+  .books-read-hero-meta {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .books-read-meta-desktop {
+    display: none;
+  }
+
+  .books-read-meta-mobile {
+    display: block;
   }
 
   .ai-channel-head {

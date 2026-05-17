@@ -1,5 +1,6 @@
 import Header from '../src/components/Header';
-import { getProfileLinkByLabel, listLinkItems } from '../lib/adminData';
+import SectionHero from '../src/components/SectionHero';
+import { getProfileLinkByLabel, getSectionHero, listLinkItems } from '../lib/adminData';
 
 function toEmbedUrl(value) {
   const text = typeof value === 'string' ? value.trim() : '';
@@ -25,15 +26,16 @@ function toEmbedUrl(value) {
 export async function getServerSideProps({ query }) {
   const binomialLink = await getProfileLinkByLabel('Binomial Names');
   if (!binomialLink) {
-    return { props: { selectedEntry: null } };
+    return { props: { selectedEntry: null, hero: { heading: 'Binomial Names', description: '', imageUrl: '' } } };
   }
+  const hero = await getSectionHero(binomialLink.id, 'Binomial Names');
 
   const entries = (await listLinkItems(binomialLink.id)).filter(
     (item) => String(item.youtubeUrl || '').trim() && String(item.kavithaiFrom || '').trim(),
   );
 
   if (entries.length === 0) {
-    return { props: { selectedEntry: null } };
+    return { props: { selectedEntry: null, hero } };
   }
 
   const requestedId = Number(query?.id);
@@ -43,17 +45,27 @@ export async function getServerSideProps({ query }) {
 
   return {
     props: {
+      hero,
       selectedEntry: requestedEntry || entries[0],
     },
   };
 }
 
-export default function BinomialNamesPage({ selectedEntry }) {
+export default function BinomialNamesPage({ selectedEntry, hero }) {
   if (!selectedEntry) {
     return (
       <div className="site">
         <Header subPage />
         <main className="content">
+          <section aria-labelledby="binomial-page-title">
+            <SectionHero
+              heading={hero?.heading}
+              description={hero?.description}
+              imageUrl={hero?.imageUrl}
+              fallbackHeading="Binomial Names"
+            />
+            <h1 id="binomial-page-title" style={{ display: 'none' }}>Binomial Names</h1>
+          </section>
           <section className="binomial-layout">
             <article className="contact-card binomial-card">
               <p className="contact-note">No entries yet.</p>
@@ -71,6 +83,15 @@ export default function BinomialNamesPage({ selectedEntry }) {
     <div className="site">
       <Header subPage />
       <main className="content">
+        <section aria-labelledby="binomial-page-title">
+          <SectionHero
+            heading={hero?.heading}
+            description={hero?.description}
+            imageUrl={hero?.imageUrl}
+            fallbackHeading="Binomial Names"
+          />
+          <h1 id="binomial-page-title" style={{ display: 'none' }}>Binomial Names</h1>
+        </section>
         <section className="binomial-layout" aria-labelledby="binomial-title">
           <article className="contact-card binomial-card">
             <div className="binomial-video-wrap">

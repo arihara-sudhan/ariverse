@@ -965,9 +965,19 @@ a {
 }
 
 .clay-play-entry h2 {
-  margin: 0 0 0.7rem;
+  margin: -1rem -1rem 0.85rem;
+  padding: 0.65rem 0.9rem;
+  background: #000000;
+  color: #ffffff;
   font-size: 1.1rem;
   line-height: 1.3;
+}
+
+.guest-lectures-page .clay-play-entry h2 {
+  margin: -1rem -1rem 0.85rem;
+  padding: 0.65rem 0.9rem;
+  background: #000000;
+  color: #ffffff;
 }
 
 .clay-play-entry p {

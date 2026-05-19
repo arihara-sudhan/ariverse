@@ -39,9 +39,11 @@ export async function getServerSideProps({ req, params }) {
 export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isBinomialSection = link.label === 'Binomial Names';
   const isClayPlaySection = link.label === 'Clay Play';
+  const isGuestLecturesSection = link.label === 'Guest Lectures';
+  const isGallerySection = isClayPlaySection || isGuestLecturesSection;
   const isBooksReadSection = link.label === 'Books Read';
   const isKavithaiSection = link.label === 'Ariyin Kavithaigal';
-  const isItemManagedSection = isBinomialSection || isClayPlaySection || isBooksReadSection || isKavithaiSection;
+  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
@@ -185,7 +187,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
       body: JSON.stringify({
         linkId: link.id,
         imageUrl: isBinomialSection ? '' : imageUrl,
-        imageUrls: isClayPlaySection ? imageUrls : undefined,
+        imageUrls: isGallerySection ? imageUrls : undefined,
         youtubeUrl: isBinomialSection ? youtubeUrl : '',
         markdownText,
         kavithaiFrom,
@@ -232,7 +234,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
       linkId: item.linkId || link.id,
     };
 
-    if (isClayPlaySection) {
+    if (isGallerySection) {
       const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
       payload.imageUrls = currentUrls.length > 0 ? currentUrls : item.imageUrl ? [item.imageUrl] : [];
       payload.imageUrl = item.imageUrl || payload.imageUrls[0] || '';
@@ -361,7 +363,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>
             <label htmlFor="item-kavithai-from">
-              {isBinomialSection ? 'Entry Name' : isClayPlaySection || isBooksReadSection || isKavithaiSection ? 'Title' : 'Kavithai Name'}
+              {isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection ? 'Title' : 'Kavithai Name'}
             </label>
             <input
               id="item-kavithai-from"
@@ -418,20 +420,20 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             ) : (
               <>
                 <label htmlFor="item-image-upload">
-                  {isClayPlaySection ? 'Upload images' : 'Upload image'}
+                  {isGallerySection ? 'Upload images' : 'Upload image'}
                 </label>
                 <input
                   id="item-image-upload"
                   type="file"
                   accept="image/*"
-                  multiple={isClayPlaySection}
+                  multiple={isGallerySection}
                   onChange={async (event) => {
                     const files = Array.from(event.target.files || []);
                     if (files.length === 0) return;
                     setUploading(true);
                     setError('');
                     try {
-                      if (isClayPlaySection) {
+                      if (isGallerySection) {
                         const uploadedUrls = await uploadMultipleImages(files, kavithaiFrom);
                         setImageUrls((prev) => [...prev, ...uploadedUrls]);
                         setImageUrl((prev) => prev || uploadedUrls[0] || '');
@@ -446,7 +448,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     }
                   }}
                 />
-                {isClayPlaySection ? (
+                {isGallerySection ? (
                   imageUrls.length > 0 ? (
                     <div className="admin-upload-list">
                       {imageUrls.map((url, index) => (
@@ -482,7 +484,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             )}
 
             <label htmlFor="item-markdown">
-              {isBinomialSection || isBooksReadSection ? 'Caption' : isClayPlaySection ? 'Write-up' : 'Markdown (.md) content'}
+              {isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
             </label>
             <textarea
               id="item-markdown"
@@ -522,12 +524,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
                     <label htmlFor={`edit-name-${item.id}`}>
-                      {isBinomialSection ? 'Entry Name' : isClayPlaySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
+                      {isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
                     </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isBinomialSection ? 'Entry Name' : isClayPlaySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
+                      placeholder={isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
 
@@ -599,13 +601,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                           id={`edit-image-${item.id}`}
                           type="file"
                           accept="image/*"
-                          multiple={isClayPlaySection}
+                          multiple={isGallerySection}
                           onChange={async (event) => {
                             const files = Array.from(event.target.files || []);
                             if (files.length === 0) return;
                             setError('');
                             try {
-                              if (isClayPlaySection) {
+                              if (isGallerySection) {
                                 const uploadedUrls = await uploadMultipleImages(files, item.kavithaiFrom);
                                 const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
                                 const nextUrls = [...currentUrls, ...uploadedUrls];
@@ -622,7 +624,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                             }
                           }}
                         />
-                        {isClayPlaySection && Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? (
+                        {isGallerySection && Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? (
                           <div className="admin-upload-list">
                             {item.imageUrls.map((url, index) => (
                               <div
@@ -649,7 +651,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                                 }}
                                 onDragEnd={() => setDragState({ scope: '', itemId: null, fromIndex: -1 })}
                               >
-                                <img className="admin-upload-thumb" src={url} alt="Clay preview" />
+                                <img className="admin-upload-thumb" src={url} alt="Gallery preview" />
                                 <span>{url}</span>
                                 <button
                                   type="button"
@@ -671,7 +673,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     )}
 
                     <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isBinomialSection || isBooksReadSection ? 'Caption' : isClayPlaySection ? 'Write-up' : 'Poem'}
+                      {isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Poem'}
                     </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}

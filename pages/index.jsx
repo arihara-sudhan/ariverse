@@ -67,6 +67,8 @@ export default function HomePage({ profileLinks }) {
   const preferredOrder = [
     'Works',
     'Projects',
+    'Skillset',
+    'Experience',
     'Resume',
     'Guest Lectures',
     'AI with ARI (YouTube)',
@@ -98,11 +100,11 @@ export default function HomePage({ profileLinks }) {
   });
   const categoryCopy = {
     PROFESSIONAL:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      'This space holds my practical journey: real work, crafted projects, core skills, and lived experience. I focus on solving meaningful problems with consistent learning, clean execution, and long-term thinking.',
     PASSIONAL:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      'Beyond formal work, these are the things I pursue with heart: lectures, experiments, writing, and timeless wisdom. This section reflects how I learn, share, and grow through ideas that truly move me.',
     HOBBYAL:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      'Here live my creative and personal explorations - clay, poetry, reading trails, reflections, and scientific wonder. These are not side notes; they are the quiet roots that shape how I think and build.',
   };
 
   return (

@@ -1089,6 +1089,96 @@ a {
   transform: scale(1.02);
 }
 
+.clay-play-reactions {
+  margin-top: 0.45rem;
+  border-top: none;
+  padding-top: 0.2rem;
+}
+
+.clay-play-reaction-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.clay-heart-btn {
+  border: none;
+  background: transparent;
+  color: #111;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.2rem;
+  cursor: pointer;
+}
+
+.clay-heart-btn[aria-pressed='true'] {
+  color: #000;
+}
+
+.clay-like-count {
+  min-width: 1.2rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.clay-name-input,
+.clay-comment-input {
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  height: 26px;
+  padding: 0 0.42rem;
+  font-size: 0.78rem;
+  background: #fff;
+  color: #111;
+}
+
+.clay-name-input {
+  width: 108px;
+}
+
+.clay-comment-input {
+  min-width: 170px;
+  flex: 1 1 170px;
+}
+
+.clay-comment-send {
+  border: 1px solid #000;
+  background: #000;
+  color: #fff;
+  border-radius: 5px;
+  height: 26px;
+  padding: 0 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clay-heart-btn:disabled,
+.clay-comment-send:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.clay-play-reaction-error {
+  margin: 0.25rem 0 0;
+  color: #a32626;
+  font-size: 0.74rem;
+}
+
+.clay-play-comments {
+  margin-top: 0.28rem;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.clay-play-comments p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
 .ariyin-poems-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

@@ -66,7 +66,7 @@ export default function MiniProjectsPage({ hero }) {
                   <img src={project.logo} alt={project.title} />
                   <div>
                     <h3>{project.title}</h3>
-                    <p>{project.category}</p>
+                    <p>{project.caption || project.category}</p>
                     <div className="mini-project-actions">
                       <a
                         href={project.embedLink}

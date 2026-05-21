@@ -955,7 +955,7 @@ a {
 
 .mini-project-card {
   display: grid;
-  grid-template-columns: 130px minmax(0, 1fr);
+  grid-template-columns: 180px minmax(0, 1fr);
   gap: 0.85rem;
   border: 1px solid #d7d7d7;
   border-radius: 10px;

@@ -98,3 +98,5 @@ export const miniProjects = miniProjectsRaw.map((project) => ({
   ...project,
   category: inferCategory(project.title),
 }));
+
+

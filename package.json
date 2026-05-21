@@ -1,22 +1,25 @@
 {
-    "name":  "ariverse",
-    "private":  true,
-    "version":  "0.0.0",
-    "scripts":  {
-                    "dev":  "next dev --webpack",
-                    "build":  "next build",
-                    "start":  "next start",
-                    "migrate:kavithai-images":  "node scripts/migrate-kavithai-images-to-blob.mjs",
-                    "migrate:assets":  "node scripts/migrate-assets-to-blob.mjs"
-                },
-    "dependencies":  {
-                         "@neondatabase/serverless":  "^1.1.0",
-                         "@vercel/blob":  "^2.3.3",
-                         "cookie":  "^1.1.1",
-                         "formidable":  "^3.5.4",
-                         "next":  "16.2.6",
-                         "react":  "19.2.6",
-                         "react-dom":  "19.2.6",
-                         "react-markdown":  "^10.1.0"
-                     }
+    "name": "ariverse",
+    "private": true,
+    "version": "0.0.0",
+    "scripts": {
+        "dev": "next dev --webpack",
+        "build": "next build",
+        "start": "next start",
+        "migrate:kavithai-images": "node scripts/migrate-kavithai-images-to-blob.mjs",
+        "migrate:assets": "node scripts/migrate-assets-to-blob.mjs"
+    },
+    "dependencies": {
+        "@neondatabase/serverless": "^1.1.0",
+        "@vercel/blob": "^2.3.3",
+        "cookie": "^1.1.1",
+        "formidable": "^3.5.4",
+        "next": "16.2.6",
+        "react": "19.2.6",
+        "react-dom": "19.2.6",
+        "react-markdown": "^10.1.0"
+    },
+    "devDependencies": {
+        "sharp": "^0.34.5"
+    }
 }

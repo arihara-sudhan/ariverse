@@ -8,6 +8,26 @@ const WELCOME_MESSAGES = [
   { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
 ];
 
+const HOME_FALLBACK_LINKS = [
+  { id: 'f-works', label: 'Works', href: '/works', category: 'PROFESSIONAL' },
+  { id: 'f-projects', label: 'Projects', href: '/projects', category: 'PROFESSIONAL' },
+  { id: 'f-skillset', label: 'Skillset', href: 'https://arihara-sudhan.github.io/resume/#skills', category: 'PROFESSIONAL' },
+  { id: 'f-experience', label: 'Experience', href: 'https://arihara-sudhan.github.io/resume/#experience', category: 'PROFESSIONAL' },
+  { id: 'f-resume', label: 'Resume', href: 'https://arihara-sudhan.github.io/resume/resume.pdf', category: 'PROFESSIONAL' },
+  { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PROFESSIONAL' },
+  { id: 'f-experiments', label: 'Experiments', href: '/aris-trials', category: 'PASSIONAL' },
+  { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PASSIONAL' },
+  { id: 'f-my-books', label: 'My Books', href: '/my-books', category: 'PASSIONAL' },
+  { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'PASSIONAL' },
+  { id: 'f-thirukkural', label: 'Thirukkural', href: '/thirukkural', category: 'PASSIONAL' },
+  { id: 'f-guest', label: 'Guest Lectures', href: '/guest-lectures', category: 'PASSIONAL' },
+  { id: 'f-clay', label: 'Clay Play', href: '/clay-play', category: 'HOBBYAL' },
+  { id: 'f-kavithaigal', label: 'Ariyin Kavithaigal', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
+  { id: 'f-books-read', label: 'Books Read', href: '/ari-read-books', category: 'HOBBYAL' },
+  { id: 'f-reviews', label: 'Book Reviews', href: '/book-reviews', category: 'HOBBYAL' },
+  { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },
+];
+
 export async function getServerSideProps() {
   let profileLinks = [];
 
@@ -63,7 +83,21 @@ export default function HomePage({ profileLinks }) {
     return () => clearTimeout(timer);
   }, [isDeleting, typedText, welcomeIndex]);
 
-  const safeLinks = Array.isArray(profileLinks) ? profileLinks : [];
+  const safeLinks = Array.isArray(profileLinks) && profileLinks.length > 0 ? profileLinks : HOME_FALLBACK_LINKS;
+  const hasMiniProjects = safeLinks.some((link) => String(link.label).trim() === 'Mini-Projects');
+  const normalizedLinks = hasMiniProjects
+    ? safeLinks
+    : [
+        ...safeLinks,
+        {
+          id: 'fallback-mini-projects',
+          label: 'Mini-Projects',
+          href: '/mini-projects',
+          category: 'PASSIONAL',
+          sortOrder: Number.MAX_SAFE_INTEGER,
+          isHidden: 0,
+        },
+      ];
   const preferredOrder = [
     'Works',
     'Projects',
@@ -73,6 +107,7 @@ export default function HomePage({ profileLinks }) {
     'Guest Lectures',
     'AI with ARI (YouTube)',
     'Experiments',
+    'Mini-Projects',
     'My Books',
     'AriZone (Blog)',
     'Thirukkural',
@@ -85,7 +120,7 @@ export default function HomePage({ profileLinks }) {
   const orderIndex = new Map(preferredOrder.map((label, idx) => [label, idx]));
 
   const groupedLinks = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'].map((category) => {
-    const items = safeLinks
+    const items = normalizedLinks
       .filter((link) => {
         const normalizedCategory = (link.category || 'PASSIONAL').toUpperCase();
         return normalizedCategory === category;

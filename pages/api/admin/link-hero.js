@@ -1,5 +1,6 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getProfileLinkById, getSectionHero, upsertSectionHero } from '../../../lib/adminData';
+import { enforceSameOriginWrite, isSafePublicHref } from '../../../lib/security';
 
 function toCleanText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -8,6 +9,9 @@ function toCleanText(value) {
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  if (!enforceSameOriginWrite(req, res)) {
     return;
   }
 
@@ -33,6 +37,10 @@ export default async function handler(req, res) {
     const description = toCleanText(req.body?.description);
     const quote = toCleanText(req.body?.quote);
     const imageUrl = toCleanText(req.body?.imageUrl);
+    if (imageUrl && !isSafePublicHref(imageUrl)) {
+      res.status(400).json({ error: 'Invalid hero image URL.' });
+      return;
+    }
 
     if (!Number.isInteger(linkId) || linkId <= 0) {
       res.status(400).json({ error: 'Invalid link id.' });

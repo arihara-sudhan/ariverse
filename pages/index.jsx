@@ -1,28 +1,27 @@
 import { listVisibleProfileLinks } from '../lib/adminData';
 import Header from '../src/components/Header';
 import { useEffect, useState } from 'react';
-const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/hero/ari.png';
-const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/hero/glory-lily.jpg';
+const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
+const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
 const WELCOME_MESSAGES = [
   { lang: 'en', text: 'Welcome to ARIVERSE...' },
   { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
 ];
 
 const HOME_FALLBACK_LINKS = [
-  { id: 'f-works', label: 'Works', href: '/works', category: 'PROFESSIONAL' },
+  { id: 'f-works', label: 'Experience', href: '/works', category: 'PROFESSIONAL' },
   { id: 'f-projects', label: 'Projects', href: '/projects', category: 'PROFESSIONAL' },
-  { id: 'f-skillset', label: 'Skillset', href: 'https://arihara-sudhan.github.io/resume/#skills', category: 'PROFESSIONAL' },
-  { id: 'f-experience', label: 'Experience', href: 'https://arihara-sudhan.github.io/resume/#experience', category: 'PROFESSIONAL' },
+  { id: 'f-skillset', label: 'Skillset', href: '/skillset', category: 'PROFESSIONAL' },
   { id: 'f-resume', label: 'Resume', href: 'https://arihara-sudhan.github.io/resume/resume.pdf', category: 'PROFESSIONAL' },
-  { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PROFESSIONAL' },
+  { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PASSIONAL' },
   { id: 'f-experiments', label: 'Experiments', href: '/aris-trials', category: 'PASSIONAL' },
-  { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PASSIONAL' },
+  { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PROFESSIONAL' },
   { id: 'f-my-books', label: 'My Books', href: '/my-books', category: 'PASSIONAL' },
-  { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'PASSIONAL' },
-  { id: 'f-thirukkural', label: 'Thirukkural', href: '/thirukkural', category: 'PASSIONAL' },
+  { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'HOBBYAL' },
+  { id: 'f-thirukkural', label: 'திருக்குறள்', href: '/thirukkural', category: 'PASSIONAL' },
   { id: 'f-guest', label: 'Guest Lectures', href: '/guest-lectures', category: 'PASSIONAL' },
   { id: 'f-clay', label: 'Clay Play', href: '/clay-play', category: 'HOBBYAL' },
-  { id: 'f-kavithaigal', label: 'Ariyin Kavithaigal', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
+  { id: 'f-kavithaigal', label: 'அரியின் கவிதைகள்', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
   { id: 'f-books-read', label: 'Books Read', href: '/ari-read-books', category: 'HOBBYAL' },
   { id: 'f-reviews', label: 'Book Reviews', href: '/book-reviews', category: 'HOBBYAL' },
   { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },
@@ -93,26 +92,26 @@ export default function HomePage({ profileLinks }) {
           id: 'fallback-mini-projects',
           label: 'Mini-Projects',
           href: '/mini-projects',
-          category: 'PASSIONAL',
+          category: 'PROFESSIONAL',
           sortOrder: Number.MAX_SAFE_INTEGER,
           isHidden: 0,
         },
       ];
   const preferredOrder = [
-    'Works',
-    'Projects',
-    'Skillset',
     'Experience',
+    'Skillset',
+    'Projects',
+    'Mini-Projects',
     'Resume',
+    'Experiments',
     'Guest Lectures',
     'AI with ARI (YouTube)',
-    'Experiments',
-    'Mini-Projects',
     'My Books',
     'AriZone (Blog)',
+    'திருக்குறள்',
     'Thirukkural',
     'Clay Play',
-    'Ariyin Kavithaigal',
+    'அரியின் கவிதைகள்',
     'Books Read',
     'Book Reviews',
     'Binomial Names',
@@ -167,7 +166,7 @@ export default function HomePage({ profileLinks }) {
           </section>
 
           <figure className="photo-block">
-            <img src={HERO_ARI_URL} alt="Portrait of Ari" />
+            <img loading="eager" fetchPriority="high" decoding="async" draggable={false} src={HERO_ARI_URL} alt="Portrait of Ari" />
           </figure>
         </section>
 
@@ -193,19 +192,31 @@ export default function HomePage({ profileLinks }) {
                     const resolvedHref =
                       link.label === 'Resume'
                         ? 'https://arihara-sudhan.github.io/resume/resume.pdf'
+                        : link.label === 'Skillset'
+                            ? '/skillset'
                         : link.label === 'Books Read'
                             ? '/ari-read-books'
                           : link.href;
-                    const isExternal = resolvedHref.startsWith('http');
+                    const safeHref = typeof resolvedHref === 'string' && (resolvedHref.startsWith('/') || resolvedHref.startsWith('https://'))
+                      ? resolvedHref
+                      : '/';
+                    const isExternal = safeHref.startsWith('http');
+
+                    const displayLabel =
+                      link.label === 'Works'
+                        ? 'Experience'
+                        : link.label === 'Thirukkural'
+                          ? 'திருக்குறள்'
+                          : link.label;
 
                     return (
                       <a
                         key={link.id}
-                        href={resolvedHref}
+                        href={safeHref}
                         target={isExternal ? '_blank' : undefined}
                         rel={isExternal ? 'noreferrer' : undefined}
                       >
-                        {link.label}
+                        {displayLabel}
                       </a>
                     );
                   })}
@@ -217,21 +228,15 @@ export default function HomePage({ profileLinks }) {
 
         <section className="feature" id="contact">
           <figure className="feature-image">
-            <img src={HERO_FLOWER_URL} alt="Glory lily flower" />
+            <img loading="lazy" decoding="async" draggable={false} src={HERO_FLOWER_URL} alt="Glory lily flower" />
           </figure>
           <section className="feature-copy">
             <div className="contact-card">
               <p className="eyebrow">leaf</p>
               <h2>Get in Touch</h2>
               <p className="contact-note">Drop ARI a message and He&apos;ll get back to you!</p>
-
-              <label htmlFor="contact-email">Your Email</label>
-              <input id="contact-email" type="email" placeholder="you@example.com" />
-
-              <label htmlFor="contact-message">Your Message</label>
-              <textarea id="contact-message" placeholder="Write your message here..." rows="4" />
-
-              <button type="button">Send Message</button>
+              <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer">LinkedIn</a>{' '}
+              <a href="https://www.youtube.com/@ai_with_ari" target="_blank" rel="noreferrer">YouTube</a>
             </div>
           </section>
         </section>

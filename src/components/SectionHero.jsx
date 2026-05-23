@@ -25,7 +25,7 @@ export default function SectionHero({
 
       {imageUrl ? (
         <figure className="photo-block">
-          <img src={imageUrl} alt={resolvedHeading || 'Section hero'} />
+          <img loading="eager" fetchPriority="high" decoding="async" draggable={false} src={imageUrl} alt={resolvedHeading || 'Section hero'} />
         </figure>
       ) : null}
     </section>

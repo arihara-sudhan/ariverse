@@ -42,7 +42,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isGuestLecturesSection = link.label === 'Guest Lectures';
   const isGallerySection = isClayPlaySection || isGuestLecturesSection;
   const isBooksReadSection = link.label === 'Books Read';
-  const isKavithaiSection = link.label === 'Ariyin Kavithaigal';
+  const isKavithaiSection = link.label === 'அரியின் கவிதைகள்' || link.label === 'Ariyin Kavithaigal';
   const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
@@ -113,11 +113,18 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   }
 
   async function uploadMultipleImages(files, title) {
+    const concurrency = 3;
+    const queue = [...files];
     const uploaded = [];
-    for (const file of files) {
-      const url = await uploadImage(file, title);
-      uploaded.push(url);
-    }
+    const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+      while (queue.length > 0) {
+        const file = queue.shift();
+        if (!file) continue;
+        const url = await uploadImage(file, title);
+        uploaded.push(url);
+      }
+    });
+    await Promise.all(workers);
     return uploaded;
   }
 

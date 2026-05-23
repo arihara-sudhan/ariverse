@@ -63,7 +63,7 @@ export default function MiniProjectsPage({ hero }) {
               const external = isExternalLink(project.embedLink);
               return (
                 <article key={project.title} className="mini-project-card">
-                  <img src={project.logo} alt={project.title} />
+                  <img loading="lazy" decoding="async" src={project.logo} alt={project.title} />
                   <div>
                     <h3>{project.title}</h3>
                     <p>{project.caption || project.category}</p>

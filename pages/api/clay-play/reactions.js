@@ -3,6 +3,9 @@ import {
   addClayPlayEntryComment,
   listClayPlayEntryReactions,
 } from '../../../lib/adminData';
+import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
+
+const MAX_BATCH_EVENTS = 25;
 
 function toPositiveInt(value) {
   const n = Number(value);
@@ -36,6 +39,14 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      if (!enforceSameOriginWrite(req, res)) {
+        return;
+      }
+      const limit = checkRateLimit(req, 'clay-reactions', 60, 60 * 1000);
+      if (!limit.ok) {
+        res.status(429).json({ error: 'Too many requests. Please try later.' });
+        return;
+      }
       const action = toCleanText(req.body?.action, 20).toLowerCase();
       const entryId = toPositiveInt(req.body?.entryId);
       const name = toCleanText(req.body?.name, 80);
@@ -43,6 +54,10 @@ export default async function handler(req, res) {
 
       if (action === 'batch') {
         const events = Array.isArray(req.body?.events) ? req.body.events : [];
+        if (events.length > MAX_BATCH_EVENTS) {
+          res.status(400).json({ error: `Batch size exceeds ${MAX_BATCH_EVENTS}.` });
+          return;
+        }
         for (const event of events) {
           const eventAction = toCleanText(event?.action, 20).toLowerCase();
           const eventEntryId = toPositiveInt(event?.entryId);
@@ -92,6 +107,6 @@ export default async function handler(req, res) {
 
     res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    res.status(500).json({ error: error?.message || 'Unexpected server error.' });
+    res.status(500).json({ error: 'Unexpected server error.' });
   }
 }

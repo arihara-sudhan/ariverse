@@ -1,10 +1,12 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listLinkItems } from '../lib/adminData';
+import { isAllowedYouTubeUrl } from '../lib/security';
 
 function toEmbedUrl(value) {
   const text = typeof value === 'string' ? value.trim() : '';
   if (!text) return '';
+  if (!isAllowedYouTubeUrl(text)) return '';
 
   if (text.includes('youtube.com/embed/')) {
     return text;
@@ -77,6 +79,20 @@ export default function BinomialNamesPage({ selectedEntry, hero }) {
   }
 
   const embedBase = toEmbedUrl(selectedEntry.youtubeUrl);
+  if (!embedBase) {
+    return (
+      <div className="site">
+        <Header subPage />
+        <main className="content">
+          <section className="binomial-layout">
+            <article className="contact-card binomial-card">
+              <p className="contact-note">Invalid or unsupported video URL.</p>
+            </article>
+          </section>
+        </main>
+      </div>
+    );
+  }
   const embedSrc = `${embedBase}${embedBase.includes('?') ? '&' : '?'}controls=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1`;
 
   return (

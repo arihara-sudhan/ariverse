@@ -8,6 +8,7 @@ import {
   listLinkItems,
   updateLinkItem,
 } from '../../../lib/adminData';
+import { enforceSameOriginWrite, isAllowedYouTubeUrl, isSafePublicHref } from '../../../lib/security';
 
 function toCleanText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -28,9 +29,25 @@ function isValidBooksSubcategory(category, subcategory) {
   return false;
 }
 
+async function getSpecialLinkIds() {
+  const [binomialLink, clayPlayLink, booksReadLink] = await Promise.all([
+    getProfileLinkByLabel('Binomial Names'),
+    getProfileLinkByLabel('Clay Play'),
+    getProfileLinkByLabel('Books Read'),
+  ]);
+  return {
+    binomialId: binomialLink?.id || null,
+    clayPlayId: clayPlayLink?.id || null,
+    booksReadId: booksReadLink?.id || null,
+  };
+}
+
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  if (!enforceSameOriginWrite(req, res)) {
     return;
   }
 
@@ -55,12 +72,10 @@ export default async function handler(req, res) {
     const subcategory = toCleanText(req.body?.subcategory);
     const imageUrls = toImageUrls(req.body?.imageUrls);
     const imageAlign = toCleanText(req.body?.imageAlign).toLowerCase() === 'right' ? 'right' : 'left';
-    const binomialLink = await getProfileLinkByLabel('Binomial Names');
-    const clayPlayLink = await getProfileLinkByLabel('Clay Play');
-    const booksReadLink = await getProfileLinkByLabel('Books Read');
-    const isBinomial = Boolean(binomialLink && binomialLink.id === linkId);
-    const isClayPlay = Boolean(clayPlayLink && clayPlayLink.id === linkId);
-    const isBooksRead = Boolean(booksReadLink && booksReadLink.id === linkId);
+    const specialIds = await getSpecialLinkIds();
+    const isBinomial = Boolean(specialIds.binomialId && specialIds.binomialId === linkId);
+    const isClayPlay = Boolean(specialIds.clayPlayId && specialIds.clayPlayId === linkId);
+    const isBooksRead = Boolean(specialIds.booksReadId && specialIds.booksReadId === linkId);
 
     if (!Number.isInteger(linkId) || linkId <= 0 || !markdownText || !kavithaiFrom) {
       res.status(400).json({ error: 'Invalid payload.' });
@@ -69,6 +84,18 @@ export default async function handler(req, res) {
 
     if (isBinomial && !youtubeUrl) {
       res.status(400).json({ error: 'YouTube URL is required.' });
+      return;
+    }
+    if (isBinomial && !isAllowedYouTubeUrl(youtubeUrl)) {
+      res.status(400).json({ error: 'Invalid YouTube URL.' });
+      return;
+    }
+    if (imageUrl && !isSafePublicHref(imageUrl)) {
+      res.status(400).json({ error: 'Invalid image URL.' });
+      return;
+    }
+    if (imageUrls.some((url) => !isSafePublicHref(url))) {
+      res.status(400).json({ error: 'Invalid image URL list.' });
       return;
     }
 
@@ -103,13 +130,11 @@ export default async function handler(req, res) {
     const subcategory = toCleanText(req.body?.subcategory);
     const imageUrls = toImageUrls(req.body?.imageUrls);
     const imageAlign = toCleanText(req.body?.imageAlign).toLowerCase() === 'right' ? 'right' : 'left';
-    const binomialLink = await getProfileLinkByLabel('Binomial Names');
-    const clayPlayLink = await getProfileLinkByLabel('Clay Play');
-    const booksReadLink = await getProfileLinkByLabel('Books Read');
+    const specialIds = await getSpecialLinkIds();
     const existing = await getLinkItemById(id);
-    const isBinomial = Boolean(existing && binomialLink && existing.linkId === binomialLink.id);
-    const isClayPlay = Boolean(existing && clayPlayLink && existing.linkId === clayPlayLink.id);
-    const isBooksRead = Boolean(existing && booksReadLink && existing.linkId === booksReadLink.id);
+    const isBinomial = Boolean(existing && specialIds.binomialId && existing.linkId === specialIds.binomialId);
+    const isClayPlay = Boolean(existing && specialIds.clayPlayId && existing.linkId === specialIds.clayPlayId);
+    const isBooksRead = Boolean(existing && specialIds.booksReadId && existing.linkId === specialIds.booksReadId);
 
     if (!Number.isInteger(id) || id <= 0 || !markdownText || !kavithaiFrom) {
       res.status(400).json({ error: 'Invalid payload.' });
@@ -118,6 +143,18 @@ export default async function handler(req, res) {
 
     if (isBinomial && !youtubeUrl) {
       res.status(400).json({ error: 'YouTube URL is required.' });
+      return;
+    }
+    if (isBinomial && !isAllowedYouTubeUrl(youtubeUrl)) {
+      res.status(400).json({ error: 'Invalid YouTube URL.' });
+      return;
+    }
+    if (imageUrl && !isSafePublicHref(imageUrl)) {
+      res.status(400).json({ error: 'Invalid image URL.' });
+      return;
+    }
+    if (imageUrls.some((url) => !isSafePublicHref(url))) {
+      res.status(400).json({ error: 'Invalid image URL list.' });
       return;
     }
 

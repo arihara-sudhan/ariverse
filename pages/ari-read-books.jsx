@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listBooksReadEntries } from '../lib/adminData';
@@ -163,7 +163,7 @@ export default function AriReadBooksPage({ entries, hero }) {
             {filteredEntries.map((book, index) => (
               <article key={book.id} className="books-read-card">
                 <figure className="books-read-cover">
-                  <img src={book.imageUrl} alt={book.title || 'Book cover'} />
+                  <img loading="lazy" decoding="async" src={book.imageUrl} alt={book.title || 'Book cover'} />
                 </figure>
                 <div className="books-read-copy">
                   <h3>{`${index + 1}. ${book.title}`}</h3>

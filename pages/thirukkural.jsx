@@ -2,7 +2,7 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Thirukkural');
   const hero = link ? await getSectionHero(link.id, 'Thirukkural') : { heading: 'Thirukkural', description: '', imageUrl: '' };
   return { props: { hero } };

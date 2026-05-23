@@ -6,10 +6,10 @@ import { getProfileLinkByLabel, getSectionHero, listKavithaiEntries } from '../l
 
 export async function getServerSideProps({ query }) {
   const poems = await listKavithaiEntries();
-  const kavithaiLink = (await getProfileLinkByLabel('Ariyin Kavithaigal')) || (await getProfileLinkByLabel('Kavithaigal'));
+  const kavithaiLink = (await getProfileLinkByLabel('அரியின் கவிதைகள்')) || (await getProfileLinkByLabel('Ariyin Kavithaigal')) || (await getProfileLinkByLabel('Kavithaigal'));
   const hero = kavithaiLink
-    ? await getSectionHero(kavithaiLink.id, 'Ariyin Kavithaigal')
-    : { heading: 'Ariyin Kavithaigal', description: '', imageUrl: '' };
+    ? await getSectionHero(kavithaiLink.id, 'அரியின் கவிதைகள்')
+    : { heading: 'அரியின் கவிதைகள்', description: '', imageUrl: '' };
 
   const requestedId = Number(query?.id);
   const selectedPoem = Number.isInteger(requestedId) ? poems.find((poem) => poem.id === requestedId) || null : null;
@@ -44,7 +44,7 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
       <main className="kavithai-stage">
         <section className="kavithai-media">
           {selectedPoem.imageUrl ? (
-            <img className="kavithai-hero" src={selectedPoem.imageUrl} alt={selectedPoem.kavithaiName} />
+            <img loading="lazy" decoding="async" className="kavithai-hero" src={selectedPoem.imageUrl} alt={selectedPoem.kavithaiName} />
           ) : (
             <div className="kavithai-media-empty" />
           )}
@@ -116,10 +116,10 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
             }
             description={hero?.description}
             imageUrl={hero?.imageUrl}
-            fallbackHeading="Ariyin Kavithaigal"
+            fallbackHeading="அரியின் கவிதைகள்"
             descriptionAfterImageOnMobile
           />
-          <h1 id="ariyin-kavithaigal-title" style={{ display: 'none' }}>Ariyin Kavithaigal</h1>
+          <h1 id="ariyin-kavithaigal-title" style={{ display: 'none' }}>அரியின் கவிதைகள்</h1>
 
           {!hasPoems ? (
             <p className="contact-note">No poems yet.</p>
@@ -130,7 +130,7 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
                   <article className="ariyin-poem-entry tamil-text" lang="ta">
                     {poem.imageUrl ? (
                       <figure className="ariyin-poem-image-wrap">
-                        <img className="ariyin-poem-image" src={poem.imageUrl} alt={poem.kavithaiName || 'Poem image'} />
+                        <img loading="lazy" decoding="async" className="ariyin-poem-image" src={poem.imageUrl} alt={poem.kavithaiName || 'Poem image'} />
                       </figure>
                     ) : null}
                     <h2>{`${index + 1}. ${poem.kavithaiName}`}</h2>

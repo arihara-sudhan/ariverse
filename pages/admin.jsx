@@ -37,7 +37,14 @@ export default function AdminPage({ isAuthed, initialLinks }) {
     });
 
     if (!res.ok) {
-      setError('Access denied. Invalid password.');
+      let message = 'Access denied. Invalid password.';
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch (_error) {
+        // ignore parse errors and keep fallback message
+      }
+      setError(message);
       return;
     }
 

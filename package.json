@@ -7,12 +7,15 @@
         "build": "next build",
         "start": "next start",
         "migrate:kavithai-images": "node scripts/migrate-kavithai-images-to-blob.mjs",
-        "migrate:assets": "node scripts/migrate-assets-to-blob.mjs"
+        "migrate:assets": "node scripts/migrate-assets-to-blob.mjs",
+        "migrate:mini-project-pngs": "node scripts/migrate-mini-project-pngs-to-blob.mjs",
+        "blob:download": "node scripts/download-blob-to-local.mjs"
     },
     "dependencies": {
         "@neondatabase/serverless": "^1.1.0",
         "@vercel/blob": "^2.3.3",
         "cookie": "^1.1.1",
+        "dotenv": "^17.4.2",
         "formidable": "^3.5.4",
         "next": "16.2.6",
         "react": "19.2.6",
@@ -21,5 +24,8 @@
     },
     "devDependencies": {
         "sharp": "^0.34.5"
+    },
+    "overrides": {
+        "postcss": "^8.5.10"
     }
 }

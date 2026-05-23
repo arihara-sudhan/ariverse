@@ -1,5 +1,6 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { addProfileLink, listProfileLinks, setProfileLinkHidden } from '../../../lib/adminData';
+import { enforceSameOriginWrite, isSafePublicHref } from '../../../lib/security';
 
 const LINK_CATEGORIES = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'];
 
@@ -10,6 +11,9 @@ function toCleanText(value) {
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  if (!enforceSameOriginWrite(req, res)) {
     return;
   }
 
@@ -25,6 +29,10 @@ export default async function handler(req, res) {
 
     if (!label || !href) {
       res.status(400).json({ error: 'Label and URL are required.' });
+      return;
+    }
+    if (!isSafePublicHref(href)) {
+      res.status(400).json({ error: 'URL must be relative path or HTTPS URL.' });
       return;
     }
 

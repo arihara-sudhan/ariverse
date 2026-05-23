@@ -74,6 +74,16 @@ a {
   text-decoration: none;
 }
 
+div,
+section,
+article,
+main,
+header,
+nav,
+footer {
+  background-color: #ffffff;
+}
+
 .site {
   max-width: 960px;
   margin: 0 auto;
@@ -111,6 +121,28 @@ a {
 
 .nav a:hover {
   color: var(--text);
+}
+
+.nav-social {
+  gap: 0.45rem;
+}
+
+.nav-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  padding: 0.28rem;
+}
+
+.nav-social a svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: currentColor;
+  display: block;
 }
 
 .content {
@@ -183,6 +215,40 @@ a {
   letter-spacing: -0.02em;
   max-width: 640px;
   text-wrap: balance;
+}
+
+.intro-social-links {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-start;
+}
+
+.intro-social-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.36rem;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.32rem 0.68rem;
+}
+
+.intro-social-links a svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+  display: block;
+}
+
+.intro-social-links a:hover {
+  background: #f2f2f2;
 }
 
 .type-caret {
@@ -841,14 +907,42 @@ a {
 .mini-project-grid {
   margin-top: 1rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.mini-project-embed-shell {
+  width: 100%;
+  margin: 0;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.mini-project-embed-shell iframe {
+  width: 100%;
+  min-height: 900px;
+  border: 0;
+  display: block;
+}
+
+body.mini-project-open-body {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.mini-project-open-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .mini-project-card {
-  display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
-  gap: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
   border: 1px solid #d7d7d7;
   border-radius: 10px;
   padding: 0.7rem;
@@ -861,6 +955,13 @@ a {
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid #e4e4e4;
+}
+
+.mini-project-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: #ffffff;
 }
 
 .mini-project-card h3 {
@@ -876,7 +977,7 @@ a {
 }
 
 .mini-project-actions {
-  margin-top: 0.6rem;
+  margin-top: 0.45rem;
   display: flex;
   gap: 0.45rem;
   flex-wrap: wrap;
@@ -1156,10 +1257,15 @@ a {
 }
 
 .contact-note {
-  margin: 0.9rem 0 1.05rem;
+  margin: 0.75rem 0 0.95rem;
   color: #3f3f3f;
   line-height: 1.6;
   font-size: 0.98rem;
+}
+
+.contact-form {
+  display: grid;
+  gap: 0.15rem;
 }
 
 .contact-card label {
@@ -1212,6 +1318,64 @@ a {
 
 .contact-card button:hover {
   background: #2a2a2a;
+}
+
+.contact-card button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.contact-status {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.contact-status.success {
+  color: #1f6f3f;
+}
+
+.contact-status.error {
+  color: #a32626;
+}
+
+.contact-status.loading {
+  color: #3d3d3d;
+}
+
+.contact-links {
+  margin-top: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.contact-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.32rem 0.68rem;
+}
+
+.contact-links a:hover {
+  background: #f2f2f2;
+}
+
+.contact-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .tamil-text,
@@ -1491,7 +1655,7 @@ a {
   }
 
   .mini-project-card {
-    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 0.6rem;
   }.books-read-cover {
     width: 95%;
     max-width: none;

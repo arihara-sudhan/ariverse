@@ -68,7 +68,8 @@ export default async function handler(req, res) {
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
-    const category = toCleanText(req.body?.category).toUpperCase();
+    const category = toCleanText(req.body?.category);
+    const booksCategory = category.toUpperCase();
     const subcategory = toCleanText(req.body?.subcategory);
     const imageUrls = toImageUrls(req.body?.imageUrls);
     const imageAlign = toCleanText(req.body?.imageAlign).toLowerCase() === 'right' ? 'right' : 'left';
@@ -107,14 +108,24 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'Cover image is required for Books Read entries.' });
       return;
     }
-    if (isBooksRead && (!isValidBooksCategory(category) || !isValidBooksSubcategory(category, subcategory))) {
+    if (isBooksRead && (!isValidBooksCategory(booksCategory) || !isValidBooksSubcategory(booksCategory, subcategory))) {
       res.status(400).json({ error: 'Invalid category/subcategory for Books Read.' });
       return;
     }
 
     const item = isBinomial
       ? await addBinomialItem({ linkId, name: kavithaiFrom, youtubeUrl, caption: markdownText })
-      : await addLinkItem({ linkId, imageUrl, imageUrls, markdownText, kavithaiFrom, imageAlign, category, subcategory });
+      : await addLinkItem({
+          linkId,
+          imageUrl,
+          imageUrls,
+          youtubeUrl,
+          markdownText,
+          kavithaiFrom,
+          imageAlign,
+          category: isBooksRead ? booksCategory : category,
+          subcategory,
+        });
     res.status(201).json({ item });
     return;
   }
@@ -126,12 +137,13 @@ export default async function handler(req, res) {
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
-    const category = toCleanText(req.body?.category).toUpperCase();
+    const category = toCleanText(req.body?.category);
+    const booksCategory = category.toUpperCase();
     const subcategory = toCleanText(req.body?.subcategory);
     const imageUrls = toImageUrls(req.body?.imageUrls);
     const imageAlign = toCleanText(req.body?.imageAlign).toLowerCase() === 'right' ? 'right' : 'left';
     const specialIds = await getSpecialLinkIds();
-    const existing = await getLinkItemById(id);
+    const existing = await getLinkItemById(id, Number.isInteger(linkId) && linkId > 0 ? linkId : undefined);
     const isBinomial = Boolean(existing && specialIds.binomialId && existing.linkId === specialIds.binomialId);
     const isClayPlay = Boolean(existing && specialIds.clayPlayId && existing.linkId === specialIds.clayPlayId);
     const isBooksRead = Boolean(existing && specialIds.booksReadId && existing.linkId === specialIds.booksReadId);
@@ -166,7 +178,7 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'Cover image is required for Books Read entries.' });
       return;
     }
-    if (isBooksRead && (!isValidBooksCategory(category) || !isValidBooksSubcategory(category, subcategory))) {
+    if (isBooksRead && (!isValidBooksCategory(booksCategory) || !isValidBooksSubcategory(booksCategory, subcategory))) {
       res.status(400).json({ error: 'Invalid category/subcategory for Books Read.' });
       return;
     }
@@ -180,7 +192,7 @@ export default async function handler(req, res) {
       markdownText,
       kavithaiFrom,
       imageAlign,
-      category,
+      category: isBooksRead ? booksCategory : category,
       subcategory,
     });
     res.status(200).json({ ok: true });

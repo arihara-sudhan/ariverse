@@ -6,3 +6,4 @@
 6. Index in Google
 7. Qn Polling section
 8. Recommendation section
+9. Name should be asked for images

@@ -235,8 +235,14 @@ export default function HomePage({ profileLinks }) {
               <p className="eyebrow">leaf</p>
               <h2>Get in Touch</h2>
               <p className="contact-note">Drop ARI a message and He&apos;ll get back to you!</p>
-              <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer">LinkedIn</a>{' '}
-              <a href="https://www.youtube.com/@ai_with_ari" target="_blank" rel="noreferrer">YouTube</a>
+
+              <label htmlFor="contact-email">Your Email</label>
+              <input id="contact-email" type="email" placeholder="you@example.com" />
+
+              <label htmlFor="contact-message">Your Message</label>
+              <textarea id="contact-message" placeholder="Write your message here..." rows="4" />
+
+              <button type="button">Send Message</button>
             </div>
           </section>
         </section>

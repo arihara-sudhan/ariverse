@@ -4,6 +4,7 @@ import Header from '../../../src/components/Header';
 import SectionHero from '../../../src/components/SectionHero';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getProfileLinkById, getSectionHero, listLinkItems } from '../../../lib/adminData';
+import { MINI_PROJECT_CATEGORIES } from '../../../data/miniProjects';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 
@@ -42,8 +43,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isGuestLecturesSection = link.label === 'Guest Lectures';
   const isGallerySection = isClayPlaySection || isGuestLecturesSection;
   const isBooksReadSection = link.label === 'Books Read';
+  const isMiniProjectsSection = link.label === 'Mini-Projects';
   const isKavithaiSection = link.label === 'அரியின் கவிதைகள்' || link.label === 'Ariyin Kavithaigal';
-  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection;
+  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
@@ -60,11 +62,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [imageUrls, setImageUrls] = useState([]);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [kavithaiFrom, setKavithaiFrom] = useState('');
+  const [miniProjectCategory, setMiniProjectCategory] = useState(MINI_PROJECT_CATEGORIES[0] || '');
   const [bookCategory, setBookCategory] = useState('ENGLISH');
   const [bookSubcategory, setBookSubcategory] = useState('FICTION');
   const [markdownText, setMarkdownText] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pendingSaveIds, setPendingSaveIds] = useState([]);
 
   const [heroHeading, setHeroHeading] = useState(initialHero?.heading || link.label || '');
   const [heroDescription, setHeroDescription] = useState(initialHero?.description || '');
@@ -195,10 +199,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         linkId: link.id,
         imageUrl: isBinomialSection ? '' : imageUrl,
         imageUrls: isGallerySection ? imageUrls : undefined,
-        youtubeUrl: isBinomialSection ? youtubeUrl : '',
+        youtubeUrl: isBinomialSection || isMiniProjectsSection ? youtubeUrl : '',
         markdownText,
         kavithaiFrom,
-        category: isBooksReadSection ? bookCategory : undefined,
+        category: isMiniProjectsSection ? miniProjectCategory : isBooksReadSection ? bookCategory : undefined,
         subcategory: isBooksReadSection ? bookSubcategory : undefined,
       }),
     });
@@ -215,6 +219,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     setImageUrls([]);
     setYoutubeUrl('');
     setKavithaiFrom('');
+    setMiniProjectCategory(MINI_PROJECT_CATEGORIES[0] || '');
     setBookCategory('ENGLISH');
     setBookSubcategory('FICTION');
     setMarkdownText('');
@@ -236,31 +241,38 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   }
 
   async function saveItem(item) {
-    const payload = {
-      ...item,
-      linkId: item.linkId || link.id,
-    };
+    setPendingSaveIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
+    try {
+      const payload = {
+        ...item,
+        linkId: item.linkId || link.id,
+      };
 
-    if (isGallerySection) {
-      const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
-      payload.imageUrls = currentUrls.length > 0 ? currentUrls : item.imageUrl ? [item.imageUrl] : [];
-      payload.imageUrl = item.imageUrl || payload.imageUrls[0] || '';
+      if (isGallerySection) {
+        const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+        payload.imageUrls = currentUrls.length > 0 ? currentUrls : item.imageUrl ? [item.imageUrl] : [];
+        payload.imageUrl = item.imageUrl || payload.imageUrls[0] || '';
+      }
+
+      const res = await fetch('/api/admin/link-items', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Could not save item.');
+        setPendingSaveIds((prev) => prev.filter((id) => id !== item.id));
+        return;
+      }
+
+      setError('');
+      setPendingSaveIds((prev) => prev.filter((id) => id !== item.id));
+    } catch (_error) {
+      setError('Could not save item.');
+      setPendingSaveIds((prev) => prev.filter((id) => id !== item.id));
     }
-
-    const res = await fetch('/api/admin/link-items', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || 'Could not save item.');
-      return false;
-    }
-
-    setError('');
-    return true;
   }
 
   async function deleteItem(id) {
@@ -370,7 +382,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>
             <label htmlFor="item-kavithai-from">
-              {isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection ? 'Title' : 'Kavithai Name'}
+              {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection ? 'Title' : 'Kavithai Name'}
             </label>
             <input
               id="item-kavithai-from"
@@ -409,6 +421,38 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     </>
                   )}
                 </select>
+              </>
+            ) : null}
+
+            {isMiniProjectsSection ? (
+              <>
+                <label htmlFor="item-mini-project-category">Category</label>
+                <select
+                  id="item-mini-project-category"
+                  value={miniProjectCategory}
+                  onChange={(event) => setMiniProjectCategory(event.target.value)}
+                  required
+                >
+                  {MINI_PROJECT_CATEGORIES.map((categoryOption) => (
+                    <option key={categoryOption} value={categoryOption}>
+                      {categoryOption}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
+
+            {isMiniProjectsSection ? (
+              <>
+                <label htmlFor="item-youtube-url">Project URL</label>
+                <input
+                  id="item-youtube-url"
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(event) => setYoutubeUrl(event.target.value)}
+                  placeholder="https://..."
+                  required
+                />
               </>
             ) : null}
 
@@ -491,7 +535,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             )}
 
             <label htmlFor="item-markdown">
-              {isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
+              {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
             </label>
             <textarea
               id="item-markdown"
@@ -522,23 +566,53 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       : `English - ${(item.subcategory || 'FICTION').replace('_', ' ')}`}
                   </p>
                 ) : null}
-                {isBinomialSection && item.youtubeUrl ? (
+                {(isBinomialSection || isMiniProjectsSection) && item.youtubeUrl ? (
                   <p className="contact-note" style={{ margin: '0.25rem 0 0', wordBreak: 'break-all' }}>
                     {item.youtubeUrl}
+                  </p>
+                ) : null}
+                {isMiniProjectsSection && item.category ? (
+                  <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
+                    {item.category}
                   </p>
                 ) : null}
 
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
                     <label htmlFor={`edit-name-${item.id}`}>
-                      {isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
+                      {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
                     </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
+                      placeholder={isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
+
+                    {isMiniProjectsSection ? (
+                      <>
+                        <label htmlFor={`edit-category-${item.id}`}>Category</label>
+                        <select
+                          id={`edit-category-${item.id}`}
+                          value={item.category || MINI_PROJECT_CATEGORIES[0] || ''}
+                          onChange={(event) => updateLocalItem(item.id, { category: event.target.value })}
+                        >
+                          {MINI_PROJECT_CATEGORIES.map((categoryOption) => (
+                            <option key={categoryOption} value={categoryOption}>
+                              {categoryOption}
+                            </option>
+                          ))}
+                        </select>
+                        <label htmlFor={`edit-youtube-${item.id}`}>Project URL</label>
+                        <input
+                          id={`edit-youtube-${item.id}`}
+                          type="url"
+                          value={item.youtubeUrl || ''}
+                          placeholder="https://..."
+                          onChange={(event) => updateLocalItem(item.id, { youtubeUrl: event.target.value })}
+                        />
+                      </>
+                    ) : null}
 
                     {isBinomialSection ? (
                       <>
@@ -603,7 +677,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       </>
                     ) : (
                       <>
-                        <label htmlFor={`edit-image-${item.id}`}>Replace Image</label>
+                        <label htmlFor={`edit-image-${item.id}`}>{isMiniProjectsSection ? 'Replace Project Image' : 'Replace Image'}</label>
                         <input
                           id={`edit-image-${item.id}`}
                           type="file"
@@ -624,7 +698,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                                 });
                               } else {
                                 const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom);
+                                const nextItem = { ...item, imageUrl: uploadedUrl };
                                 updateLocalItem(item.id, { imageUrl: uploadedUrl });
+                                if (isMiniProjectsSection) {
+                                  saveItem(nextItem);
+                                }
                               }
                             } catch (uploadError) {
                               setError(uploadError.message || 'Upload failed.');
@@ -680,7 +758,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     )}
 
                     <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Poem'}
+                      {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Poem'}
                     </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}
@@ -697,11 +775,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       <button
                         type="button"
                         className="playlist-watch-btn admin-item-action-btn"
-                        onClick={async () => {
-                          const didSave = await saveItem(item);
-                          if (didSave) {
-                            setEditingItemId(null);
-                          }
+                        onClick={() => {
+                          setEditingItemId(null);
+                          saveItem(item);
                         }}
                       >
                         Save
@@ -731,6 +807,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     Delete
                   </button>
                 </div>
+                {pendingSaveIds.includes(item.id) ? (
+                  <p className="contact-note" style={{ margin: '0.35rem 0 0' }}>Syncing changes...</p>
+                ) : null}
               </article>
             ))}
           </div>

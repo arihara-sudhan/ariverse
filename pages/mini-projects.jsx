@@ -1,26 +1,39 @@
 import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
-import { MINI_PROJECT_CATEGORIES, miniProjects } from '../data/miniProjects';
+import { getProfileLinkByLabel, getSectionHero, listMiniProjectEntries } from '../lib/adminData';
+import { MINI_PROJECT_CATEGORIES } from '../data/miniProjects';
 
 export async function getServerSideProps() {
   const link = await getProfileLinkByLabel('Mini-Projects');
   const hero = link ? await getSectionHero(link.id, 'Mini-Projects') : { heading: 'Mini-Projects', description: '', imageUrl: '' };
-  return { props: { hero } };
+  const miniProjects = await listMiniProjectEntries();
+  return { props: { hero, miniProjects } };
 }
 
-function isExternalLink(url = '') {
-  return url.startsWith('http');
-}
-
-export default function MiniProjectsPage({ hero }) {
+export default function MiniProjectsPage({ hero, miniProjects }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const heroQuote = String(hero?.quote || '').trim();
+  const normalizedProjects = useMemo(() => {
+    const categoryMap = new Map(MINI_PROJECT_CATEGORIES.map((item) => [item.toUpperCase(), item]));
+    return (miniProjects || []).map((project) => {
+      const raw = String(project?.category || '').trim();
+      const normalizedCategory = categoryMap.get(raw.toUpperCase()) || raw;
+      return {
+        ...project,
+        category: normalizedCategory,
+      };
+    });
+  }, [miniProjects]);
+  const categories = useMemo(
+    () => Array.from(new Set(normalizedProjects.map((project) => project.category).filter(Boolean))),
+    [normalizedProjects],
+  );
 
   const filteredProjects = useMemo(() => {
-    if (activeCategory === 'ALL') return miniProjects;
-    return miniProjects.filter((project) => project.category === activeCategory);
-  }, [activeCategory]);
+    if (activeCategory === 'ALL') return normalizedProjects;
+    return normalizedProjects.filter((project) => project.category === activeCategory);
+  }, [activeCategory, normalizedProjects]);
 
   return (
     <div className="site">
@@ -32,7 +45,9 @@ export default function MiniProjectsPage({ hero }) {
             description={hero?.description || 'A categorized archive of my LinkedIn mini-projects across AI, CV, web, games, and creative building.'}
             imageUrl={hero?.imageUrl}
             fallbackHeading="Mini-Projects"
-          />
+          >
+            {heroQuote ? <p className="clay-play-quote">"{heroQuote}"</p> : null}
+          </SectionHero>
           <h1 id="mini-projects-title" style={{ display: 'none' }}>Mini-Projects</h1>
 
           <div className="books-read-filters" aria-label="Mini project categories">
@@ -41,10 +56,10 @@ export default function MiniProjectsPage({ hero }) {
               className={`books-filter-btn${activeCategory === 'ALL' ? ' is-active' : ''}`}
               onClick={() => setActiveCategory('ALL')}
             >
-              All ({miniProjects.length})
+              All ({normalizedProjects.length})
             </button>
-            {MINI_PROJECT_CATEGORIES.map((category) => {
-              const count = miniProjects.filter((item) => item.category === category).length;
+            {categories.map((category) => {
+              const count = normalizedProjects.filter((item) => item.category === category).length;
               return (
                 <button
                   key={category}
@@ -60,7 +75,7 @@ export default function MiniProjectsPage({ hero }) {
 
           <div className="mini-project-grid">
             {filteredProjects.map((project) => {
-              const external = isExternalLink(project.embedLink);
+              const viewerHref = `/mini-projects/open?url=${encodeURIComponent(project.embedLink || '')}&title=${encodeURIComponent(project.title || 'Mini Project')}`;
               return (
                 <article key={project.title} className="mini-project-card">
                   <img loading="lazy" decoding="async" src={project.logo} alt={project.title} />
@@ -69,9 +84,9 @@ export default function MiniProjectsPage({ hero }) {
                     <p>{project.caption || project.category}</p>
                     <div className="mini-project-actions">
                       <a
-                        href={project.embedLink}
-                        target={external ? '_blank' : undefined}
-                        rel={external ? 'noreferrer' : undefined}
+                        href={viewerHref}
+                        target="_blank"
+                        rel="noreferrer"
                       >
                         Open
                       </a>

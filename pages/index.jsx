@@ -1,15 +1,15 @@
 import { listVisibleProfileLinks } from '../lib/adminData';
 import Header from '../src/components/Header';
 import { useEffect, useState } from 'react';
-const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
-const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
+const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.png';
+const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.jpg';
 const WELCOME_MESSAGES = [
   { lang: 'en', text: 'Welcome to ARIVERSE...' },
   { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
 ];
 
 const HOME_FALLBACK_LINKS = [
-  { id: 'f-works', label: 'Experience', href: '/works', category: 'PROFESSIONAL' },
+  { id: 'f-career', label: 'Career', href: '/ari_career', category: 'PROFESSIONAL' },
   { id: 'f-projects', label: 'Projects', href: '/projects', category: 'PROFESSIONAL' },
   { id: 'f-skillset', label: 'Skillset', href: '/skillset', category: 'PROFESSIONAL' },
   { id: 'f-resume', label: 'Resume', href: 'https://arihara-sudhan.github.io/resume/resume.pdf', category: 'PROFESSIONAL' },
@@ -98,6 +98,8 @@ export default function HomePage({ profileLinks }) {
         },
       ];
   const preferredOrder = [
+    'Career',
+    'Works',
     'Experience',
     'Skillset',
     'Projects',
@@ -203,11 +205,9 @@ export default function HomePage({ profileLinks }) {
                     const isExternal = safeHref.startsWith('http');
 
                     const displayLabel =
-                      link.label === 'Works'
-                        ? 'Experience'
-                        : link.label === 'Thirukkural'
-                          ? 'திருக்குறள்'
-                          : link.label;
+                      link.label === 'Works' || link.label === 'Experience'
+                        ? 'Career'
+                        : link.label;
 
                     return (
                       <a

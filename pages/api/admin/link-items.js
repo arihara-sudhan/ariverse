@@ -65,9 +65,11 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const linkId = Number(req.body?.linkId);
     const imageUrl = toCleanText(req.body?.imageUrl);
+    const companyLogoUrl = toCleanText(req.body?.companyLogoUrl);
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
+    const subtitle = toCleanText(req.body?.subtitle);
     const category = toCleanText(req.body?.category);
     const booksCategory = category.toUpperCase();
     const subcategory = toCleanText(req.body?.subcategory);
@@ -95,6 +97,10 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'Invalid image URL.' });
       return;
     }
+    if (companyLogoUrl && !isSafePublicHref(companyLogoUrl)) {
+      res.status(400).json({ error: 'Invalid company logo URL.' });
+      return;
+    }
     if (imageUrls.some((url) => !isSafePublicHref(url))) {
       res.status(400).json({ error: 'Invalid image URL list.' });
       return;
@@ -119,9 +125,11 @@ export default async function handler(req, res) {
           linkId,
           imageUrl,
           imageUrls,
+          companyLogoUrl,
           youtubeUrl,
           markdownText,
           kavithaiFrom,
+          subtitle,
           imageAlign,
           category: isBooksRead ? booksCategory : category,
           subcategory,
@@ -134,9 +142,11 @@ export default async function handler(req, res) {
     const id = Number(req.body?.id);
     const linkId = Number(req.body?.linkId);
     const imageUrl = toCleanText(req.body?.imageUrl);
+    const companyLogoUrl = toCleanText(req.body?.companyLogoUrl);
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
+    const subtitle = toCleanText(req.body?.subtitle);
     const category = toCleanText(req.body?.category);
     const booksCategory = category.toUpperCase();
     const subcategory = toCleanText(req.body?.subcategory);
@@ -165,6 +175,10 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'Invalid image URL.' });
       return;
     }
+    if (companyLogoUrl && !isSafePublicHref(companyLogoUrl)) {
+      res.status(400).json({ error: 'Invalid company logo URL.' });
+      return;
+    }
     if (imageUrls.some((url) => !isSafePublicHref(url))) {
       res.status(400).json({ error: 'Invalid image URL list.' });
       return;
@@ -188,9 +202,11 @@ export default async function handler(req, res) {
       linkId: Number.isInteger(linkId) && linkId > 0 ? linkId : existing?.linkId,
       imageUrl,
       imageUrls,
+      companyLogoUrl,
       youtubeUrl,
       markdownText,
       kavithaiFrom,
+      subtitle,
       imageAlign,
       category: isBooksRead ? booksCategory : category,
       subcategory,

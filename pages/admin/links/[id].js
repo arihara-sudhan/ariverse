@@ -28,11 +28,17 @@ export async function getServerSideProps({ req, params }) {
     return { notFound: true };
   }
 
+  const initialItemsRaw = await listLinkItems(linkId);
+  const initialItems = (initialItemsRaw || []).map((item) => ({
+    ...item,
+    createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : item?.createdAt || '',
+  }));
+
   return {
     props: {
       link,
       initialHero: await getSectionHero(linkId, link.label),
-      initialItems: await listLinkItems(linkId),
+      initialItems,
     },
   };
 }
@@ -44,8 +50,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isGallerySection = isClayPlaySection || isGuestLecturesSection;
   const isBooksReadSection = link.label === 'Books Read';
   const isMiniProjectsSection = link.label === 'Mini-Projects';
+  const isCareerSection = link.label === 'Career' || link.label === 'Works' || link.label === 'Experience';
   const isKavithaiSection = link.label === 'அரியின் கவிதைகள்' || link.label === 'Ariyin Kavithaigal';
-  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection;
+  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isCareerSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
@@ -59,9 +66,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [error, setError] = useState('');
   const [editingItemId, setEditingItemId] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
+  const [companyLogoUrl, setCompanyLogoUrl] = useState('');
   const [imageUrls, setImageUrls] = useState([]);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [kavithaiFrom, setKavithaiFrom] = useState('');
+  const [subtitle, setSubtitle] = useState('');
   const [miniProjectCategory, setMiniProjectCategory] = useState(MINI_PROJECT_CATEGORIES[0] || '');
   const [bookCategory, setBookCategory] = useState('ENGLISH');
   const [bookSubcategory, setBookSubcategory] = useState('FICTION');
@@ -198,10 +207,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
       body: JSON.stringify({
         linkId: link.id,
         imageUrl: isBinomialSection ? '' : imageUrl,
+        companyLogoUrl: isCareerSection ? companyLogoUrl : '',
         imageUrls: isGallerySection ? imageUrls : undefined,
         youtubeUrl: isBinomialSection || isMiniProjectsSection ? youtubeUrl : '',
         markdownText,
         kavithaiFrom,
+        subtitle: isCareerSection ? subtitle : '',
         category: isMiniProjectsSection ? miniProjectCategory : isBooksReadSection ? bookCategory : undefined,
         subcategory: isBooksReadSection ? bookSubcategory : undefined,
       }),
@@ -216,9 +227,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
 
     setItems((prev) => [...prev, data.item]);
     setImageUrl('');
+    setCompanyLogoUrl('');
     setImageUrls([]);
     setYoutubeUrl('');
     setKavithaiFrom('');
+    setSubtitle('');
     setMiniProjectCategory(MINI_PROJECT_CATEGORIES[0] || '');
     setBookCategory('ENGLISH');
     setBookSubcategory('FICTION');
@@ -382,7 +395,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>
             <label htmlFor="item-kavithai-from">
-              {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection ? 'Title' : 'Kavithai Name'}
+              {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection ? 'Title' : 'Kavithai Name'}
             </label>
             <input
               id="item-kavithai-from"
@@ -390,6 +403,17 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
               onChange={(event) => setKavithaiFrom(event.target.value)}
               required
             />
+            {isCareerSection ? (
+              <>
+                <label htmlFor="item-subtitle">Subtitle</label>
+                <input
+                  id="item-subtitle"
+                  value={subtitle}
+                  onChange={(event) => setSubtitle(event.target.value)}
+                  placeholder="e.g., Nov 2024 - Present"
+                />
+              </>
+            ) : null}
             {isBooksReadSection ? (
               <>
                 <label htmlFor="item-book-category">Category</label>
@@ -531,11 +555,36 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 ) : (
                   imageUrl && <p className="contact-note">Uploaded: {imageUrl}</p>
                 )}
+                {isCareerSection ? (
+                  <>
+                    <label htmlFor="item-company-logo-upload">Upload company logo</label>
+                    <input
+                      id="item-company-logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={async (event) => {
+                        const files = Array.from(event.target.files || []);
+                        if (files.length === 0) return;
+                        setUploading(true);
+                        setError('');
+                        try {
+                          const uploadedUrl = await uploadImage(files[0], `${kavithaiFrom || 'career'}-company-logo`);
+                          setCompanyLogoUrl(uploadedUrl);
+                        } catch (uploadError) {
+                          setError(uploadError.message || 'Upload failed.');
+                        } finally {
+                          setUploading(false);
+                        }
+                      }}
+                    />
+                    {companyLogoUrl ? <p className="contact-note">Company logo: {companyLogoUrl}</p> : null}
+                  </>
+                ) : null}
               </>
             )}
 
             <label htmlFor="item-markdown">
-              {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
+              {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
             </label>
             <textarea
               id="item-markdown"
@@ -558,7 +607,20 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 {!isBinomialSection && item.imageUrl ? (
                   <img className="playlist-thumb" src={item.imageUrl} alt={item.kavithaiFrom || 'Kavithai image'} />
                 ) : null}
+                {isCareerSection && item.companyLogoUrl ? (
+                  <img
+                    className="playlist-thumb"
+                    src={item.companyLogoUrl}
+                    alt={`${item.kavithaiFrom || 'Career'} company logo`}
+                    style={{ width: '56px', height: '56px', objectFit: 'contain', marginTop: '0.45rem' }}
+                  />
+                ) : null}
                 <p className="admin-item-title">{item.kavithaiFrom || 'Untitled'}</p>
+                {isCareerSection && item.subtitle ? (
+                  <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
+                    {item.subtitle}
+                  </p>
+                ) : null}
                 {isBooksReadSection ? (
                   <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
                     {(item.category || 'ENGLISH') === 'TAMIL'
@@ -580,14 +642,25 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
                     <label htmlFor={`edit-name-${item.id}`}>
-                      {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
+                      {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
                     </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection ? 'Title' : 'Kavithai Name'}
+                      placeholder={isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
+                    {isCareerSection ? (
+                      <>
+                        <label htmlFor={`edit-subtitle-${item.id}`}>Subtitle</label>
+                        <input
+                          id={`edit-subtitle-${item.id}`}
+                          value={item.subtitle || ''}
+                          placeholder="e.g., Nov 2024 - Present"
+                          onChange={(event) => updateLocalItem(item.id, { subtitle: event.target.value })}
+                        />
+                      </>
+                    ) : null}
 
                     {isMiniProjectsSection ? (
                       <>
@@ -754,11 +827,37 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                             ))}
                           </div>
                         ) : null}
+                        {isCareerSection ? (
+                          <>
+                            <label htmlFor={`edit-company-logo-${item.id}`}>Replace Company Logo</label>
+                            <input
+                              id={`edit-company-logo-${item.id}`}
+                              type="file"
+                              accept="image/*"
+                              onChange={async (event) => {
+                                const files = Array.from(event.target.files || []);
+                                if (files.length === 0) return;
+                                setError('');
+                                try {
+                                  const uploadedUrl = await uploadImage(files[0], `${item.kavithaiFrom || 'career'}-company-logo`);
+                                  updateLocalItem(item.id, { companyLogoUrl: uploadedUrl });
+                                } catch (uploadError) {
+                                  setError(uploadError.message || 'Upload failed.');
+                                }
+                              }}
+                            />
+                            {item.companyLogoUrl ? (
+                              <p className="contact-note" style={{ margin: '0.35rem 0 0', wordBreak: 'break-all' }}>
+                                Company logo: {item.companyLogoUrl}
+                              </p>
+                            ) : null}
+                          </>
+                        ) : null}
                       </>
                     )}
 
                     <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isGallerySection ? 'Write-up' : 'Poem'}
+                      {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
                     </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}

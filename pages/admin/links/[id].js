@@ -7,6 +7,7 @@ import { getProfileLinkById, getSectionHero, listLinkItems } from '../../../lib/
 import { MINI_PROJECT_CATEGORIES } from '../../../data/miniProjects';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
+const DEFAULT_PROJECT_CATEGORIES = ['Deep Learning', 'Product Engineering', 'AI Engineering', 'Robotic Process Automation'];
 
 export async function getServerSideProps({ req, params }) {
   if (!isAdminRequest(req)) {
@@ -50,9 +51,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isGallerySection = isClayPlaySection || isGuestLecturesSection;
   const isBooksReadSection = link.label === 'Books Read';
   const isMiniProjectsSection = link.label === 'Mini-Projects';
+  const isProjectsSection = link.label === 'Projects';
   const isCareerSection = link.label === 'Career' || link.label === 'Works' || link.label === 'Experience';
   const isKavithaiSection = link.label === 'அரியின் கவிதைகள்' || link.label === 'Ariyin Kavithaigal';
-  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isCareerSection;
+  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
@@ -72,12 +74,19 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [kavithaiFrom, setKavithaiFrom] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [miniProjectCategory, setMiniProjectCategory] = useState(MINI_PROJECT_CATEGORIES[0] || '');
+  const [projectCategory, setProjectCategory] = useState(DEFAULT_PROJECT_CATEGORIES[0]);
   const [bookCategory, setBookCategory] = useState('ENGLISH');
   const [bookSubcategory, setBookSubcategory] = useState('FICTION');
   const [markdownText, setMarkdownText] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pendingSaveIds, setPendingSaveIds] = useState([]);
+  const projectCategoryOptions = Array.from(
+    new Set([
+      ...DEFAULT_PROJECT_CATEGORIES,
+      ...(items || []).map((item) => String(item?.category || '').trim()).filter(Boolean),
+    ]),
+  );
 
   const [heroHeading, setHeroHeading] = useState(initialHero?.heading || link.label || '');
   const [heroDescription, setHeroDescription] = useState(initialHero?.description || '');
@@ -213,7 +222,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         markdownText,
         kavithaiFrom,
         subtitle: isCareerSection ? subtitle : '',
-        category: isMiniProjectsSection ? miniProjectCategory : isBooksReadSection ? bookCategory : undefined,
+        category: isMiniProjectsSection ? miniProjectCategory : isProjectsSection ? projectCategory : isBooksReadSection ? bookCategory : undefined,
         subcategory: isBooksReadSection ? bookSubcategory : undefined,
       }),
     });
@@ -233,6 +242,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     setKavithaiFrom('');
     setSubtitle('');
     setMiniProjectCategory(MINI_PROJECT_CATEGORIES[0] || '');
+    setProjectCategory(DEFAULT_PROJECT_CATEGORIES[0]);
     setBookCategory('ENGLISH');
     setBookSubcategory('FICTION');
     setMarkdownText('');
@@ -395,7 +405,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>
             <label htmlFor="item-kavithai-from">
-              {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+              {isMiniProjectsSection || isProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection ? 'Title' : 'Kavithai Name'}
             </label>
             <input
               id="item-kavithai-from"
@@ -458,6 +468,24 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                   required
                 >
                   {MINI_PROJECT_CATEGORIES.map((categoryOption) => (
+                    <option key={categoryOption} value={categoryOption}>
+                      {categoryOption}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
+
+            {isProjectsSection ? (
+              <>
+                <label htmlFor="item-project-category">Category</label>
+                <select
+                  id="item-project-category"
+                  value={projectCategory}
+                  onChange={(event) => setProjectCategory(event.target.value)}
+                  required
+                >
+                  {projectCategoryOptions.map((categoryOption) => (
                     <option key={categoryOption} value={categoryOption}>
                       {categoryOption}
                     </option>
@@ -584,7 +612,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             )}
 
             <label htmlFor="item-markdown">
-              {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
+              {isMiniProjectsSection || isProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
             </label>
             <textarea
               id="item-markdown"
@@ -633,7 +661,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     {item.youtubeUrl}
                   </p>
                 ) : null}
-                {isMiniProjectsSection && item.category ? (
+                {(isMiniProjectsSection || isProjectsSection) && item.category ? (
                   <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
                     {item.category}
                   </p>
@@ -642,12 +670,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
                     <label htmlFor={`edit-name-${item.id}`}>
-                      {isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+                      {isMiniProjectsSection || isProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
                     </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isMiniProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+                      placeholder={isMiniProjectsSection || isProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
                     {isCareerSection ? (
@@ -684,6 +712,22 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                           placeholder="https://..."
                           onChange={(event) => updateLocalItem(item.id, { youtubeUrl: event.target.value })}
                         />
+                      </>
+                    ) : null}
+                    {isProjectsSection ? (
+                      <>
+                        <label htmlFor={`edit-category-${item.id}`}>Category</label>
+                        <select
+                          id={`edit-category-${item.id}`}
+                          value={item.category || ''}
+                          onChange={(event) => updateLocalItem(item.id, { category: event.target.value })}
+                        >
+                          {projectCategoryOptions.map((categoryOption) => (
+                            <option key={categoryOption} value={categoryOption}>
+                              {categoryOption}
+                            </option>
+                          ))}
+                        </select>
                       </>
                     ) : null}
 
@@ -857,7 +901,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     )}
 
                     <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isMiniProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
+                      {isMiniProjectsSection || isProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
                     </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}

@@ -1,21 +1,104 @@
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listProjectEntries } from '../lib/adminData';
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
   const link = await getProfileLinkByLabel('Projects');
-  const hero = link ? await getSectionHero(link.id, 'Projects') : { heading: 'Projects', description: '', imageUrl: '' };
-  return { props: { hero } };
+  const hero = link ? await getSectionHero(link.id, "#Ari'sProjects") : { heading: "#Ari'sProjects", description: '', quote: '', imageUrl: '' };
+  const projects = await listProjectEntries();
+  return { props: { hero, projects } };
 }
 
-export default function ProjectsPage({ hero }) {
+export default function ProjectsPage({ hero, projects }) {
+  const [activeCategory, setActiveCategory] = useState('ALL');
+  const heroHeading = String(hero?.heading || '').trim() || "#Ari'sProjects";
+  const heroDescription = String(hero?.description || '').trim() || 'Lorem ipsum as description';
+  const heroQuote = String(hero?.quote || '').trim() || 'lorm ipsum for hero text';
+  const normalizedProjects = useMemo(
+    () => (Array.isArray(projects) ? projects : []).map((project) => ({ ...project, category: String(project?.category || '').trim() })),
+    [projects],
+  );
+  const categories = useMemo(
+    () => Array.from(new Set(normalizedProjects.map((project) => project.category).filter(Boolean))),
+    [normalizedProjects],
+  );
+  const filteredProjects = useMemo(() => {
+    if (activeCategory === 'ALL') return normalizedProjects;
+    return normalizedProjects.filter((project) => project.category === activeCategory);
+  }, [activeCategory, normalizedProjects]);
+  const slugify = (input) =>
+    String(input || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'project';
+
   return (
     <div className="site">
       <Header subPage />
       <main className="content">
-        <section aria-labelledby="projects-title">
-          <SectionHero heading={hero?.heading} description={hero?.description} imageUrl={hero?.imageUrl} fallbackHeading="Projects" />
-          <h1 id="projects-title" style={{ display: 'none' }}>Projects</h1>
+        <section className="for-ai" aria-labelledby="projects-title">
+          <SectionHero
+            heading={heroHeading}
+            description={heroDescription}
+            imageUrl={hero?.imageUrl}
+            fallbackHeading="#Ari'sProjects"
+          >
+            {heroQuote ? <p className="clay-play-quote">"{heroQuote}"</p> : null}
+          </SectionHero>
+          <h1 id="projects-title" style={{ display: 'none' }}>#Ari&apos;sProjects</h1>
+
+          <div className="books-read-filters" aria-label="Project categories">
+            <button
+              type="button"
+              className={`books-filter-btn${activeCategory === 'ALL' ? ' is-active' : ''}`}
+              onClick={() => setActiveCategory('ALL')}
+            >
+              All ({normalizedProjects.length})
+            </button>
+            {categories.map((category) => {
+              const count = normalizedProjects.filter((item) => item.category === category).length;
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  className={`books-filter-btn${activeCategory === category ? ' is-active' : ''}`}
+                  onClick={() => setActiveCategory(category)}
+                >
+                  {category} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mini-project-grid" aria-live="polite">
+            {filteredProjects.length === 0 ? (
+              <article className="mini-project-card">
+                <div>
+                  <h3>Projects Coming Soon</h3>
+                  <p>Project cards and images will appear here once uploaded.</p>
+                </div>
+              </article>
+            ) : (
+              filteredProjects.map((project) => (
+                <article key={project.title} className="mini-project-card">
+                  {project.logo ? (
+                    <img src={project.logo} alt={project.title || 'Project image'} />
+                  ) : (
+                    <div className="projects-card-image-placeholder" aria-hidden="true">No Image</div>
+                  )}
+                  <div>
+                    <h3>{project.title || 'Project'}</h3>
+                    <p>{project.caption || project.category || 'Project description'}</p>
+                    <div className="mini-project-actions">
+                      <Link href={`/projects/${slugify(project.title)}`}>Open</Link>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
         </section>
       </main>
     </div>

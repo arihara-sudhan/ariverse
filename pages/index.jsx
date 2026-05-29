@@ -16,7 +16,7 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PASSIONAL' },
   { id: 'f-experiments', label: 'Experiments', href: '/aris-trials', category: 'PASSIONAL' },
   { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PROFESSIONAL' },
-  { id: 'f-my-books', label: 'My Books', href: '/my-books', category: 'PASSIONAL' },
+  { id: 'f-my-books', label: 'My Books', href: '/aris-books', category: 'PASSIONAL' },
   { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'HOBBYAL' },
   { id: 'f-thirukkural', label: 'திருக்குறள்', href: '/thirukkural', category: 'PASSIONAL' },
   { id: 'f-guest', label: 'Guest Lectures', href: '/guest-lectures', category: 'PASSIONAL' },

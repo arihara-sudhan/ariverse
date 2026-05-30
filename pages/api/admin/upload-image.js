@@ -55,6 +55,27 @@ function toFileBaseFromOriginalName(fileName) {
   return toFileNameBase(base);
 }
 
+function buildBlobPath({ section, title, category, subcategory, baseName, ext }) {
+  const sectionFolder = toFolderName(section);
+  const titleFolder = toFolderName(title);
+  const categoryFolder = toFolderName(category);
+  const subcategoryFolder = toFolderName(subcategory);
+
+  // Career assets follow fixed folders under projects/
+  if (sectionFolder === 'career' || sectionFolder === 'works' || sectionFolder === 'experience') {
+    if (titleFolder === 'hero') {
+      return `projects/hero${ext}`;
+    }
+    const isCompanyLogo = titleFolder.endsWith('-company-logo') || titleFolder.includes('company-logo');
+    if (isCompanyLogo) {
+      return `projects/company-logos/${baseName}${ext}`;
+    }
+    return `projects/company-photos/${baseName}${ext}`;
+  }
+
+  return `${sectionFolder}/${categoryFolder}/${subcategoryFolder}/${titleFolder}/${baseName}${ext}`;
+}
+
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -83,12 +104,8 @@ export default async function handler(req, res) {
     const title = Array.isArray(fields?.title) ? fields.title[0] : fields?.title;
     const category = Array.isArray(fields?.category) ? fields.category[0] : fields?.category;
     const subcategory = Array.isArray(fields?.subcategory) ? fields.subcategory[0] : fields?.subcategory;
-    const folder = toFolderName(section);
-    const titleFolder = toFolderName(title);
-    const categoryFolder = toFolderName(category);
-    const subcategoryFolder = toFolderName(subcategory);
     const baseName = toFileBaseFromOriginalName(file.originalFilename || '');
-    const fileName = `${folder}/${categoryFolder}/${subcategoryFolder}/${titleFolder}/${baseName}${ext}`;
+    const fileName = buildBlobPath({ section, title, category, subcategory, baseName, ext });
 
     if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
       res.status(413).json({ error: 'File too large.' });

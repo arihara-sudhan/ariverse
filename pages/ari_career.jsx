@@ -17,6 +17,12 @@ function formatCareerDate(value) {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 }
 
+function getCareerDateLabel(item) {
+  const custom = typeof item?.dateText === 'string' ? item.dateText.trim() : '';
+  if (custom) return custom;
+  return formatCareerDate(item?.createdAt);
+}
+
 export async function getStaticProps() {
   const link = (await getProfileLinkByLabel('Career')) || (await getProfileLinkByLabel('Works'));
   const hero = link
@@ -78,9 +84,9 @@ export default function CareerPage({ hero, items }) {
                   </div>
                   <div className="career-post-desc">{renderParagraphs(item.markdownText)}</div>
                 </div>
-                {formatCareerDate(item.createdAt) ? (
+                {getCareerDateLabel(item) ? (
                   <div className="career-post-date-corner">
-                    <span className="career-post-date">{formatCareerDate(item.createdAt)}</span>
+                    <span className="career-post-date">{getCareerDateLabel(item)}</span>
                   </div>
                 ) : null}
               </article>

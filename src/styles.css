@@ -762,13 +762,12 @@ footer {
 .career-post {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(240px, 360px) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   align-items: start;
   gap: 0.8rem;
   border: 1px solid #e1e1e1;
   border-radius: 10px;
-  padding: 0.75rem;
-  padding-bottom: 2.6rem;
+  padding: 0 0 2.6rem;
   background: #ffffff;
 }
 
@@ -780,12 +779,13 @@ footer {
   position: relative;
   display: block;
   min-height: 100%;
+  padding: 0 0.75rem;
 }
 
 .career-post-image-wrap {
   margin: 0;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
+  border: 0;
+  border-radius: 10px 10px 0 0;
   overflow: hidden;
 }
 

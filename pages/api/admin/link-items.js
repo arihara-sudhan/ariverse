@@ -70,6 +70,7 @@ export default async function handler(req, res) {
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
     const subtitle = toCleanText(req.body?.subtitle);
+    const dateText = toCleanText(req.body?.dateText);
     const category = toCleanText(req.body?.category);
     const booksCategory = category.toUpperCase();
     const subcategory = toCleanText(req.body?.subcategory);
@@ -130,6 +131,7 @@ export default async function handler(req, res) {
           markdownText,
           kavithaiFrom,
           subtitle,
+          dateText,
           imageAlign,
           category: isBooksRead ? booksCategory : category,
           subcategory,
@@ -147,6 +149,7 @@ export default async function handler(req, res) {
     const markdownText = toCleanText(req.body?.markdownText);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
     const subtitle = toCleanText(req.body?.subtitle);
+    const dateText = toCleanText(req.body?.dateText);
     const category = toCleanText(req.body?.category);
     const booksCategory = category.toUpperCase();
     const subcategory = toCleanText(req.body?.subcategory);
@@ -207,6 +210,7 @@ export default async function handler(req, res) {
       markdownText,
       kavithaiFrom,
       subtitle,
+      dateText,
       imageAlign,
       category: isBooksRead ? booksCategory : category,
       subcategory,

@@ -73,6 +73,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [kavithaiFrom, setKavithaiFrom] = useState('');
   const [subtitle, setSubtitle] = useState('');
+  const [dateText, setDateText] = useState('');
   const [miniProjectCategory, setMiniProjectCategory] = useState(MINI_PROJECT_CATEGORIES[0] || '');
   const [projectCategory, setProjectCategory] = useState(DEFAULT_PROJECT_CATEGORIES[0]);
   const [bookCategory, setBookCategory] = useState('ENGLISH');
@@ -87,6 +88,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
       ...(items || []).map((item) => String(item?.category || '').trim()).filter(Boolean),
     ]),
   );
+  const existingCareerLogos = isCareerSection
+    ? Array.from(new Set((items || []).map((item) => String(item?.companyLogoUrl || '').trim()).filter(Boolean)))
+    : [];
 
   const [heroHeading, setHeroHeading] = useState(initialHero?.heading || link.label || '');
   const [heroDescription, setHeroDescription] = useState(initialHero?.description || '');
@@ -222,6 +226,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         markdownText,
         kavithaiFrom,
         subtitle: isCareerSection ? subtitle : '',
+        dateText: isCareerSection ? dateText : '',
         category: isMiniProjectsSection ? miniProjectCategory : isProjectsSection ? projectCategory : isBooksReadSection ? bookCategory : undefined,
         subcategory: isBooksReadSection ? bookSubcategory : undefined,
       }),
@@ -241,6 +246,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     setYoutubeUrl('');
     setKavithaiFrom('');
     setSubtitle('');
+    setDateText('');
     setMiniProjectCategory(MINI_PROJECT_CATEGORIES[0] || '');
     setProjectCategory(DEFAULT_PROJECT_CATEGORIES[0]);
     setBookCategory('ENGLISH');
@@ -421,6 +427,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                   value={subtitle}
                   onChange={(event) => setSubtitle(event.target.value)}
                   placeholder="e.g., Nov 2024 - Present"
+                />
+                <label htmlFor="item-date-text">Date Text</label>
+                <input
+                  id="item-date-text"
+                  value={dateText}
+                  onChange={(event) => setDateText(event.target.value)}
+                  placeholder="e.g., Feb 2025 - Present"
                 />
               </>
             ) : null}
@@ -606,6 +619,27 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       }}
                     />
                     {companyLogoUrl ? <p className="contact-note">Company logo: {companyLogoUrl}</p> : null}
+                    {existingCareerLogos.length > 0 ? (
+                      <>
+                        <label htmlFor="item-company-logo-existing">Reuse existing company logo</label>
+                        <select
+                          id="item-company-logo-existing"
+                          value=""
+                          onChange={(event) => {
+                            const nextValue = event.target.value;
+                            if (nextValue) setCompanyLogoUrl(nextValue);
+                            event.target.value = '';
+                          }}
+                        >
+                          <option value="">Select existing logo...</option>
+                          {existingCareerLogos.map((logoUrl) => (
+                            <option key={logoUrl} value={logoUrl}>
+                              {logoUrl}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    ) : null}
                   </>
                 ) : null}
               </>
@@ -649,6 +683,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     {item.subtitle}
                   </p>
                 ) : null}
+                {isCareerSection && item.dateText ? (
+                  <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
+                    {item.dateText}
+                  </p>
+                ) : null}
                 {isBooksReadSection ? (
                   <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
                     {(item.category || 'ENGLISH') === 'TAMIL'
@@ -686,6 +725,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                           value={item.subtitle || ''}
                           placeholder="e.g., Nov 2024 - Present"
                           onChange={(event) => updateLocalItem(item.id, { subtitle: event.target.value })}
+                        />
+                        <label htmlFor={`edit-date-text-${item.id}`}>Date Text</label>
+                        <input
+                          id={`edit-date-text-${item.id}`}
+                          value={item.dateText || ''}
+                          placeholder="e.g., Feb 2025 - Present"
+                          onChange={(event) => updateLocalItem(item.id, { dateText: event.target.value })}
                         />
                       </>
                     ) : null}
@@ -894,6 +940,27 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                               <p className="contact-note" style={{ margin: '0.35rem 0 0', wordBreak: 'break-all' }}>
                                 Company logo: {item.companyLogoUrl}
                               </p>
+                            ) : null}
+                            {existingCareerLogos.length > 0 ? (
+                              <>
+                                <label htmlFor={`edit-company-logo-existing-${item.id}`}>Reuse Existing Company Logo</label>
+                                <select
+                                  id={`edit-company-logo-existing-${item.id}`}
+                                  value=""
+                                  onChange={(event) => {
+                                    const nextValue = event.target.value;
+                                    if (nextValue) updateLocalItem(item.id, { companyLogoUrl: nextValue });
+                                    event.target.value = '';
+                                  }}
+                                >
+                                  <option value="">Select existing logo...</option>
+                                  {existingCareerLogos.map((logoUrl) => (
+                                    <option key={`${item.id}-${logoUrl}`} value={logoUrl}>
+                                      {logoUrl}
+                                    </option>
+                                  ))}
+                                </select>
+                              </>
                             ) : null}
                           </>
                         ) : null}

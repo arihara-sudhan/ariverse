@@ -12,9 +12,9 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-career', label: 'Career', href: '/ari_career', category: 'PROFESSIONAL' },
   { id: 'f-projects', label: 'Projects', href: '/projects', category: 'PROFESSIONAL' },
   { id: 'f-skillset', label: 'Skillset', href: '/skillset', category: 'PROFESSIONAL' },
-  { id: 'f-resume', label: 'Resume', href: 'https://arihara-sudhan.github.io/resume/resume.pdf', category: 'PROFESSIONAL' },
+  { id: 'f-resume', label: 'Resume', href: '/ari-resume', category: 'PROFESSIONAL' },
   { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PASSIONAL' },
-  { id: 'f-experiments', label: 'Experiments', href: '/aris-trials', category: 'PASSIONAL' },
+  { id: 'f-experiments', label: 'Experiments', href: '/aris-xperiments', category: 'PASSIONAL' },
   { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PROFESSIONAL' },
   { id: 'f-my-books', label: 'My Books', href: '/aris-books', category: 'PASSIONAL' },
   { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'HOBBYAL' },
@@ -192,13 +192,11 @@ export default function HomePage({ profileLinks }) {
                 <div className="category-links">
                   {group.items.map((link) => {
                     const resolvedHref =
-                      link.label === 'Resume'
-                        ? 'https://arihara-sudhan.github.io/resume/resume.pdf'
-                        : link.label === 'Skillset'
-                            ? '/skillset'
-                        : link.label === 'Books Read'
-                            ? '/ari-read-books'
-                          : link.href;
+                      link.label === 'Skillset'
+                        ? '/skillset'
+                      : link.label === 'Books Read'
+                        ? '/ari-read-books'
+                        : link.href;
                     const safeHref = typeof resolvedHref === 'string' && (resolvedHref.startsWith('/') || resolvedHref.startsWith('https://'))
                       ? resolvedHref
                       : '/';

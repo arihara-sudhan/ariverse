@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import DiscussionThread from '../src/components/DiscussionThread';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listKavithaiEntries } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listContentComments, listKavithaiEntries } from '../lib/adminData';
 
 export async function getServerSideProps({ query }) {
   const poems = await listKavithaiEntries();
@@ -14,6 +15,9 @@ export async function getServerSideProps({ query }) {
   const requestedId = Number(query?.id);
   const selectedPoem = Number.isInteger(requestedId) ? poems.find((poem) => poem.id === requestedId) || null : null;
   const selectedIndex = selectedPoem ? poems.findIndex((poem) => poem.id === selectedPoem.id) : -1;
+  const initialComments = selectedPoem
+    ? await listContentComments({ sectionKey: 'kavithaigal', entryId: selectedPoem.id })
+    : [];
   const showAll = query?.view === 'all';
 
   return {
@@ -22,12 +26,13 @@ export async function getServerSideProps({ query }) {
       hero,
       selectedPoem,
       selectedIndex,
+      initialComments,
       showAll,
     },
   };
 }
 
-export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selectedIndex, showAll }) {
+export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selectedIndex, initialComments, showAll }) {
   const hasPoems = Array.isArray(poems) && poems.length > 0;
   const headingText = String(hero?.heading || 'அரியின் கவிதைகள்').trim();
   const headingParts = headingText.split(/\s+/).filter(Boolean);
@@ -41,7 +46,7 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
 
   if (selectedPoem) {
     return (
-      <main className="kavithai-stage">
+      <main className="kavithai-stage kavithai-detail-stage">
         <section className="kavithai-media">
           {selectedPoem.imageUrl ? (
             <img loading="lazy" decoding="async" className="kavithai-hero" src={selectedPoem.imageUrl} alt={selectedPoem.kavithaiName} />
@@ -74,6 +79,14 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
           <div className="kavithai-markdown tamil-text" lang="ta">
             <ReactMarkdown>{(selectedPoem.markdownText || '').replace(/\n/g, '  \n')}</ReactMarkdown>
           </div>
+          <DiscussionThread
+            title="Comments"
+            endpoint="/api/content/comments"
+            itemId={selectedPoem.id}
+            itemIdField="entryId"
+            extraPayload={{ section: 'kavithaigal' }}
+            initialComments={initialComments}
+          />
         </section>
       </main>
     );

@@ -4,7 +4,6 @@ import Header from '../../../src/components/Header';
 import SectionHero from '../../../src/components/SectionHero';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getProfileLinkById, getSectionHero, listLinkItems } from '../../../lib/adminData';
-import { MINI_PROJECT_CATEGORIES } from '../../../data/miniProjects';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 const DEFAULT_PROJECT_CATEGORIES = ['Deep Learning', 'Product Engineering', 'AI Engineering', 'Robotic Process Automation'];
@@ -50,11 +49,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isGuestLecturesSection = link.label === 'Guest Lectures';
   const isGallerySection = isClayPlaySection || isGuestLecturesSection;
   const isBooksReadSection = link.label === 'Books Read';
+  const isExperimentsSection = link.label === 'Experiments';
   const isMiniProjectsSection = link.label === 'Mini-Projects';
   const isProjectsSection = link.label === 'Projects';
   const isCareerSection = link.label === 'Career' || link.label === 'Works' || link.label === 'Experience';
   const isKavithaiSection = link.label === 'அரியின் கவிதைகள்' || link.label === 'Ariyin Kavithaigal';
-  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection;
+  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection || isExperimentsSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
@@ -74,20 +74,59 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [kavithaiFrom, setKavithaiFrom] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [dateText, setDateText] = useState('');
-  const [miniProjectCategory, setMiniProjectCategory] = useState(MINI_PROJECT_CATEGORIES[0] || '');
+  const [miniProjectCategory, setMiniProjectCategory] = useState('');
+  const [newMiniProjectCategory, setNewMiniProjectCategory] = useState('');
   const [projectCategory, setProjectCategory] = useState(DEFAULT_PROJECT_CATEGORIES[0]);
+  const [newProjectCategory, setNewProjectCategory] = useState('');
   const [bookCategory, setBookCategory] = useState('ENGLISH');
   const [bookSubcategory, setBookSubcategory] = useState('FICTION');
   const [markdownText, setMarkdownText] = useState('');
+  const [bigDescription, setBigDescription] = useState('');
+  const [projectTags, setProjectTags] = useState([]);
+  const [newProjectTag, setNewProjectTag] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pendingSaveIds, setPendingSaveIds] = useState([]);
+  const [commentsByProjectId, setCommentsByProjectId] = useState({});
+  const [loadingCommentsFor, setLoadingCommentsFor] = useState([]);
+  const commentsSectionKey = isProjectsSection ? 'projects' : isExperimentsSection ? 'xperiments' : isKavithaiSection ? 'kavithaigal' : '';
+  const supportsComments = isProjectsSection || isExperimentsSection || isKavithaiSection;
   const projectCategoryOptions = Array.from(
     new Set([
       ...DEFAULT_PROJECT_CATEGORIES,
+      String(projectCategory || '').trim(),
       ...(items || []).map((item) => String(item?.category || '').trim()).filter(Boolean),
     ]),
   );
+  const miniProjectCategoryOptions = Array.from(
+    new Set([
+      String(miniProjectCategory || '').trim(),
+      ...(items || []).map((item) => String(item?.category || '').trim()).filter(Boolean),
+    ]),
+  );
+  const availableProjectTags = isProjectsSection
+    ? Array.from(
+        new Set(
+          (items || [])
+            .flatMap((item) => (Array.isArray(item.projectTags) ? item.projectTags : []))
+            .map((tag) => String(tag || '').trim())
+            .filter(Boolean),
+        ),
+      ).sort((a, b) => a.localeCompare(b))
+    : [];
+
+  function addProjectTagToSelection(rawTag, itemId = null) {
+    const cleaned = String(rawTag || '').trim();
+    if (!cleaned) return;
+    if (itemId) {
+      const target = items.find((entry) => entry.id === itemId);
+      const current = Array.isArray(target?.projectTags) ? target.projectTags : [];
+      if (current.includes(cleaned)) return;
+      updateLocalItem(itemId, { projectTags: [...current, cleaned] });
+      return;
+    }
+    setProjectTags((prev) => (prev.includes(cleaned) ? prev : [...prev, cleaned]));
+  }
   const existingCareerLogos = isCareerSection
     ? Array.from(new Set((items || []).map((item) => String(item?.companyLogoUrl || '').trim()).filter(Boolean)))
     : [];
@@ -222,8 +261,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         imageUrl: isBinomialSection ? '' : imageUrl,
         companyLogoUrl: isCareerSection ? companyLogoUrl : '',
         imageUrls: isGallerySection ? imageUrls : undefined,
-        youtubeUrl: isBinomialSection || isMiniProjectsSection ? youtubeUrl : '',
+        youtubeUrl: isBinomialSection || isMiniProjectsSection || isExperimentsSection ? youtubeUrl : '',
         markdownText,
+        bigDescription: isProjectsSection ? bigDescription : '',
+        projectTags: isProjectsSection ? projectTags : [],
         kavithaiFrom,
         subtitle: isCareerSection ? subtitle : '',
         dateText: isCareerSection ? dateText : '',
@@ -247,11 +288,14 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     setKavithaiFrom('');
     setSubtitle('');
     setDateText('');
-    setMiniProjectCategory(MINI_PROJECT_CATEGORIES[0] || '');
+    setMiniProjectCategory('');
+    setNewMiniProjectCategory('');
     setProjectCategory(DEFAULT_PROJECT_CATEGORIES[0]);
     setBookCategory('ENGLISH');
     setBookSubcategory('FICTION');
     setMarkdownText('');
+    setBigDescription('');
+    setProjectTags([]);
     setSaving(false);
   }
 
@@ -321,6 +365,51 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
 
   function updateLocalItem(id, patch) {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  }
+
+  async function loadSectionComments(entryId) {
+    if (!supportsComments) return;
+    const key = entryId;
+    const endpoint = isProjectsSection
+      ? `/api/projects/comments?projectEntryId=${entryId}`
+      : `/api/content/comments?section=${encodeURIComponent(commentsSectionKey)}&entryId=${entryId}`;
+    setLoadingCommentsFor((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    try {
+      const res = await fetch(endpoint);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'Could not load comments.');
+        setLoadingCommentsFor((prev) => prev.filter((id) => id !== key));
+        return;
+      }
+      setCommentsByProjectId((prev) => ({ ...prev, [key]: Array.isArray(data.comments) ? data.comments : [] }));
+      setLoadingCommentsFor((prev) => prev.filter((id) => id !== key));
+    } catch (_error) {
+      setError('Could not load comments.');
+      setLoadingCommentsFor((prev) => prev.filter((id) => id !== key));
+    }
+  }
+
+  async function deleteSectionCommentForAdmin(entryId, commentId) {
+    if (!supportsComments) return;
+    const endpoint = isProjectsSection ? '/api/projects/comments' : '/api/content/comments';
+    const body = isProjectsSection
+      ? { projectEntryId: entryId, commentId }
+      : { section: commentsSectionKey, entryId, commentId };
+    const res = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || 'Could not delete comment.');
+      return;
+    }
+    setCommentsByProjectId((prev) => ({
+      ...prev,
+      [entryId]: (prev[entryId] || []).filter((item) => item.id !== commentId),
+    }));
   }
 
   return (
@@ -411,7 +500,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>
             <label htmlFor="item-kavithai-from">
-              {isMiniProjectsSection || isProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+              {isMiniProjectsSection || isProjectsSection || isExperimentsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection ? 'Title' : 'Kavithai Name'}
             </label>
             <input
               id="item-kavithai-from"
@@ -480,12 +569,35 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                   onChange={(event) => setMiniProjectCategory(event.target.value)}
                   required
                 >
-                  {MINI_PROJECT_CATEGORIES.map((categoryOption) => (
+                  <option value="" disabled>
+                    Select category
+                  </option>
+                  {miniProjectCategoryOptions.map((categoryOption) => (
                     <option key={categoryOption} value={categoryOption}>
                       {categoryOption}
                     </option>
                   ))}
                 </select>
+                <label htmlFor="item-mini-project-category-new">Add New Category</label>
+                <div className="admin-inline-row">
+                  <input
+                    id="item-mini-project-category-new"
+                    value={newMiniProjectCategory}
+                    onChange={(event) => setNewMiniProjectCategory(event.target.value)}
+                    placeholder="Type a new category"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cleaned = String(newMiniProjectCategory || '').trim();
+                      if (!cleaned) return;
+                      setMiniProjectCategory(cleaned);
+                      setNewMiniProjectCategory('');
+                    }}
+                  >
+                    Add Category
+                  </button>
+                </div>
               </>
             ) : null}
 
@@ -504,12 +616,32 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     </option>
                   ))}
                 </select>
+                <label htmlFor="item-project-category-new">Add New Category</label>
+                <div className="admin-inline-row">
+                  <input
+                    id="item-project-category-new"
+                    value={newProjectCategory}
+                    onChange={(event) => setNewProjectCategory(event.target.value)}
+                    placeholder="Type a new category"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cleaned = String(newProjectCategory || '').trim();
+                      if (!cleaned) return;
+                      setProjectCategory(cleaned);
+                      setNewProjectCategory('');
+                    }}
+                  >
+                    Add Category
+                  </button>
+                </div>
               </>
             ) : null}
 
-            {isMiniProjectsSection ? (
+            {isMiniProjectsSection || isExperimentsSection ? (
               <>
-                <label htmlFor="item-youtube-url">Project URL</label>
+                <label htmlFor="item-youtube-url">{isExperimentsSection ? 'Read More URL' : 'Project URL'}</label>
                 <input
                   id="item-youtube-url"
                   type="url"
@@ -646,7 +778,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             )}
 
             <label htmlFor="item-markdown">
-              {isMiniProjectsSection || isProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
+              {isMiniProjectsSection ? 'Project Description' : isProjectsSection ? 'Small Description' : isExperimentsSection ? 'Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
             </label>
             <textarea
               id="item-markdown"
@@ -655,6 +787,69 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
               onChange={(event) => setMarkdownText(event.target.value)}
               required
             />
+            {isProjectsSection ? (
+              <>
+                <label htmlFor="item-big-description">Big Description (Detail Page)</label>
+                <textarea
+                  id="item-big-description"
+                  rows="10"
+                  value={bigDescription}
+                  onChange={(event) => setBigDescription(event.target.value)}
+                  placeholder="Write full README-like content for project detail page..."
+                />
+                <label htmlFor="item-project-tag-new">Create / Add Skill Tag</label>
+                <div className="admin-inline-row">
+                  <input
+                    id="item-project-tag-new"
+                    value={newProjectTag}
+                    onChange={(event) => setNewProjectTag(event.target.value)}
+                    placeholder="e.g., FastAPI, LangChain, MongoDB"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addProjectTagToSelection(newProjectTag);
+                      setNewProjectTag('');
+                    }}
+                  >
+                    Add Tag
+                  </button>
+                </div>
+                {availableProjectTags.length > 0 ? (
+                  <>
+                    <label htmlFor="item-project-tag-existing">Reuse Existing Tag</label>
+                    <select
+                      id="item-project-tag-existing"
+                      value=""
+                      onChange={(event) => {
+                        addProjectTagToSelection(event.target.value);
+                        event.target.value = '';
+                      }}
+                    >
+                      <option value="">Select tag...</option>
+                      {availableProjectTags.map((tag) => (
+                        <option key={tag} value={tag}>{tag}</option>
+                      ))}
+                    </select>
+                  </>
+                ) : null}
+                {projectTags.length > 0 ? (
+                  <div className="admin-tag-list">
+                    {projectTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className="admin-tag-chip"
+                        onClick={() => setProjectTags((prev) => prev.filter((entry) => entry !== tag))}
+                        title="Click to remove"
+                      >
+                        {tag} ×
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
 
             <button type="submit" disabled={saving || uploading}>
               {saving ? 'Adding...' : uploading ? 'Uploading...' : 'Add Item'}
@@ -695,7 +890,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       : `English - ${(item.subcategory || 'FICTION').replace('_', ' ')}`}
                   </p>
                 ) : null}
-                {(isBinomialSection || isMiniProjectsSection) && item.youtubeUrl ? (
+                {(isBinomialSection || isMiniProjectsSection || isExperimentsSection) && item.youtubeUrl ? (
                   <p className="contact-note" style={{ margin: '0.25rem 0 0', wordBreak: 'break-all' }}>
                     {item.youtubeUrl}
                   </p>
@@ -709,12 +904,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
                     <label htmlFor={`edit-name-${item.id}`}>
-                      {isMiniProjectsSection || isProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+                      {isMiniProjectsSection || isProjectsSection || isExperimentsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
                     </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isMiniProjectsSection || isProjectsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+                      placeholder={isMiniProjectsSection || isProjectsSection || isExperimentsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
                     {isCareerSection ? (
@@ -741,10 +936,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                         <label htmlFor={`edit-category-${item.id}`}>Category</label>
                         <select
                           id={`edit-category-${item.id}`}
-                          value={item.category || MINI_PROJECT_CATEGORIES[0] || ''}
+                          value={item.category || ''}
                           onChange={(event) => updateLocalItem(item.id, { category: event.target.value })}
                         >
-                          {MINI_PROJECT_CATEGORIES.map((categoryOption) => (
+                          <option value="" disabled>
+                            Select category
+                          </option>
+                          {miniProjectCategoryOptions.map((categoryOption) => (
                             <option key={categoryOption} value={categoryOption}>
                               {categoryOption}
                             </option>
@@ -756,6 +954,18 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                           type="url"
                           value={item.youtubeUrl || ''}
                           placeholder="https://..."
+                          onChange={(event) => updateLocalItem(item.id, { youtubeUrl: event.target.value })}
+                        />
+                      </>
+                    ) : null}
+                    {isExperimentsSection ? (
+                      <>
+                        <label htmlFor={`edit-youtube-${item.id}`}>Read More URL</label>
+                        <input
+                          id={`edit-youtube-${item.id}`}
+                          type="url"
+                          value={item.youtubeUrl || ''}
+                          placeholder="https://... or /aris-xperiments?id=1"
                           onChange={(event) => updateLocalItem(item.id, { youtubeUrl: event.target.value })}
                         />
                       </>
@@ -774,6 +984,61 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                             </option>
                           ))}
                         </select>
+                        <label htmlFor={`edit-project-tag-new-${item.id}`}>Create / Add Skill Tag</label>
+                        <div className="admin-inline-row">
+                          <input
+                            id={`edit-project-tag-new-${item.id}`}
+                            value={newProjectTag}
+                            onChange={(event) => setNewProjectTag(event.target.value)}
+                            placeholder="e.g., FastAPI, LangChain, MongoDB"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addProjectTagToSelection(newProjectTag, item.id);
+                              setNewProjectTag('');
+                            }}
+                          >
+                            Add Tag
+                          </button>
+                        </div>
+                        {availableProjectTags.length > 0 ? (
+                          <>
+                            <label htmlFor={`edit-project-tag-existing-${item.id}`}>Reuse Existing Tag</label>
+                            <select
+                              id={`edit-project-tag-existing-${item.id}`}
+                              value=""
+                              onChange={(event) => {
+                                addProjectTagToSelection(event.target.value, item.id);
+                                event.target.value = '';
+                              }}
+                            >
+                              <option value="">Select tag...</option>
+                              {availableProjectTags.map((tag) => (
+                                <option key={`${item.id}-${tag}`} value={tag}>{tag}</option>
+                              ))}
+                            </select>
+                          </>
+                        ) : null}
+                        {Array.isArray(item.projectTags) && item.projectTags.length > 0 ? (
+                          <div className="admin-tag-list">
+                            {item.projectTags.map((tag) => (
+                              <button
+                                key={`${item.id}-${tag}`}
+                                type="button"
+                                className="admin-tag-chip"
+                                onClick={() =>
+                                  updateLocalItem(item.id, {
+                                    projectTags: item.projectTags.filter((entry) => entry !== tag),
+                                  })
+                                }
+                                title="Click to remove"
+                              >
+                                {tag} ×
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
                       </>
                     ) : null}
 
@@ -968,7 +1233,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     )}
 
                     <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isMiniProjectsSection || isProjectsSection ? 'Project Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
+                      {isMiniProjectsSection ? 'Project Description' : isProjectsSection ? 'Small Description' : isExperimentsSection ? 'Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
                     </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}
@@ -976,6 +1241,17 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       value={item.markdownText || item.description || ''}
                       onChange={(event) => updateLocalItem(item.id, { markdownText: event.target.value })}
                     />
+                    {isProjectsSection ? (
+                      <>
+                        <label htmlFor={`edit-big-description-${item.id}`}>Big Description (Detail Page)</label>
+                        <textarea
+                          id={`edit-big-description-${item.id}`}
+                          rows="10"
+                          value={item.bigDescription || ''}
+                          onChange={(event) => updateLocalItem(item.id, { bigDescription: event.target.value })}
+                        />
+                      </>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -1019,6 +1295,34 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 </div>
                 {pendingSaveIds.includes(item.id) ? (
                   <p className="contact-note" style={{ margin: '0.35rem 0 0' }}>Syncing changes...</p>
+                ) : null}
+                {supportsComments ? (
+                  <div style={{ marginTop: '0.7rem' }}>
+                    <button
+                      type="button"
+                      className="playlist-watch-btn admin-item-action-btn"
+                      onClick={() => loadSectionComments(item.id)}
+                    >
+                      {loadingCommentsFor.includes(item.id) ? 'Loading Comments...' : 'Manage Comments'}
+                    </button>
+                    {(commentsByProjectId[item.id] || []).length > 0 ? (
+                      <div className="admin-upload-list" style={{ marginTop: '0.5rem' }}>
+                        {(commentsByProjectId[item.id] || []).map((comment) => (
+                          <div key={`${item.id}-${comment.id}`} className="admin-upload-item">
+                            <span>
+                              <strong>{comment.name || 'anonymous'}:</strong> {comment.comment}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => deleteSectionCommentForAdmin(item.id, comment.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
               </article>
             ))}

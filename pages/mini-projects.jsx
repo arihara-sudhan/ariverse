@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listMiniProjectEntries } from '../lib/adminData';
-import { MINI_PROJECT_CATEGORIES } from '../data/miniProjects';
 
 export async function getServerSideProps() {
   const link = await getProfileLinkByLabel('Mini-Projects');
@@ -13,18 +12,9 @@ export async function getServerSideProps() {
 
 export default function MiniProjectsPage({ hero, miniProjects }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [brokenImageByTitle, setBrokenImageByTitle] = useState({});
   const heroQuote = String(hero?.quote || '').trim();
-  const normalizedProjects = useMemo(() => {
-    const categoryMap = new Map(MINI_PROJECT_CATEGORIES.map((item) => [item.toUpperCase(), item]));
-    return (miniProjects || []).map((project) => {
-      const raw = String(project?.category || '').trim();
-      const normalizedCategory = categoryMap.get(raw.toUpperCase()) || raw;
-      return {
-        ...project,
-        category: normalizedCategory,
-      };
-    });
-  }, [miniProjects]);
+  const normalizedProjects = useMemo(() => miniProjects || [], [miniProjects]);
   const categories = useMemo(
     () => Array.from(new Set(normalizedProjects.map((project) => project.category).filter(Boolean))),
     [normalizedProjects],
@@ -76,9 +66,22 @@ export default function MiniProjectsPage({ hero, miniProjects }) {
           <div className="mini-project-grid">
             {filteredProjects.map((project) => {
               const viewerHref = `/mini-projects/open?url=${encodeURIComponent(project.embedLink || '')}&title=${encodeURIComponent(project.title || 'Mini Project')}`;
+              const isBroken = Boolean(brokenImageByTitle[project.title]);
               return (
                 <article key={project.title} className="mini-project-card">
-                  <img loading="lazy" decoding="async" src={project.logo} alt={project.title} />
+                  {!isBroken && project.logo ? (
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      src={project.logo}
+                      alt={project.title}
+                      onError={() =>
+                        setBrokenImageByTitle((prev) => ({ ...prev, [project.title]: true }))
+                      }
+                    />
+                  ) : (
+                    <div className="projects-card-image-placeholder" aria-hidden="true">No Image</div>
+                  )}
                   <div>
                     <h3>{project.title}</h3>
                     <p>{project.caption || project.category}</p>

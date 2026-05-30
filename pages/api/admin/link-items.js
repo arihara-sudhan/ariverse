@@ -19,6 +19,11 @@ function toImageUrls(value) {
   return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
 }
 
+function toTagNames(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+}
+
 function isValidBooksCategory(category) {
   return category === 'ENGLISH' || category === 'TAMIL';
 }
@@ -68,6 +73,8 @@ export default async function handler(req, res) {
     const companyLogoUrl = toCleanText(req.body?.companyLogoUrl);
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
+    const bigDescription = toCleanText(req.body?.bigDescription);
+    const projectTags = toTagNames(req.body?.projectTags);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
     const subtitle = toCleanText(req.body?.subtitle);
     const dateText = toCleanText(req.body?.dateText);
@@ -129,6 +136,8 @@ export default async function handler(req, res) {
           companyLogoUrl,
           youtubeUrl,
           markdownText,
+          bigDescription,
+          projectTags,
           kavithaiFrom,
           subtitle,
           dateText,
@@ -147,6 +156,8 @@ export default async function handler(req, res) {
     const companyLogoUrl = toCleanText(req.body?.companyLogoUrl);
     const youtubeUrl = toCleanText(req.body?.youtubeUrl);
     const markdownText = toCleanText(req.body?.markdownText);
+    const bigDescription = toCleanText(req.body?.bigDescription);
+    const projectTags = toTagNames(req.body?.projectTags);
     const kavithaiFrom = toCleanText(req.body?.kavithaiFrom);
     const subtitle = toCleanText(req.body?.subtitle);
     const dateText = toCleanText(req.body?.dateText);
@@ -208,6 +219,8 @@ export default async function handler(req, res) {
       companyLogoUrl,
       youtubeUrl,
       markdownText,
+      bigDescription,
+      projectTags,
       kavithaiFrom,
       subtitle,
       dateText,

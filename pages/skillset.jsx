@@ -135,8 +135,8 @@ export default function SkillsetPage({ hero }) {
 
       <style jsx>{`
         .skillset-site {
-          width: min(90vw, 1400px);
-          max-width: none;
+          width: 100%;
+          max-width: 960px;
           margin: 0 auto;
         }
         .skillset-layout {
@@ -208,15 +208,21 @@ export default function SkillsetPage({ hero }) {
         }
         @media (max-width: 560px) {
           .skill-list {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.6rem;
+          }
+          .skill-row {
+            padding: 0.65rem;
+            aspect-ratio: auto;
+            min-height: 152px;
           }
           .skill-icon {
-            width: 112px;
-            height: 112px;
+            width: min(100%, 84px);
+            height: min(100%, 84px);
           }
           .skill-icon svg {
-            width: 88px;
-            height: 88px;
+            width: 64px;
+            height: 64px;
           }
           .skill-row p {
             font-size: 0.9rem;

@@ -72,9 +72,9 @@ export default function ProjectsPage({ hero, projects }) {
             })}
           </div>
 
-          <div className="mini-project-grid" aria-live="polite">
+          <div className="projects-list" aria-live="polite">
             {filteredProjects.length === 0 ? (
-              <article className="mini-project-card">
+              <article className="projects-card">
                 <div>
                   <h3>Projects Coming Soon</h3>
                   <p>Project cards and images will appear here once uploaded.</p>
@@ -82,19 +82,29 @@ export default function ProjectsPage({ hero, projects }) {
               </article>
             ) : (
               filteredProjects.map((project) => (
-                <article key={project.title} className="mini-project-card">
-                  {project.logo ? (
-                    <img src={project.logo} alt={project.title || 'Project image'} />
-                  ) : (
-                    <div className="projects-card-image-placeholder" aria-hidden="true">No Image</div>
-                  )}
-                  <div>
-                    <h3>{project.title || 'Project'}</h3>
-                    <p>{project.caption || project.category || 'Project description'}</p>
-                    <div className="mini-project-actions">
-                      <Link href={`/projects/${slugify(project.title)}`}>Open</Link>
+                <article key={project.title} className="projects-card">
+                  <Link className="projects-card-link" href={`/projects/${slugify(project.title)}`}>
+                    <div className="projects-card-top">
+                      <div className="projects-card-left">
+                        {project.logo ? (
+                          <img src={project.logo} alt={project.title || 'Project image'} />
+                        ) : (
+                          <div className="projects-card-image-placeholder" aria-hidden="true">No Image</div>
+                        )}
+                      </div>
+                      <div className="projects-card-right">
+                        <h3>{project.title || 'Project'}</h3>
+                        <p>{project.caption || project.category || 'Project description'}</p>
+                        {Array.isArray(project.projectTags) && project.projectTags.length > 0 ? (
+                          <div className="projects-skill-tags" aria-label="Skills used">
+                            {project.projectTags.map((tag) => (
+                              <span key={`${project.title}-${tag}`} className="projects-skill-tag">{tag}</span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </article>
               ))
             )}

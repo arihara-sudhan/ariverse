@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import Header from '../../src/components/Header';
-import { listProjectEntries } from '../../lib/adminData';
+import DiscussionThread from '../../src/components/DiscussionThread';
+import { listProjectEntries, listProjectComments } from '../../lib/adminData';
 
 function slugify(input) {
   return (
@@ -18,18 +18,69 @@ function toLines(text) {
     .filter(Boolean);
 }
 
+function renderReadme(text) {
+  function renderInlineMarkdown(line, keyPrefix) {
+    const tokens = String(line || '').split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g).filter(Boolean);
+    return tokens.map((token, idx) => {
+      if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
+        return <strong key={`${keyPrefix}-b-${idx}`}>{token.slice(2, -2)}</strong>;
+      }
+      if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
+        return <em key={`${keyPrefix}-i-${idx}`}>{token.slice(1, -1)}</em>;
+      }
+      if (token.startsWith('`') && token.endsWith('`') && token.length > 2) {
+        return <code key={`${keyPrefix}-c-${idx}`}>{token.slice(1, -1)}</code>;
+      }
+      return <span key={`${keyPrefix}-t-${idx}`}>{token}</span>;
+    });
+  }
+
+  const rawLines = String(text || '').split('\n');
+  return rawLines
+    .map((raw, idx) => {
+      const line = String(raw || '').trim();
+      if (!line) return null;
+      if (line.startsWith('[LINKEDIN_POST_URL]')) {
+        const url = line.replace('[LINKEDIN_POST_URL]', '').trim();
+        const isLinkedInEmbed = /^https:\/\/www\.linkedin\.com\/embed\/feed\/update\/urn:li:[a-zA-Z]+:\d+/.test(url);
+        if (!isLinkedInEmbed) {
+          return <p key={`md-linkedin-invalid-${idx}`}>Invalid LinkedIn embed URL.</p>;
+        }
+        return (
+          <div key={`md-linkedin-${idx}`} className="project-linkedin-embed">
+            <iframe
+              src={url}
+              title={`linkedin-post-${idx}`}
+              width="100%"
+              height="620"
+              frameBorder="0"
+              allowFullScreen
+            />
+          </div>
+        );
+      }
+      if (line.startsWith('### ')) return <h4 key={`md-h4-${idx}`}>{renderInlineMarkdown(line.slice(4).trim(), `md-h4-${idx}`)}</h4>;
+      if (line.startsWith('## ')) return <h3 key={`md-h3-${idx}`}>{renderInlineMarkdown(line.slice(3).trim(), `md-h3-${idx}`)}</h3>;
+      if (line.startsWith('# ')) return <h2 key={`md-h2-${idx}`}>{renderInlineMarkdown(line.slice(2).trim(), `md-h2-${idx}`)}</h2>;
+      return <p key={`md-p-${idx}`}>{renderInlineMarkdown(line, `md-p-${idx}`)}</p>;
+    })
+    .filter(Boolean);
+}
+
 export async function getServerSideProps({ params }) {
   const projects = await listProjectEntries();
   const slug = String(params?.slug || '');
   const project = (projects || []).find((item) => slugify(item.title) === slug) || null;
   if (!project) return { notFound: true };
-  return { props: { project } };
+  const comments = await listProjectComments(project.id);
+  return { props: { project, comments } };
 }
 
-export default function ProjectDetailPage({ project }) {
-  const lines = toLines(project?.caption);
-  const summary = lines.slice(0, 3);
-  const learnings = lines.length > 0 ? lines : ['More learnings will be added soon.'];
+export default function ProjectDetailPage({ project, comments }) {
+  const shortLines = toLines(project?.caption);
+  const readmeContent = String(project?.bigDescription || project?.caption || '');
+  const summary = shortLines.slice(0, 3);
+  const legendNodes = renderReadme(readmeContent);
 
   return (
     <div className="site">
@@ -39,10 +90,16 @@ export default function ProjectDetailPage({ project }) {
           <div className="project-detail-hero-left">
             <p className="project-detail-kicker">{project?.category || 'Project'}</p>
             <h1>{project?.title || 'Project'}</h1>
-            <div className="project-detail-actions">
-              <Link href="/projects" className="project-detail-btn primary">View Projects</Link>
-              <a href="#what-i-learned" className="project-detail-btn">Read Full Writeup</a>
-            </div>
+            {summary.map((line, idx) => (
+              <p key={`overview-${line}-${idx}`}>{line}</p>
+            ))}
+            {Array.isArray(project?.projectTags) && project.projectTags.length > 0 ? (
+              <div className="projects-skill-tags" aria-label="Skills used">
+                {project.projectTags.map((tag) => (
+                  <span key={`${project?.id || project?.title}-${tag}`} className="projects-skill-tag">{tag}</span>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="project-detail-hero-right">
             {project?.logo ? (
@@ -51,28 +108,19 @@ export default function ProjectDetailPage({ project }) {
               <div className="project-detail-image-placeholder">No Image</div>
             )}
           </div>
-        </section>
-
-        <section className="project-detail-overview">
-          <h2>Overview &amp; Methodology</h2>
-          {summary.map((line, idx) => (
-            <p key={`${line}-${idx}`}>{line}</p>
-          ))}
-        </section>
-
-        <section id="what-i-learned" className="project-detail-learnings">
-          <h2>What I learned</h2>
-          <ul>
-            {learnings.map((line, idx) => (
-              <li key={`${line}-${idx}`}>
-                <span aria-hidden="true">★</span>
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="project-legend-full">
+            <hr className="project-legend-rule" />
+            {legendNodes.length > 0 ? legendNodes : <p>More learnings will be added soon.</p>}
+            <DiscussionThread
+              title="Comments"
+              endpoint="/api/projects/comments"
+              itemId={project.id}
+              itemIdField="projectEntryId"
+              initialComments={comments}
+            />
+          </div>
         </section>
       </main>
     </div>
   );
 }
-

@@ -61,11 +61,16 @@ function buildBlobPath({ section, title, category, subcategory, baseName, ext })
   const categoryFolder = toFolderName(category);
   const subcategoryFolder = toFolderName(subcategory);
 
-  // Career assets follow fixed folders under projects/
-  if (sectionFolder === 'career' || sectionFolder === 'works' || sectionFolder === 'experience') {
-    if (titleFolder === 'hero') {
+  // All hero uploads should be a single file directly under the section folder.
+  if (titleFolder === 'hero') {
+    if (sectionFolder === 'career' || sectionFolder === 'works' || sectionFolder === 'experience') {
       return `projects/hero${ext}`;
     }
+    return `${sectionFolder}/hero${ext}`;
+  }
+
+  // Career assets follow fixed folders under projects/
+  if (sectionFolder === 'career' || sectionFolder === 'works' || sectionFolder === 'experience') {
     const isCompanyLogo = titleFolder.endsWith('-company-logo') || titleFolder.includes('company-logo');
     if (isCompanyLogo) {
       return `projects/company-logos/${baseName}${ext}`;

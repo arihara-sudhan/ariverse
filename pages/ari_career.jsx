@@ -41,7 +41,7 @@ export async function getStaticProps() {
 }
 
 export default function CareerPage({ hero, items }) {
-  const safeItems = Array.isArray(items) ? items : [];
+  const safeItems = Array.isArray(items) ? [...items].reverse() : [];
 
   return (
     <div className="site career-page">
@@ -61,35 +61,40 @@ export default function CareerPage({ hero, items }) {
 
         <section className="career-posts" aria-label="Career posts">
           <div className="career-posts-list">
-            {safeItems.map((item) => (
-              <article key={item.id} className="career-post">
-                <div className="career-post-left">
-                  {item.imageUrl ? (
-                    <figure className="career-post-image-wrap">
-                      <img className="career-post-image" src={item.imageUrl} alt={item.kavithaiFrom || 'Career post'} />
-                    </figure>
+            {safeItems.map((item, index) => (
+              <div key={item.id} className="career-post-stack-item">
+                <article className="career-post">
+                  <div className="career-post-left">
+                    {item.imageUrl ? (
+                      <figure className="career-post-image-wrap">
+                        <img className="career-post-image" src={item.imageUrl} alt={item.kavithaiFrom || 'Career post'} />
+                      </figure>
+                    ) : null}
+                  </div>
+                  <div className="career-post-right">
+                    <div className="career-post-head">
+                      <div className="career-post-head-left">
+                        <h2>{item.kavithaiFrom || 'Career Post'}</h2>
+                        {item.subtitle ? <p className="career-post-subtitle">{item.subtitle}</p> : null}
+                      </div>
+                      <div className="career-post-head-center">
+                        {item.companyLogoUrl ? (
+                          <img className="career-post-company-logo" src={item.companyLogoUrl} alt={`${item.kavithaiFrom || 'Company'} logo`} />
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="career-post-desc">{renderParagraphs(item.markdownText)}</div>
+                  </div>
+                  {getCareerDateLabel(item) ? (
+                    <div className="career-post-date-corner">
+                      <span className="career-post-date">{getCareerDateLabel(item)}</span>
+                    </div>
                   ) : null}
-                </div>
-                <div className="career-post-right">
-                  <div className="career-post-head">
-                    <div className="career-post-head-left">
-                      <h2>{item.kavithaiFrom || 'Career Post'}</h2>
-                      {item.subtitle ? <p className="career-post-subtitle">{item.subtitle}</p> : null}
-                    </div>
-                    <div className="career-post-head-center">
-                      {item.companyLogoUrl ? (
-                        <img className="career-post-company-logo" src={item.companyLogoUrl} alt={`${item.kavithaiFrom || 'Company'} logo`} />
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="career-post-desc">{renderParagraphs(item.markdownText)}</div>
-                </div>
-                {getCareerDateLabel(item) ? (
-                  <div className="career-post-date-corner">
-                    <span className="career-post-date">{getCareerDateLabel(item)}</span>
-                  </div>
+                </article>
+                {index < safeItems.length - 1 ? (
+                  <div className="career-post-up-arrow" aria-hidden="true">↑</div>
                 ) : null}
-              </article>
+              </div>
             ))}
           </div>
         </section>

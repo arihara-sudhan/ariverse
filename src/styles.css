@@ -759,6 +759,20 @@ footer {
   gap: 0.9rem;
 }
 
+.career-post-stack-item {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.career-post-up-arrow {
+  text-align: center;
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #e1e1e1;
+  text-shadow: 0 1px 0 #ffffff;
+}
+
 .career-post {
   position: relative;
   display: grid;

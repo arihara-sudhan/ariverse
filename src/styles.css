@@ -1120,7 +1120,7 @@ footer {
 
 .mini-project-embed-shell iframe {
   width: 100%;
-  min-height: 900px;
+  height: 620px;
   border: 0;
   display: block;
 }
@@ -2075,6 +2075,12 @@ body.mini-project-open-body::-webkit-scrollbar {
   transition: opacity 520ms ease-in, transform 520ms ease-in;
 }
 
+.kavithai-top-nav.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+
 .kavithai-top-nav a {
   color: #222222;
   line-height: 1;
@@ -2165,6 +2171,18 @@ body.mini-project-open-body::-webkit-scrollbar {
   margin: 0 0 0.95rem;
 }
 
+.ariverse-image-anchor {
+  margin: 0.4rem 0 1rem;
+}
+
+.ariverse-inline-anchor-image {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d8d8d8;
+  margin-top: 0.5rem;
+}
+
 .kavithai-all-list {
   grid-column: 1 / -1;
   height: 100%;
@@ -2240,7 +2258,13 @@ body.mini-project-open-body::-webkit-scrollbar {
     order: 3;
     width: min(100%, 620px);
     margin: 0 auto;
-    text-align: left;
+    text-align: center;
+  }
+
+  .clay-play-quote {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
   }
 
 
@@ -2378,6 +2402,10 @@ body.mini-project-open-body::-webkit-scrollbar {
     grid-template-columns: 1fr;
   }
 
+  .mini-project-embed-shell iframe {
+    height: 520px;
+  }
+
   .career-timeline-head {
     margin-left: 0.65rem;
     padding-left: 0.95rem;
@@ -2434,6 +2462,11 @@ body.mini-project-open-body::-webkit-scrollbar {
     height: auto;
     padding: 1.25rem 1rem 2rem;
     overflow: visible;
+  }
+
+  .kavithai-markdown hr,
+  .project-legend-full hr {
+    display: none;
   }
 
   .kavithai-all-list {
@@ -2656,6 +2689,8 @@ body.mini-project-open-body::-webkit-scrollbar {
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+    border-top: 0;
+    border-bottom: 0;
   }
 
   .resume-document-frame {

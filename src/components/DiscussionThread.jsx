@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 function formatRelativeTime(value) {
   const dt = new Date(value);
@@ -25,6 +25,9 @@ export default function DiscussionThread({
   queryParams = {},
   extraPayload = {},
   initialComments = [],
+  namePlaceholder = 'Name (optional)',
+  commentPlaceholder = 'Share your thoughts',
+  submitLabel = 'Post Comment',
 }) {
   const [name, setName] = useState('');
   const [commentText, setCommentText] = useState('');
@@ -97,16 +100,16 @@ export default function DiscussionThread({
           type="text"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="name (optional)"
+          placeholder={namePlaceholder}
         />
         <textarea
           rows="3"
           value={commentText}
           onChange={(event) => setCommentText(event.target.value)}
-          placeholder="Share your thoughts"
+          placeholder={commentPlaceholder}
         />
         <button type="button" onClick={() => submitComment(null)} disabled={sending}>
-          {sending ? 'Posting...' : 'Post Comment'}
+          {sending ? 'Posting...' : submitLabel}
         </button>
       </div>
       {error ? <p className="project-comments-error">{error}</p> : null}

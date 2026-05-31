@@ -1,6 +1,7 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listLinkItems } from '../lib/adminData';
+import DiscussionThread from '../src/components/DiscussionThread';
+import { getProfileLinkByLabel, getSectionHero, listContentComments, listLinkItems } from '../lib/adminData';
 import { useRef, useState } from 'react';
 
 const DEFAULT_GUEST_LECTURES_QUOTE =
@@ -9,18 +10,28 @@ const DEFAULT_GUEST_LECTURES_QUOTE =
 export async function getServerSideProps() {
   const link = await getProfileLinkByLabel('Guest Lectures');
   if (!link) {
-    return { props: { entries: [], hero: { heading: 'Guest Lectures', imageUrl: '' } } };
+    return { props: { entries: [], hero: { heading: 'Guest Lectures', imageUrl: '' }, initialCommentsByEntry: {} } };
   }
 
   const entries = (await listLinkItems(link.id)).filter(
     (item) => String(item.kavithaiFrom || '').trim() && String(item.markdownText || '').trim(),
   );
   const hero = await getSectionHero(link.id, 'Guest Lectures');
+  const commentsRows = await Promise.all(
+    entries.map(async (entry) => ({
+      entryId: entry.id,
+      comments: await listContentComments({ sectionKey: 'guest-lectures', entryId: entry.id }),
+    })),
+  );
+  const initialCommentsByEntry = commentsRows.reduce((acc, row) => {
+    acc[row.entryId] = Array.isArray(row.comments) ? row.comments : [];
+    return acc;
+  }, {});
 
-  return { props: { entries, hero } };
+  return { props: { entries, hero, initialCommentsByEntry } };
 }
 
-export default function GuestLecturesPage({ entries, hero }) {
+export default function GuestLecturesPage({ entries, hero, initialCommentsByEntry }) {
   const imageMetricsRef = useRef({});
   const [galleryHeightByEntry, setGalleryHeightByEntry] = useState({});
   const heroQuote = String(hero?.quote || '').trim() || DEFAULT_GUEST_LECTURES_QUOTE;
@@ -104,6 +115,16 @@ export default function GuestLecturesPage({ entries, hero }) {
                     ))}
                   </div>
                 ) : null}
+                <DiscussionThread
+                  title="Were you there?"
+                  endpoint="/api/content/comments"
+                  itemId={entry.id}
+                  itemIdField="entryId"
+                  extraPayload={{ section: 'guest-lectures' }}
+                  initialComments={initialCommentsByEntry?.[entry.id] || []}
+                  namePlaceholder="Name"
+                  commentPlaceholder="How was your experience under Ari's session?"
+                />
               </article>
             ))}
           </div>

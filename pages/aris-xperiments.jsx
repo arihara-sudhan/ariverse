@@ -1,8 +1,55 @@
 import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import { getProfileLinkByLabel, getSectionHero, listContentComments, listExperimentsEntries } from '../lib/adminData';
+
+function parseExperimentReadme(rawText) {
+  const lines = String(rawText || '').split('\n');
+  const imageUrlByName = new Map();
+  const tokenRegex = /^\[ARIVERSE_IMAGE\]\s+(.+?)\s*$/;
+  const mapRegex = /^\[ARIVERSE_IMAGE_URL\]\s+(.+?)\s*::\s*(\S+)\s*$/;
+  const blocks = [];
+  let paragraphLines = [];
+  let anchorIndex = 0;
+
+  function flushParagraph() {
+    if (paragraphLines.length === 0) return;
+    blocks.push({ type: 'markdown', text: paragraphLines.join('\n') });
+    paragraphLines = [];
+  }
+
+  for (const line of lines) {
+    const mapMatch = line.match(mapRegex);
+    if (mapMatch) {
+      imageUrlByName.set(String(mapMatch[1] || '').trim(), String(mapMatch[2] || '').trim());
+      continue;
+    }
+
+    const tokenMatch = line.match(tokenRegex);
+    if (tokenMatch) {
+      flushParagraph();
+      const name = String(tokenMatch[1] || '').trim();
+      blocks.push({ type: 'anchor', name, anchorId: `exp-anchor-${anchorIndex}` });
+      anchorIndex += 1;
+      continue;
+    }
+
+    paragraphLines.push(line);
+  }
+  flushParagraph();
+
+  return blocks.map((block) =>
+    block.type === 'anchor'
+      ? {
+          ...block,
+          imageUrl: imageUrlByName.get(block.name) || '',
+        }
+      : block,
+  );
+}
 
 export async function getServerSideProps({ query }) {
   const link = await getProfileLinkByLabel('Experiments');
@@ -20,10 +67,45 @@ export async function getServerSideProps({ query }) {
 
 export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, showAll, experiments, initialComments }) {
   const safeExperiments = Array.isArray(experiments) ? experiments : [];
+  const panelRef = useRef(null);
+  const [hideTopNav, setHideTopNav] = useState(false);
   const hasPrev = selectedIndex > 0;
   const hasNext = selectedIndex >= 0 && selectedIndex < safeExperiments.length - 1;
   const prevItem = hasPrev ? safeExperiments[selectedIndex - 1] : null;
   const nextItem = hasNext ? safeExperiments[selectedIndex + 1] : null;
+  const readmeBlocks = useMemo(
+    () => (selectedTrial ? parseExperimentReadme(selectedTrial.fullDescription || selectedTrial.description || '') : []),
+    [selectedTrial],
+  );
+
+  useEffect(() => {
+    if (!selectedTrial) return;
+    const panelEl = panelRef.current;
+
+    const updateVisibility = () => {
+      const panelScrollable = panelEl && panelEl.scrollHeight > panelEl.clientHeight + 4;
+      let progress = 0;
+      if (panelScrollable) {
+        const maxScroll = Math.max(1, panelEl.scrollHeight - panelEl.clientHeight);
+        progress = panelEl.scrollTop / maxScroll;
+      } else if (typeof window !== 'undefined') {
+        const doc = document.documentElement;
+        const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+        progress = maxScroll > 1 ? window.scrollY / maxScroll : 0;
+      }
+      setHideTopNav(progress > 0.02);
+    };
+
+    updateVisibility();
+    if (panelEl) panelEl.addEventListener('scroll', updateVisibility, { passive: true });
+    if (typeof window !== 'undefined') window.addEventListener('scroll', updateVisibility, { passive: true });
+    if (typeof window !== 'undefined') window.addEventListener('resize', updateVisibility);
+    return () => {
+      if (panelEl) panelEl.removeEventListener('scroll', updateVisibility);
+      if (typeof window !== 'undefined') window.removeEventListener('scroll', updateVisibility);
+      if (typeof window !== 'undefined') window.removeEventListener('resize', updateVisibility);
+    };
+  }, [selectedTrial]);
 
   if (selectedTrial) {
     return (
@@ -34,8 +116,8 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
           ) : (
             <div className="kavithai-media-empty" />
           )}
-          <nav className="kavithai-top-nav" aria-label="Experiment navigation">
-            <Link href="/" aria-label="Home">
+          <nav className={`kavithai-top-nav${hideTopNav ? ' is-hidden' : ''}`} aria-label="Experiment navigation">
+            <Link href="/aris-xperiments" aria-label="Home">
               <span className="material-symbols-outlined" aria-hidden="true">home</span>
             </Link>
             <Link href="/aris-xperiments?view=all" aria-label="All experiments">
@@ -53,10 +135,34 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
             ) : null}
           </nav>
         </section>
-        <section className="kavithai-panel">
+        <section ref={panelRef} className="kavithai-panel">
           <h1 className="kavithai-title">{`${selectedIndex + 1}. ${selectedTrial.title}`}</h1>
           <div className="kavithai-markdown">
-            <p>{selectedTrial.description}</p>
+            {readmeBlocks.map((block, index) => {
+              if (block.type === 'markdown') {
+                return (
+                  <ReactMarkdown key={`md-${index}`}>
+                    {String(block.text || '').replace(/\n/g, '  \n')}
+                  </ReactMarkdown>
+                );
+              }
+              return (
+                <div
+                  key={block.anchorId}
+                  className="ariverse-image-anchor"
+                >
+                  {block.imageUrl ? (
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      className="ariverse-inline-anchor-image"
+                      src={block.imageUrl}
+                      alt={block.name || selectedTrial.title}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
           <DiscussionThread
             title="Comments"
@@ -75,7 +181,7 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
     return (
       <main className="kavithai-stage">
         <nav className="kavithai-top-nav" aria-label="Experiment navigation">
-          <Link href="/" aria-label="Home">
+          <Link href="/aris-xperiments" aria-label="Home">
             <span className="material-symbols-outlined" aria-hidden="true">home</span>
           </Link>
           <Link href="/aris-xperiments" aria-label="Grid view">

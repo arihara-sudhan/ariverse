@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Header from '../../../src/components/Header';
 import SectionHero from '../../../src/components/SectionHero';
 import { isAdminRequest } from '../../../lib/adminAuth';
@@ -7,6 +7,32 @@ import { getProfileLinkById, getSectionHero, listLinkItems } from '../../../lib/
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 const DEFAULT_PROJECT_CATEGORIES = ['Deep Learning', 'Product Engineering', 'AI Engineering', 'Robotic Process Automation'];
+
+function slugifyImageName(input) {
+  const cleaned = String(input || '')
+    .trim()
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim();
+  return cleaned || 'Inline Image';
+}
+
+function insertAnchoredImageToken(text, imageName, imageUrl, caretStart = null, caretEnd = null) {
+  const source = String(text || '');
+  const name = slugifyImageName(imageName);
+  const markerLine = `[ARIVERSE_IMAGE] ${name}`;
+  const mapLine = `[ARIVERSE_IMAGE_URL] ${name} :: ${String(imageUrl || '').trim()}`;
+  const hasMapLine = source.includes(mapLine);
+  const start = Number.isInteger(caretStart) ? Math.max(0, Math.min(caretStart, source.length)) : source.length;
+  const end = Number.isInteger(caretEnd) ? Math.max(start, Math.min(caretEnd, source.length)) : start;
+  const prefix = source.slice(0, start);
+  const suffix = source.slice(end);
+  const before = `${prefix}${prefix && !prefix.endsWith('\n') ? '\n' : ''}`;
+  const after = `${suffix && !suffix.startsWith('\n') ? '\n' : ''}${suffix}`;
+  const withMarker = `${before}${markerLine}${after}`.replace(/\n{3,}/g, '\n\n');
+  if (hasMapLine) return withMarker;
+  return `${withMarker}${withMarker.endsWith('\n') ? '' : '\n'}\n${mapLine}\n`;
+}
 
 export async function getServerSideProps({ req, params }) {
   if (!isAdminRequest(req)) {
@@ -44,16 +70,17 @@ export async function getServerSideProps({ req, params }) {
 }
 
 export default function LinkAdminPage({ link, initialItems, initialHero }) {
-  const isBinomialSection = link.label === 'Binomial Names';
-  const isClayPlaySection = link.label === 'Clay Play';
-  const isGuestLecturesSection = link.label === 'Guest Lectures';
+  const sectionLabel = String(link?.label || '').trim();
+  const isBinomialSection = sectionLabel === 'Binomial Names';
+  const isClayPlaySection = sectionLabel === 'Clay Play';
+  const isGuestLecturesSection = sectionLabel === 'Guest Lectures';
   const isGallerySection = isClayPlaySection || isGuestLecturesSection;
-  const isBooksReadSection = link.label === 'Books Read';
-  const isExperimentsSection = link.label === 'Experiments';
-  const isMiniProjectsSection = link.label === 'Mini-Projects';
-  const isProjectsSection = link.label === 'Projects';
-  const isCareerSection = link.label === 'Career' || link.label === 'Works' || link.label === 'Experience';
-  const isKavithaiSection = link.label === 'அரியின் கவிதைகள்' || link.label === 'Ariyin Kavithaigal';
+  const isBooksReadSection = sectionLabel === 'Books Read';
+  const isExperimentsSection = sectionLabel === 'Experiments';
+  const isMiniProjectsSection = sectionLabel === 'Mini-Projects';
+  const isProjectsSection = sectionLabel === 'Projects';
+  const isCareerSection = sectionLabel === 'Career' || sectionLabel === 'Works' || sectionLabel === 'Experience';
+  const isKavithaiSection = sectionLabel === 'அரியின் கவிதைகள்' || sectionLabel === 'Ariyin Kavithaigal';
   const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection || isExperimentsSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
@@ -86,11 +113,22 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [newProjectTag, setNewProjectTag] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingInlineImage, setUploadingInlineImage] = useState(false);
   const [pendingSaveIds, setPendingSaveIds] = useState([]);
   const [commentsByProjectId, setCommentsByProjectId] = useState({});
   const [loadingCommentsFor, setLoadingCommentsFor] = useState([]);
-  const commentsSectionKey = isProjectsSection ? 'projects' : isExperimentsSection ? 'xperiments' : isKavithaiSection ? 'kavithaigal' : '';
-  const supportsComments = isProjectsSection || isExperimentsSection || isKavithaiSection;
+  const commentsSectionKey = isProjectsSection
+    ? 'projects'
+    : isExperimentsSection
+      ? 'xperiments'
+      : isKavithaiSection
+        ? 'kavithaigal'
+        : isGuestLecturesSection
+          ? 'guest-lectures'
+          : isClayPlaySection
+            ? 'clay-play'
+          : '';
+  const supportsComments = isProjectsSection || isExperimentsSection || isKavithaiSection || isGuestLecturesSection || isClayPlaySection;
   const projectCategoryOptions = Array.from(
     new Set([
       ...DEFAULT_PROJECT_CATEGORIES,
@@ -143,6 +181,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [savingHero, setSavingHero] = useState(false);
 
   const [dragState, setDragState] = useState({ scope: '', itemId: null, fromIndex: -1 });
+  const inlineImageInputRef = useRef(null);
+  const createBigDescriptionRef = useRef(null);
+  const editBigDescriptionRefs = useRef({});
+  const inlineImageTargetRef = useRef({ mode: 'create', itemId: null, selectionStart: null, selectionEnd: null });
 
   function reorderList(list, fromIndex, toIndex) {
     if (!Array.isArray(list)) return [];
@@ -191,6 +233,65 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     });
     await Promise.all(workers);
     return uploaded;
+  }
+
+  function openInlineImagePicker(target) {
+    if (!isExperimentsSection) return;
+    inlineImageTargetRef.current = target;
+    if (inlineImageInputRef.current) {
+      inlineImageInputRef.current.value = '';
+      inlineImageInputRef.current.click();
+    }
+  }
+
+  function triggerInlineImageUpload(target, textarea = null) {
+    if (!isExperimentsSection) return;
+    openInlineImagePicker({
+      ...target,
+      selectionStart: textarea ? textarea.selectionStart : null,
+      selectionEnd: textarea ? textarea.selectionEnd : null,
+    });
+  }
+
+  async function handleInlineImageUpload(event) {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    const file = files[0];
+    const target = inlineImageTargetRef.current || { mode: 'create', itemId: null, selectionStart: null, selectionEnd: null };
+    setUploadingInlineImage(true);
+    setError('');
+    try {
+      const imageUrl = await uploadImage(file, `${kavithaiFrom || 'experiment'}-inline`);
+      const imageName = slugifyImageName(file.name);
+      if (target.mode === 'edit' && target.itemId) {
+        const item = items.find((entry) => entry.id === target.itemId);
+        if (!item) return;
+        updateLocalItem(target.itemId, {
+          bigDescription: insertAnchoredImageToken(
+            item.bigDescription || '',
+            imageName,
+            imageUrl,
+            target.selectionStart,
+            target.selectionEnd,
+          ),
+        });
+        return;
+      }
+      setBigDescription((prev) =>
+        insertAnchoredImageToken(
+          prev,
+          imageName,
+          imageUrl,
+          target.selectionStart,
+          target.selectionEnd,
+        ),
+      );
+    } catch (uploadError) {
+      setError(uploadError.message || 'Inline image upload failed.');
+    } finally {
+      setUploadingInlineImage(false);
+      if (inlineImageInputRef.current) inlineImageInputRef.current.value = '';
+    }
   }
 
   async function saveHero(event) {
@@ -263,7 +364,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         imageUrls: isGallerySection ? imageUrls : undefined,
         youtubeUrl: isBinomialSection || isMiniProjectsSection || isExperimentsSection ? youtubeUrl : '',
         markdownText,
-        bigDescription: isProjectsSection ? bigDescription : '',
+        bigDescription: isProjectsSection || isExperimentsSection ? bigDescription : '',
         projectTags: isProjectsSection ? projectTags : [],
         kavithaiFrom,
         subtitle: isCareerSection ? subtitle : '',
@@ -417,6 +518,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
       <Header subPage />
       <main className="content">
         <section className="for-ai" aria-labelledby="link-admin-title">
+          <input
+            ref={inlineImageInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleInlineImageUpload}
+          />
           <p className="eyebrow">Section Admin</p>
           <h2 id="link-admin-title">{link.label}</h2>
           <p className="contact-note"><Link href="/admin">Back to Admin</Link></p>
@@ -778,7 +886,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             )}
 
             <label htmlFor="item-markdown">
-              {isMiniProjectsSection ? 'Project Description' : isProjectsSection ? 'Small Description' : isExperimentsSection ? 'Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
+              {isMiniProjectsSection ? 'Project Description' : isProjectsSection || isExperimentsSection ? 'Small Description (List Page)' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
             </label>
             <textarea
               id="item-markdown"
@@ -787,66 +895,88 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
               onChange={(event) => setMarkdownText(event.target.value)}
               required
             />
-            {isProjectsSection ? (
+            {isProjectsSection || isExperimentsSection ? (
               <>
-                <label htmlFor="item-big-description">Big Description (Detail Page)</label>
+                <label htmlFor="item-big-description">README / Full Description (Detail Page)</label>
                 <textarea
                   id="item-big-description"
                   rows="10"
+                  ref={createBigDescriptionRef}
                   value={bigDescription}
                   onChange={(event) => setBigDescription(event.target.value)}
-                  placeholder="Write full README-like content for project detail page..."
+                  placeholder="Write full README-like content for detail page..."
                 />
-                <label htmlFor="item-project-tag-new">Create / Add Skill Tag</label>
-                <div className="admin-inline-row">
-                  <input
-                    id="item-project-tag-new"
-                    value={newProjectTag}
-                    onChange={(event) => setNewProjectTag(event.target.value)}
-                    placeholder="e.g., FastAPI, LangChain, MongoDB"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      addProjectTagToSelection(newProjectTag);
-                      setNewProjectTag('');
-                    }}
-                  >
-                    Add Tag
-                  </button>
-                </div>
-                {availableProjectTags.length > 0 ? (
+                {isExperimentsSection ? (
                   <>
-                    <label htmlFor="item-project-tag-existing">Reuse Existing Tag</label>
-                    <select
-                      id="item-project-tag-existing"
-                      value=""
-                      onChange={(event) => {
-                        addProjectTagToSelection(event.target.value);
-                        event.target.value = '';
-                      }}
-                    >
-                      <option value="">Select tag...</option>
-                      {availableProjectTags.map((tag) => (
-                        <option key={tag} value={tag}>{tag}</option>
-                      ))}
-                    </select>
+                    <div className="admin-item-actions" style={{ marginTop: '0.45rem' }}>
+                      <button
+                        type="button"
+                        className="playlist-watch-btn admin-item-action-btn"
+                        onClick={() => triggerInlineImageUpload({ mode: 'create', itemId: null }, createBigDescriptionRef.current)}
+                        disabled={uploadingInlineImage}
+                      >
+                        {uploadingInlineImage ? 'Uploading Inline Image...' : 'Upload Inline Image'}
+                      </button>
+                    </div>
+                    <p className="contact-note" style={{ margin: '0.35rem 0 0' }}>
+                      Places an `[ARIVERSE_IMAGE]` anchor at your cursor and maps it to the uploaded image URL.
+                    </p>
                   </>
                 ) : null}
-                {projectTags.length > 0 ? (
-                  <div className="admin-tag-list">
-                    {projectTags.map((tag) => (
+                {isProjectsSection ? (
+                  <>
+                    <label htmlFor="item-project-tag-new">Create / Add Skill Tag</label>
+                    <div className="admin-inline-row">
+                      <input
+                        id="item-project-tag-new"
+                        value={newProjectTag}
+                        onChange={(event) => setNewProjectTag(event.target.value)}
+                        placeholder="e.g., FastAPI, LangChain, MongoDB"
+                      />
                       <button
-                        key={tag}
                         type="button"
-                        className="admin-tag-chip"
-                        onClick={() => setProjectTags((prev) => prev.filter((entry) => entry !== tag))}
-                        title="Click to remove"
+                        onClick={() => {
+                          addProjectTagToSelection(newProjectTag);
+                          setNewProjectTag('');
+                        }}
                       >
-                        {tag} ×
+                        Add Tag
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                    {availableProjectTags.length > 0 ? (
+                      <>
+                        <label htmlFor="item-project-tag-existing">Reuse Existing Tag</label>
+                        <select
+                          id="item-project-tag-existing"
+                          value=""
+                          onChange={(event) => {
+                            addProjectTagToSelection(event.target.value);
+                            event.target.value = '';
+                          }}
+                        >
+                          <option value="">Select tag...</option>
+                          {availableProjectTags.map((tag) => (
+                            <option key={tag} value={tag}>{tag}</option>
+                          ))}
+                        </select>
+                      </>
+                    ) : null}
+                    {projectTags.length > 0 ? (
+                      <div className="admin-tag-list">
+                        {projectTags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className="admin-tag-chip"
+                            onClick={() => setProjectTags((prev) => prev.filter((entry) => entry !== tag))}
+                            title="Click to remove"
+                          >
+                            {tag} ×
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
                 ) : null}
               </>
             ) : null}
@@ -1233,7 +1363,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     )}
 
                     <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isMiniProjectsSection ? 'Project Description' : isProjectsSection ? 'Small Description' : isExperimentsSection ? 'Description' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
+                      {isMiniProjectsSection ? 'Project Description' : isProjectsSection || isExperimentsSection ? 'Small Description (List Page)' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
                     </label>
                     <textarea
                       id={`edit-markdown-${item.id}`}
@@ -1241,15 +1371,30 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                       value={item.markdownText || item.description || ''}
                       onChange={(event) => updateLocalItem(item.id, { markdownText: event.target.value })}
                     />
-                    {isProjectsSection ? (
+                    {isProjectsSection || isExperimentsSection ? (
                       <>
-                        <label htmlFor={`edit-big-description-${item.id}`}>Big Description (Detail Page)</label>
+                        <label htmlFor={`edit-big-description-${item.id}`}>README / Full Description (Detail Page)</label>
                         <textarea
                           id={`edit-big-description-${item.id}`}
                           rows="10"
+                          ref={(node) => {
+                            editBigDescriptionRefs.current[item.id] = node;
+                          }}
                           value={item.bigDescription || ''}
                           onChange={(event) => updateLocalItem(item.id, { bigDescription: event.target.value })}
                         />
+                        {isExperimentsSection ? (
+                          <div className="admin-item-actions" style={{ marginTop: '0.45rem' }}>
+                            <button
+                              type="button"
+                              className="playlist-watch-btn admin-item-action-btn"
+                              onClick={() => triggerInlineImageUpload({ mode: 'edit', itemId: item.id }, editBigDescriptionRefs.current[item.id])}
+                              disabled={uploadingInlineImage}
+                            >
+                              {uploadingInlineImage ? 'Uploading Inline Image...' : 'Upload Inline Image'}
+                            </button>
+                          </div>
+                        ) : null}
                       </>
                     ) : null}
                   </div>

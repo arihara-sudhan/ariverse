@@ -117,10 +117,14 @@ export default function SkillsetPage({ hero }) {
                 >
                   <span className={`skill-icon${icon ? '' : ' fallback'}`} aria-hidden="true">
                     {icon ? (
-                      <svg viewBox="0 0 24 24" role="img">
-                        <title>{icon.title}</title>
-                        <path d={icon.path} />
-                      </svg>
+                      icon.imageUrl ? (
+                        <img src={icon.imageUrl} alt={icon.title} loading="lazy" decoding="async" />
+                      ) : (
+                        <svg viewBox="0 0 24 24" role="img">
+                          <title>{icon.title}</title>
+                          <path d={icon.path} />
+                        </svg>
+                      )
                     ) : (
                       <strong>{item.skill.split(' ').map((part) => part[0]).join('').slice(0, 2)}</strong>
                     )}
@@ -184,6 +188,12 @@ export default function SkillsetPage({ hero }) {
           animation: iconColorWave 12s ease-in-out infinite;
           animation-delay: var(--wave-delay, 0s);
         }
+        .skill-icon img {
+          width: 82px;
+          height: 82px;
+          object-fit: contain;
+          display: block;
+        }
         .skill-icon.fallback strong {
           font-size: 0.95rem;
           letter-spacing: 0.05em;
@@ -221,6 +231,10 @@ export default function SkillsetPage({ hero }) {
             height: min(100%, 84px);
           }
           .skill-icon svg {
+            width: 64px;
+            height: 64px;
+          }
+          .skill-icon img {
             width: 64px;
             height: 64px;
           }

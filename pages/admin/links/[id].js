@@ -472,8 +472,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     if (!supportsComments) return;
     const key = entryId;
     const endpoint = isProjectsSection
-      ? `/api/projects/comments?projectEntryId=${entryId}`
-      : `/api/content/comments?section=${encodeURIComponent(commentsSectionKey)}&entryId=${entryId}`;
+      ? `/api/projects/comments?projectEntryId=${entryId}&includePending=true`
+      : `/api/content/comments?section=${encodeURIComponent(commentsSectionKey)}&entryId=${entryId}&includePending=true`;
     setLoadingCommentsFor((prev) => (prev.includes(key) ? prev : [...prev, key]));
     try {
       const res = await fetch(endpoint);
@@ -1455,7 +1455,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                         {(commentsByProjectId[item.id] || []).map((comment) => (
                           <div key={`${item.id}-${comment.id}`} className="admin-upload-item">
                             <span>
-                              <strong>{comment.name || 'anonymous'}:</strong> {comment.comment}
+                              <strong>{comment.name || 'anonymous'}:</strong> {comment.comment} ({comment.status || 'pending'})
                             </span>
                             <button
                               type="button"

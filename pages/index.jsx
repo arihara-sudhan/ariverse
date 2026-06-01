@@ -233,17 +233,31 @@ export default function HomePage({ profileLinks }) {
               <p className="eyebrow">leaf</p>
               <h2>Get in Touch</h2>
               <p className="contact-note">Drop ARI a message and He&apos;ll get back to you!</p>
+              <form action="https://formspree.io/f/xaqddpnz" method="POST">
+                <label htmlFor="contact-email">Your Email</label>
+                <input
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                />
 
-              <label htmlFor="contact-email">Your Email</label>
-              <input id="contact-email" type="email" placeholder="you@example.com" />
+                <label htmlFor="contact-message">Your Message</label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  placeholder="Write your message here..."
+                  rows="4"
+                  required
+                />
 
-              <label htmlFor="contact-message">Your Message</label>
-              <textarea id="contact-message" placeholder="Write your message here..." rows="4" />
-
-              <button type="button">Send Message</button>
+                <button type="submit">Send Message</button>
+              </form>
             </div>
           </section>
         </section>
+
       </main>
     </div>
   );

@@ -1904,6 +1904,7 @@ body.mini-project-open-body::-webkit-scrollbar {
   background: #fcfcfc;
 }
 
+
 .contact-note {
   margin: 0.75rem 0 0.95rem;
   color: #3f3f3f;
@@ -2025,6 +2026,7 @@ body.mini-project-open-body::-webkit-scrollbar {
   opacity: 0;
   pointer-events: none;
 }
+
 
 .tamil-text,
 :lang(ta) {
@@ -2406,6 +2408,7 @@ body.mini-project-open-body::-webkit-scrollbar {
     grid-template-columns: 1fr;
   }
 
+
   .mini-project-embed-shell iframe {
     height: 520px;
   }
@@ -2726,4 +2729,5 @@ body.mini-project-open-body::-webkit-scrollbar {
   .trial-read-more-btn {
     margin-top: 0.55rem;
   }
+
 }

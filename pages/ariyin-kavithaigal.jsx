@@ -111,14 +111,19 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
           <div className="kavithai-markdown tamil-text" lang="ta">
             <ReactMarkdown>{(selectedPoem.markdownText || '').replace(/\n/g, '  \n')}</ReactMarkdown>
           </div>
-          <DiscussionThread
-            title="Comments"
-            endpoint="/api/content/comments"
-            itemId={selectedPoem.id}
-            itemIdField="entryId"
-            extraPayload={{ section: 'kavithaigal' }}
-            initialComments={initialComments}
-          />
+          <div className="ariyin-comments-block">
+            <DiscussionThread
+              title="கருத்துகள்"
+              endpoint="/api/content/comments"
+              itemId={selectedPoem.id}
+              itemIdField="entryId"
+              extraPayload={{ section: 'kavithaigal' }}
+              initialComments={initialComments}
+              namePlaceholder="பெயர் (விருப்பமானால்)"
+              commentPlaceholder="உங்கள் எண்ணங்களை பகிரவும்"
+              submitLabel="கருத்தை பதிவிடவும்"
+            />
+          </div>
         </section>
       </main>
     );

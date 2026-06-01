@@ -1893,6 +1893,10 @@ body.mini-project-open-body::-webkit-scrollbar {
   line-height: 1.3;
 }
 
+.ariyin-comments-block {
+  margin-top: 2.5rem;
+}
+
 .contact-card {
   border-radius: 8px;
   border: none;

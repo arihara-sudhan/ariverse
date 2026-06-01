@@ -19,6 +19,7 @@ export default function AdminPage({ isAuthed, initialLinks }) {
   const [authed, setAuthed] = useState(isAuthed);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
 
   const [links, setLinks] = useState(initialLinks);
   const [label, setLabel] = useState('');
@@ -48,10 +49,23 @@ export default function AdminPage({ isAuthed, initialLinks }) {
       return;
     }
 
-    const linksRes = await fetch('/api/admin/links');
-    const data = await linksRes.json();
-    setLinks(data.links || []);
     setAuthed(true);
+    setIsLoadingLinks(true);
+
+    fetch('/api/admin/links')
+      .then(async (linksRes) => {
+        if (!linksRes.ok) {
+          throw new Error('Could not load admin links.');
+        }
+        const data = await linksRes.json();
+        setLinks(data.links || []);
+      })
+      .catch((loadError) => {
+        setError(loadError?.message || 'Could not load admin links.');
+      })
+      .finally(() => {
+        setIsLoadingLinks(false);
+      });
   }
 
   async function addLink(event) {
@@ -163,6 +177,7 @@ export default function AdminPage({ isAuthed, initialLinks }) {
               </form>
 
               <div className="playlist-grid">
+                {isLoadingLinks && <p className="contact-note">Loading section links...</p>}
                 {links.map((link) => {
                   const hidden = Number(link.isHidden) === 1;
                   const isLockedSection =

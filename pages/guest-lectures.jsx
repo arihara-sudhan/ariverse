@@ -2,15 +2,19 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import { getProfileLinkByLabel, getSectionHero, listContentComments, listLinkItems } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { useRef, useState } from 'react';
 
 const DEFAULT_GUEST_LECTURES_QUOTE =
   'Learning grows when ideas are shared with curiosity and care.';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Guest Lectures');
   if (!link) {
-    return { props: { entries: [], hero: { heading: 'Guest Lectures', imageUrl: '' }, initialCommentsByEntry: {} } };
+    return {
+      props: { entries: [], hero: { heading: 'Guest Lectures', imageUrl: '' }, initialCommentsByEntry: {} },
+      revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
+    };
   }
 
   const entries = (await listLinkItems(link.id)).filter(
@@ -28,7 +32,7 @@ export async function getServerSideProps() {
     return acc;
   }, {});
 
-  return { props: { entries, hero, initialCommentsByEntry } };
+  return { props: { entries, hero, initialCommentsByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
 export default function GuestLecturesPage({ entries, hero, initialCommentsByEntry }) {

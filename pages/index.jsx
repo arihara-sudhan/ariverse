@@ -1,4 +1,5 @@
 import { listVisibleProfileLinks } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import Header from '../src/components/Header';
 import { useEffect, useState } from 'react';
 const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.png';
@@ -27,7 +28,7 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },
 ];
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   let profileLinks = [];
 
   try {
@@ -40,6 +41,7 @@ export async function getServerSideProps() {
     props: {
       profileLinks,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

@@ -1,10 +1,7 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getProfileLinkById, getSectionHero, upsertSectionHero } from '../../../lib/adminData';
+import { toCleanText } from '../../../lib/requestUtils';
 import { enforceSameOriginWrite, isSafePublicHref } from '../../../lib/security';
-
-function toCleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
 
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {

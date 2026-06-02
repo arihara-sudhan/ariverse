@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+const COMMENTER_TOKEN_STORAGE_KEY = 'ariverse_commenter_token_v1';
 
 function formatRelativeTime(value) {
   const dt = new Date(value);
@@ -16,6 +17,26 @@ function formatRelativeTime(value) {
 function getDiceBearAvatarUrl(name) {
   const seed = encodeURIComponent(String(name || 'anonymous').trim().toLowerCase() || 'anonymous');
   return `https://api.dicebear.com/10.x/initials/svg?seed=${seed}&backgroundType=solid,gradientLinear`;
+}
+
+function getOrCreateCommenterToken() {
+  if (typeof window === 'undefined') return '';
+  let token = window.localStorage.getItem(COMMENTER_TOKEN_STORAGE_KEY);
+  if (!token) {
+    token = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    window.localStorage.setItem(COMMENTER_TOKEN_STORAGE_KEY, token);
+  }
+  return token;
+}
+
+function buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken }) {
+  const params = new URLSearchParams({ includePending: 'true', commenterToken });
+  for (const [key, value] of Object.entries({ [itemIdField]: itemId, ...(queryParams || {}) })) {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value));
+    }
+  }
+  return `${endpoint}?${params.toString()}`;
 }
 
 export default function DiscussionThread({
@@ -44,25 +65,12 @@ export default function DiscussionThread({
   const queryParamsKey = useMemo(() => JSON.stringify(queryParams || {}), [queryParams]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const storageKey = 'ariverse_commenter_token_v1';
-    let token = window.localStorage.getItem(storageKey);
-    if (!token) {
-      token = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-      window.localStorage.setItem(storageKey, token);
-    }
-    setCommenterToken(token);
+    setCommenterToken(getOrCreateCommenterToken());
   }, []);
 
   useEffect(() => {
     if (!commenterToken || !endpoint) return;
-    const params = new URLSearchParams({ includePending: 'true', commenterToken });
-    for (const [key, value] of Object.entries({ [itemIdField]: itemId, ...(queryParams || {}) })) {
-      if (value !== undefined && value !== null && value !== '') {
-        params.set(key, String(value));
-      }
-    }
-    fetch(`${endpoint}?${params.toString()}`)
+    fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken }))
       .then((res) => res.json())
       .then((data) => {
         setComments(Array.isArray(data.comments) ? data.comments : []);
@@ -123,13 +131,7 @@ export default function DiscussionThread({
         setCommentText('');
       }
       setNotice(data.message || 'Comment submitted for approval.');
-      const params = new URLSearchParams({ includePending: 'true', commenterToken });
-      for (const [key, value] of Object.entries({ [itemIdField]: itemId, ...(queryParams || {}) })) {
-        if (value !== undefined && value !== null && value !== '') {
-          params.set(key, String(value));
-        }
-      }
-      const refresh = await fetch(`${endpoint}?${params.toString()}`);
+      const refresh = await fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken }));
       const refreshData = await refresh.json().catch(() => ({}));
       if (refresh.ok && Array.isArray(refreshData.comments)) setComments(refreshData.comments);
     }

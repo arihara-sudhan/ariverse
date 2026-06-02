@@ -1,11 +1,12 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Book Reviews');
   const hero = link ? await getSectionHero(link.id, 'Book Reviews') : { heading: 'Book Reviews', description: '', imageUrl: '' };
-  return { props: { hero } };
+  return { props: { hero }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
 export default function BookReviewsPage({ hero }) {

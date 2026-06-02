@@ -1,12 +1,9 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { addProfileLink, listProfileLinks, setProfileLinkHidden } from '../../../lib/adminData';
+import { toCleanText } from '../../../lib/requestUtils';
 import { enforceSameOriginWrite, isSafePublicHref } from '../../../lib/security';
 
 const LINK_CATEGORIES = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'];
-
-function toCleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
 
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {

@@ -8,20 +8,15 @@ import {
   listLinkItems,
   updateLinkItem,
 } from '../../../lib/adminData';
+import { toCleanText, toCleanTextArray } from '../../../lib/requestUtils';
 import { enforceSameOriginWrite, isAllowedYouTubeUrl, isSafePublicHref } from '../../../lib/security';
 
-function toCleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
 function toImageUrls(value) {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+  return toCleanTextArray(value);
 }
 
 function toTagNames(value) {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+  return toCleanTextArray(value);
 }
 
 function isValidBooksCategory(category) {

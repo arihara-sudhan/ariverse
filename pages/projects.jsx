@@ -3,12 +3,13 @@ import Link from 'next/link';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listProjectEntries } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Projects');
   const hero = link ? await getSectionHero(link.id, "#Ari'sProjects") : { heading: "#Ari'sProjects", description: '', quote: '', imageUrl: '' };
   const projects = await listProjectEntries();
-  return { props: { hero, projects } };
+  return { props: { hero, projects }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
 export default function ProjectsPage({ hero, projects }) {

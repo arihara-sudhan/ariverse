@@ -1,6 +1,7 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listCareerEntries } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function renderParagraphs(text) {
   const value = typeof text === 'string' ? text.trim() : '';
@@ -37,6 +38,7 @@ export async function getStaticProps() {
       hero,
       items,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

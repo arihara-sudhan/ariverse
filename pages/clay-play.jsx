@@ -2,14 +2,18 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import { getProfileLinkByLabel, getSectionHero, listContentComments, listLinkItems } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { useRef, useState } from 'react';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const clayLink = await getProfileLinkByLabel('Clay Play');
   if (!clayLink) {
-    return { props: { entries: [], hero: { heading: 'Clay Play', imageUrl: '' }, initialCommentsByEntry: {} } };
+    return {
+      props: { entries: [], hero: { heading: 'Clay Play', imageUrl: '' }, initialCommentsByEntry: {} },
+      revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
+    };
   }
 
   const entries = (await listLinkItems(clayLink.id)).filter(
@@ -34,6 +38,7 @@ export async function getServerSideProps() {
       hero,
       initialCommentsByEntry,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

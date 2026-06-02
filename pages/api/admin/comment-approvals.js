@@ -6,17 +6,8 @@ import {
   updateProjectCommentForAdmin,
 } from '../../../lib/adminData';
 import { isAdminRequest } from '../../../lib/adminAuth';
+import { toCleanText, toPositiveInt } from '../../../lib/requestUtils';
 import { enforceSameOriginWrite } from '../../../lib/security';
-
-function toPositiveInt(value) {
-  const n = Number(value);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function toCleanText(value, maxLen = 800) {
-  if (typeof value !== 'string') return '';
-  return value.trim().slice(0, maxLen);
-}
 
 export default async function handler(req, res) {
   try {

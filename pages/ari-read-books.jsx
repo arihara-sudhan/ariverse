@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listBooksReadEntries } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   let entries = [];
   let hero = { heading: 'Books Read', imageUrl: '' };
   try {
@@ -21,6 +22,7 @@ export async function getServerSideProps() {
       entries,
       hero,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

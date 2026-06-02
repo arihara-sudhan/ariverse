@@ -1,13 +1,15 @@
-﻿import Header from '../src/components/Header';
+import Header from '../src/components/Header';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { formatCompact, getAIWithARIData } from '../lib/youtube';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const data = await getAIWithARIData(
     process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY,
   );
 
   return {
     props: data,
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

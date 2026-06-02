@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listMiniProjectEntries } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Mini-Projects');
   const hero = link ? await getSectionHero(link.id, 'Mini-Projects') : { heading: 'Mini-Projects', description: '', imageUrl: '' };
   const miniProjects = await listMiniProjectEntries();
-  return { props: { hero, miniProjects } };
+  return { props: { hero, miniProjects }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
 export default function MiniProjectsPage({ hero, miniProjects }) {

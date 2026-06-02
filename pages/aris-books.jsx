@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listArisBooksEntries } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function toWorkingBookUrl(url) {
   const input = typeof url === 'string' ? url.trim() : '';
@@ -28,7 +29,7 @@ export async function getStaticProps() {
   const link = await getProfileLinkByLabel('My Books');
   const hero = link ? await getSectionHero(link.id, 'My Books') : { heading: 'Aris Books', description: '', imageUrl: '' };
   const books = await listArisBooksEntries();
-  return { props: { hero, books } };
+  return { props: { hero, books }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
 export default function ArisBooksPage({ hero, books }) {

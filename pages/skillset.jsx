@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { SKILL_ICONS, ICON_BRAND_COLORS, getSkillIconKey, getSnakeOrder } from '../src/data/skillsetIcons';
 
 const SKILL_CATEGORIES = [
@@ -44,12 +45,12 @@ const SKILL_CATEGORIES = [
 const DEFAULT_SKILLSET_DESCRIPTION =
   'A focused map of my technical stack across AI, engineering foundations, web systems, data, DevOps, and creative tooling.';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Skillset');
   const hero = link
     ? await getSectionHero(link.id, '#AriSkills')
     : { heading: '#AriSkills', description: '', imageUrl: '' };
-  return { props: { hero } };
+  return { props: { hero }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
 export default function SkillsetPage({ hero }) {

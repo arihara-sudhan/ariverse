@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Head from 'next/head';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Header from '../src/components/Header';
@@ -109,6 +110,10 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
 
   if (selectedTrial) {
     return (
+      <>
+      <Head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+      </Head>
       <main className="kavithai-stage xperiment-detail-stage">
         <section className="kavithai-media">
           {selectedTrial.imageUrl ? (
@@ -174,11 +179,16 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
           />
         </section>
       </main>
+      </>
     );
   }
 
   if (showAll) {
     return (
+      <>
+      <Head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+      </Head>
       <main className="kavithai-stage">
         <nav className="kavithai-top-nav" aria-label="Experiment navigation">
           <Link href="/aris-xperiments" aria-label="Home">
@@ -196,6 +206,7 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
           ))}
         </section>
       </main>
+      </>
     );
   }
 

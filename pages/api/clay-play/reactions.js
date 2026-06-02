@@ -3,19 +3,10 @@ import {
   addClayPlayEntryComment,
   listClayPlayEntryReactions,
 } from '../../../lib/adminData';
+import { toCleanText, toPositiveInt } from '../../../lib/requestUtils';
 import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
 
 const MAX_BATCH_EVENTS = 25;
-
-function toPositiveInt(value) {
-  const n = Number(value);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function toCleanText(value, maxLen = 800) {
-  if (typeof value !== 'string') return '';
-  return value.trim().slice(0, maxLen);
-}
 
 export default async function handler(req, res) {
   try {

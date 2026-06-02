@@ -9,17 +9,8 @@ import {
 } from '../../../lib/adminData';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { notifyAdminCommentApproval } from '../../../lib/formspree';
+import { isTruthyQuery, toCleanText, toPositiveInt } from '../../../lib/requestUtils';
 import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
-
-function toPositiveInt(value) {
-  const n = Number(value);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function toCleanText(value, maxLen = 800) {
-  if (typeof value !== 'string') return '';
-  return value.trim().slice(0, maxLen);
-}
 
 export default async function handler(req, res) {
   try {
@@ -29,7 +20,7 @@ export default async function handler(req, res) {
         res.status(400).json({ error: 'projectEntryId is required.' });
         return;
       }
-      const includePending = String(req.query.includePending || '').toLowerCase() === 'true';
+      const includePending = isTruthyQuery(req.query.includePending);
       const commenterToken = toCleanText(req.query.commenterToken, 120);
       const comments = includePending && isAdminRequest(req)
         ? await listProjectCommentsForAdmin(projectEntryId, { includePending: true, commenterToken })

@@ -5,22 +5,37 @@ import ReactMarkdown from 'react-markdown';
 import DiscussionThread from '../src/components/DiscussionThread';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listKavithaiEntries } from '../lib/adminData';
+import {
+  getKavithaiEntryById,
+  getProfileLinkByHref,
+  getProfileLinkByLabel,
+  getSectionHero,
+  listContentComments,
+  listKavithaiEntries,
+  listKavithaiSummaries,
+} from '../lib/adminData';
 
 export async function getServerSideProps({ query }) {
-  const poems = await listKavithaiEntries();
-  const kavithaiLink = (await getProfileLinkByLabel('அரியின் கவிதைகள்')) || (await getProfileLinkByLabel('Ariyin Kavithaigal')) || (await getProfileLinkByLabel('Kavithaigal'));
-  const hero = kavithaiLink
-    ? await getSectionHero(kavithaiLink.id, 'அரியின் கவிதைகள்')
-    : { heading: 'அரியின் கவிதைகள்', description: '', imageUrl: '' };
-
   const requestedId = Number(query?.id);
-  const selectedPoem = Number.isInteger(requestedId) ? poems.find((poem) => poem.id === requestedId) || null : null;
+  const showAll = query?.view === 'all';
+  const poems = showAll || Number.isInteger(requestedId) ? await listKavithaiSummaries() : await listKavithaiEntries();
+  const selectedPoem = Number.isInteger(requestedId) ? await getKavithaiEntryById(requestedId) : null;
   const selectedIndex = selectedPoem ? poems.findIndex((poem) => poem.id === selectedPoem.id) : -1;
   const initialComments = selectedPoem
     ? await listContentComments({ sectionKey: 'kavithaigal', entryId: selectedPoem.id })
     : [];
-  const showAll = query?.view === 'all';
+  const hero = selectedPoem || showAll
+    ? null
+    : await (async () => {
+        const kavithaiLink =
+          (await getProfileLinkByHref('/ariyin-kavithaigal')) ||
+          (await getProfileLinkByLabel('அரியின் கவிதைகள்')) ||
+          (await getProfileLinkByLabel('Ariyin Kavithaigal')) ||
+          (await getProfileLinkByLabel('Kavithaigal'));
+        return kavithaiLink
+          ? getSectionHero(kavithaiLink.id, 'அரியின் கவிதைகள்')
+          : { heading: 'அரியின் கவிதைகள்', description: '', imageUrl: '' };
+      })();
 
   return {
     props: {
@@ -80,57 +95,57 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
   if (selectedPoem) {
     return (
       <>
-      <Head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-      </Head>
-      <main className="kavithai-stage kavithai-detail-stage">
-        <section className="kavithai-media">
-          {selectedPoem.imageUrl ? (
-            <img loading="lazy" decoding="async" className="kavithai-hero" src={selectedPoem.imageUrl} alt={selectedPoem.kavithaiName} />
-          ) : (
-            <div className="kavithai-media-empty" />
-          )}
-          <nav className={`kavithai-top-nav${hideTopNav ? ' is-hidden' : ''}`} aria-label="Poem navigation">
-            <Link href="/ariyin-kavithaigal" aria-label="Home">
-              <span className="material-symbols-outlined" aria-hidden="true">home</span>
-            </Link>
-            <Link href="/ariyin-kavithaigal?view=all" aria-label="All poems">
-              <span className="material-symbols-outlined" aria-hidden="true">list</span>
-            </Link>
-            {hasPrev ? (
-              <Link href={`/ariyin-kavithaigal?id=${prevPoem.id}`} aria-label="Previous poem">
-                <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        <Head>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        </Head>
+        <main className="kavithai-stage kavithai-detail-stage">
+          <section className="kavithai-media">
+            {selectedPoem.imageUrl ? (
+              <img loading="lazy" decoding="async" className="kavithai-hero" src={selectedPoem.imageUrl} alt={selectedPoem.kavithaiName} />
+            ) : (
+              <div className="kavithai-media-empty" />
+            )}
+            <nav className={`kavithai-top-nav${hideTopNav ? ' is-hidden' : ''}`} aria-label="Poem navigation">
+              <Link href="/ariyin-kavithaigal" aria-label="Home">
+                <span className="material-symbols-outlined" aria-hidden="true">home</span>
               </Link>
-            ) : null}
-            {hasNext ? (
-              <Link href={`/ariyin-kavithaigal?id=${nextPoem.id}`} aria-label="Next poem">
-                <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              <Link href="/ariyin-kavithaigal?view=all" aria-label="All poems">
+                <span className="material-symbols-outlined" aria-hidden="true">list</span>
               </Link>
-            ) : null}
-          </nav>
-        </section>
-        <section ref={panelRef} className="kavithai-panel">
-          <h1 className="kavithai-title tamil-text" lang="ta">
-            {`${selectedIndex + 1}. ${selectedPoem.kavithaiName}`}
-          </h1>
-          <div className="kavithai-markdown tamil-text" lang="ta">
-            <ReactMarkdown>{(selectedPoem.markdownText || '').replace(/\n/g, '  \n')}</ReactMarkdown>
-          </div>
-          <div className="ariyin-comments-block">
-            <DiscussionThread
-              title="கருத்துகள்"
-              endpoint="/api/content/comments"
-              itemId={selectedPoem.id}
-              itemIdField="entryId"
-              extraPayload={{ section: 'kavithaigal' }}
-              initialComments={initialComments}
-              namePlaceholder="பெயர் (விருப்பமானால்)"
-              commentPlaceholder="உங்கள் எண்ணங்களை பகிரவும்"
-              submitLabel="கருத்தை பதிவிடவும்"
-            />
-          </div>
-        </section>
-      </main>
+              {hasPrev ? (
+                <Link href={`/ariyin-kavithaigal?id=${prevPoem.id}`} aria-label="Previous poem">
+                  <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                </Link>
+              ) : null}
+              {hasNext ? (
+                <Link href={`/ariyin-kavithaigal?id=${nextPoem.id}`} aria-label="Next poem">
+                  <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                </Link>
+              ) : null}
+            </nav>
+          </section>
+          <section ref={panelRef} className="kavithai-panel">
+            <h1 className="kavithai-title tamil-text" lang="ta">
+              {`${selectedIndex + 1}. ${selectedPoem.kavithaiName}`}
+            </h1>
+            <div className="kavithai-markdown tamil-text" lang="ta">
+              <ReactMarkdown>{(selectedPoem.markdownText || '').replace(/\n/g, '  \n')}</ReactMarkdown>
+            </div>
+            <div className="ariyin-comments-block">
+              <DiscussionThread
+                title="கருத்துகள்"
+                endpoint="/api/content/comments"
+                itemId={selectedPoem.id}
+                itemIdField="entryId"
+                extraPayload={{ section: 'kavithaigal' }}
+                initialComments={initialComments}
+                namePlaceholder="பெயர் (விருப்பமானால்)"
+                commentPlaceholder="உங்கள் எண்ணங்களை பகிரவும்"
+                submitLabel="கருத்தை பதிவிடவும்"
+              />
+            </div>
+          </section>
+        </main>
       </>
     );
   }
@@ -138,26 +153,26 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
   if (showAll) {
     return (
       <>
-      <Head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-      </Head>
-      <main className="kavithai-stage">
-        <nav className="kavithai-top-nav" aria-label="Poem navigation">
-          <Link href="/ariyin-kavithaigal" aria-label="Home">
-            <span className="material-symbols-outlined" aria-hidden="true">home</span>
-          </Link>
-          <Link href="/ariyin-kavithaigal" aria-label="Grid view">
-            <span className="material-symbols-outlined" aria-hidden="true">grid_view</span>
-          </Link>
-        </nav>
-        <section className="kavithai-all-list tamil-text" lang="ta">
-          {poems.map((poem, index) => (
-            <Link key={poem.id} href={`/ariyin-kavithaigal?id=${poem.id}`}>
-              {index + 1}. {poem.kavithaiName}
+        <Head>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        </Head>
+        <main className="kavithai-stage">
+          <nav className="kavithai-top-nav" aria-label="Poem navigation">
+            <Link href="/ariyin-kavithaigal" aria-label="Home">
+              <span className="material-symbols-outlined" aria-hidden="true">home</span>
             </Link>
-          ))}
-        </section>
-      </main>
+            <Link href="/ariyin-kavithaigal" aria-label="Grid view">
+              <span className="material-symbols-outlined" aria-hidden="true">grid_view</span>
+            </Link>
+          </nav>
+          <section className="kavithai-all-list tamil-text" lang="ta">
+            {poems.map((poem, index) => (
+              <Link key={poem.id} href={`/ariyin-kavithaigal?id=${poem.id}`}>
+                {index + 1}. {poem.kavithaiName}
+              </Link>
+            ))}
+          </section>
+        </main>
       </>
     );
   }
@@ -169,12 +184,12 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
         <section aria-labelledby="ariyin-kavithaigal-title">
           <SectionHero
             heading={hero?.heading}
-            headingContent={
+            headingContent={(
               <span className="ariyin-hero-heading">
                 <span className="ariyin-hero-small tamil-text" lang="ta">{headingSmall}</span>
                 <span className="ariyin-hero-big tamil-text" lang="ta">{headingBig}</span>
               </span>
-            }
+            )}
             description={hero?.description}
             imageUrl={hero?.imageUrl}
             fallbackHeading="அரியின் கவிதைகள்"

@@ -200,7 +200,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     const formData = new FormData();
     formData.append('image', file);
     formData.append('section', link.label || '');
+    formData.append('sectionHref', link.href || '');
     formData.append('title', title || '');
+    if (meta.currentUrl) formData.append('currentUrl', meta.currentUrl);
     if (isBooksReadSection) {
       formData.append('category', meta.category || bookCategory || 'ENGLISH');
       formData.append('subcategory', meta.subcategory || bookSubcategory || 'FICTION');
@@ -583,7 +585,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     setUploading(true);
                     setError('');
                     try {
-                      const uploadedUrl = await uploadImage(files[0], 'hero');
+                      const uploadedUrl = await uploadImage(files[0], 'hero', {
+                        currentUrl: heroDraftImageUrl || heroImageUrl || '',
+                      });
                       setHeroDraftImageUrl(uploadedUrl);
                     } catch (uploadError) {
                       setError(uploadError.message || 'Upload failed.');
@@ -1223,10 +1227,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                             setError('');
                             try {
                               const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom, {
+                                currentUrl: item.imageUrl || '',
                                 category: item.category || 'ENGLISH',
                                 subcategory: item.subcategory || ((item.category || 'ENGLISH') === 'TAMIL' ? 'புனைவு' : 'FICTION'),
                               });
+                              const nextItem = { ...item, imageUrl: uploadedUrl };
                               updateLocalItem(item.id, { imageUrl: uploadedUrl });
+                              await saveItem(nextItem);
                             } catch (uploadError) {
                               setError(uploadError.message || 'Upload failed.');
                             }
@@ -1255,12 +1262,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                                   imageUrls: nextUrls,
                                 });
                               } else {
-                                const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom);
+                                const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom, {
+                                  currentUrl: item.imageUrl || '',
+                                });
                                 const nextItem = { ...item, imageUrl: uploadedUrl };
                                 updateLocalItem(item.id, { imageUrl: uploadedUrl });
-                                if (isMiniProjectsSection) {
-                                  saveItem(nextItem);
-                                }
+                                await saveItem(nextItem);
                               }
                             } catch (uploadError) {
                               setError(uploadError.message || 'Upload failed.');
@@ -1324,8 +1331,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                                 if (files.length === 0) return;
                                 setError('');
                                 try {
-                                  const uploadedUrl = await uploadImage(files[0], `${item.kavithaiFrom || 'career'}-company-logo`);
+                                  const uploadedUrl = await uploadImage(files[0], `${item.kavithaiFrom || 'career'}-company-logo`, {
+                                    currentUrl: item.companyLogoUrl || '',
+                                  });
+                                  const nextItem = { ...item, companyLogoUrl: uploadedUrl };
                                   updateLocalItem(item.id, { companyLogoUrl: uploadedUrl });
+                                  await saveItem(nextItem);
                                 } catch (uploadError) {
                                   setError(uploadError.message || 'Upload failed.');
                                 }

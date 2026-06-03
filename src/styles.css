@@ -683,10 +683,29 @@ footer {
   border-radius: 8px;
   overflow: hidden;
   height: 100%;
+  aspect-ratio: 1 / 1;
   background: #ffffff;
+  position: relative;
+}
+
+.feature-image-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.feature-image-track {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+  transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.feature-image-panel {
+  flex: 0 0 100%;
+  min-width: 100%;
+  height: 100%;
 }
 
 .feature-image img {
@@ -703,6 +722,87 @@ footer {
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+}
+
+.contact-carousel {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.contact-carousel-viewport {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.contact-carousel-track {
+  display: flex;
+  align-items: stretch;
+  will-change: transform;
+  transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.contact-carousel-panel {
+  flex: 0 0 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  min-height: 100%;
+  position: relative;
+}
+
+.contact-carousel-controls {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+  align-items: center;
+}
+
+.contact-carousel-arrow {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #d1d1d1;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.contact-carousel-arrow:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+  border-color: #bababa;
+}
+
+.contact-carousel-arrow:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+.contact-carousel-count {
+  min-width: 2.4rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid #d9d9d9;
+  background: rgba(255, 255, 255, 0.94);
+  color: #3b3b3b;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
 .feature-copy h2 {
@@ -2363,10 +2463,13 @@ body.mini-project-open-body::-webkit-scrollbar {
   .feature {
     grid-template-columns: 1fr;
     gap: 0.8rem;
+    background: #ffffff;
   }
 
   .feature-image {
-    aspect-ratio: 16 / 9;
+    width: calc(100% + 1.7rem);
+    margin-inline: -0.85rem;
+    border-radius: 0;
   }
 
   .category-content {

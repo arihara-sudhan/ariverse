@@ -10,3 +10,4 @@ dist
 .DS_Store
 Thumbs.db
 blob-folder-rules.md
+public/generated/resume/

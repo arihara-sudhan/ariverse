@@ -1,9 +1,14 @@
 import { listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import Header from '../src/components/Header';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.png';
 const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.jpg';
+const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.jpg';
+const FEATURE_IMAGES = [
+  { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
+  { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
+];
 const WELCOME_MESSAGES = [
   { lang: 'en', text: 'Welcome to ARIVERSE...' },
   { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
@@ -49,6 +54,61 @@ export default function HomePage({ profileLinks }) {
   const [welcomeIndex, setWelcomeIndex] = useState(0);
   const [typedText, setTypedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [contactIndex, setContactIndex] = useState(0);
+  const [isContactPaused, setIsContactPaused] = useState(false);
+  const contactResumeTimerRef = useRef(null);
+
+  const contactSlides = [
+    {
+      eyebrow: 'leaf',
+      title: 'Get in Touch',
+      note: "Drop ARI a message and He'll get back to you!",
+      body: (
+        <form action="https://formspree.io/f/xaqddpnz" method="POST">
+          <label htmlFor="contact-email">Your Email</label>
+          <input
+            id="contact-email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            required
+          />
+
+          <label htmlFor="contact-message">Your Message</label>
+          <textarea
+            id="contact-message"
+            name="message"
+            placeholder="Write your message here..."
+            rows="4"
+            required
+          />
+
+          <button type="submit">Send Message</button>
+        </form>
+      ),
+    },
+    {
+      eyebrow: 'ember',
+      title: 'Quick Connect',
+      note: 'If you want a faster reply, share your goal, timeline, and the best place to reach you.',
+      body: (
+        <>
+          <p className="contact-note" style={{ marginTop: 0 }}>
+            I usually reply with a short next step, a question or two, and the cleanest way to move forward.
+          </p>
+          <div className="contact-links">
+            <a href="mailto:aravindariharan@gmail.com">Email</a>
+            <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer">
+              LinkedIn
+            </a>
+            <a href="https://github.com/arihara-sudhan" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+          </div>
+        </>
+      ),
+    },
+  ];
 
   useEffect(() => {
     const currentMessage = WELCOME_MESSAGES[welcomeIndex].text;
@@ -83,6 +143,53 @@ export default function HomePage({ profileLinks }) {
 
     return () => clearTimeout(timer);
   }, [isDeleting, typedText, welcomeIndex]);
+
+  useEffect(() => {
+    if (isContactPaused || contactSlides.length <= 1) return undefined;
+
+    const timer = setInterval(() => {
+      setContactIndex((prev) => (prev + 1) % contactSlides.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [contactSlides.length, isContactPaused]);
+
+  useEffect(() => () => {
+    if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
+  }, []);
+
+  function handleContactCardClick() {
+    setIsContactPaused(true);
+    if (contactResumeTimerRef.current) {
+      clearTimeout(contactResumeTimerRef.current);
+      contactResumeTimerRef.current = null;
+    }
+  }
+
+  function handleContactMouseEnter() {
+    if (contactResumeTimerRef.current) {
+      clearTimeout(contactResumeTimerRef.current);
+      contactResumeTimerRef.current = null;
+    }
+  }
+
+  function handleContactMouseLeave() {
+    if (!isContactPaused) return;
+    if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
+    contactResumeTimerRef.current = setTimeout(() => {
+      setIsContactPaused(false);
+      contactResumeTimerRef.current = null;
+    }, 5000);
+  }
+
+  function goToContactSlide(nextIndex) {
+    setContactIndex(nextIndex);
+    setIsContactPaused(true);
+    if (contactResumeTimerRef.current) {
+      clearTimeout(contactResumeTimerRef.current);
+      contactResumeTimerRef.current = null;
+    }
+  }
 
   const safeLinks = Array.isArray(profileLinks) && profileLinks.length > 0 ? profileLinks : HOME_FALLBACK_LINKS;
   const hasMiniProjects = safeLinks.some((link) => String(link.label).trim() === 'Mini-Projects');
@@ -228,34 +335,90 @@ export default function HomePage({ profileLinks }) {
 
         <section className="feature" id="contact">
           <figure className="feature-image">
-            <img loading="lazy" decoding="async" draggable={false} src={HERO_FLOWER_URL} alt="Glory lily flower" />
+            <div className="feature-image-viewport">
+              <div
+                className="feature-image-track"
+                style={{ transform: `translateX(-${contactIndex * 100}%)` }}
+              >
+                {FEATURE_IMAGES.map((image) => (
+                  <div className="feature-image-panel" key={image.src}>
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                      src={image.src}
+                      alt={image.alt}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
           </figure>
           <section className="feature-copy">
-            <div className="contact-card">
-              <p className="eyebrow">leaf</p>
-              <h2>Get in Touch</h2>
-              <p className="contact-note">Drop ARI a message and He&apos;ll get back to you!</p>
-              <form action="https://formspree.io/f/xaqddpnz" method="POST">
-                <label htmlFor="contact-email">Your Email</label>
-                <input
-                  id="contact-email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                />
-
-                <label htmlFor="contact-message">Your Message</label>
-                <textarea
-                  id="contact-message"
-                  name="message"
-                  placeholder="Write your message here..."
-                  rows="4"
-                  required
-                />
-
-                <button type="submit">Send Message</button>
-              </form>
+            <div
+              className="contact-carousel"
+              onMouseEnter={handleContactMouseEnter}
+              onMouseLeave={handleContactMouseLeave}
+              onClick={handleContactCardClick}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isContactPaused}
+              aria-label="Contact card carousel"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleContactCardClick();
+                }
+              }}
+            >
+              <div className="contact-carousel-viewport">
+                <div
+                  className="contact-carousel-track"
+                  style={{ transform: `translateX(-${contactIndex * 100}%)` }}
+                >
+                  {contactSlides.map((slide) => (
+                    <article className="contact-card contact-carousel-panel" key={slide.title}>
+                      <p className="eyebrow">{slide.eyebrow}</p>
+                      <h2>{slide.title}</h2>
+                      <p className="contact-note">{slide.note}</p>
+                      {slide.body}
+                    </article>
+                  ))}
+                </div>
+              </div>
+              {isContactPaused ? (
+                <div className="contact-carousel-controls" aria-label="Contact navigation">
+                  {contactIndex > 0 ? (
+                    <button
+                      type="button"
+                      className="contact-carousel-arrow"
+                      aria-label="Previous contact card"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goToContactSlide(contactIndex - 1);
+                      }}
+                    >
+                      <span aria-hidden="true">←</span>
+                    </button>
+                  ) : null}
+                  <span className="contact-carousel-count" aria-live="polite">
+                    {contactIndex + 1}/{contactSlides.length}
+                  </span>
+                  {contactIndex < contactSlides.length - 1 ? (
+                    <button
+                      type="button"
+                      className="contact-carousel-arrow"
+                      aria-label="Next contact card"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goToContactSlide(contactIndex + 1);
+                      }}
+                    >
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </section>
         </section>

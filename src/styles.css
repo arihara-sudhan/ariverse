@@ -2676,10 +2676,6 @@ body.mini-project-open-body::-webkit-scrollbar {
     font-size: clamp(3.6rem, 12vw, 5.2rem);
   }
 
-  .intro-title-sub {
-    display: none;
-  }
-
   .photo-block {
     order: 2;
     width: min(100%, 620px);

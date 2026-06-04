@@ -3,8 +3,8 @@ import Link from 'next/link';
 export default function Header({ subPage = false }) {
   return (
     <header className="topbar">
-      <Link className="brand" href="/" aria-label="Ariverse home">
-        ARIVERSE
+      <Link className="brand" href="/" aria-label="ARIVERSE home">
+        <span className="brand-text">ARIVERSE</span>
       </Link>
       <nav className="nav nav-social" aria-label="Social links">
         <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer" aria-label="LinkedIn">

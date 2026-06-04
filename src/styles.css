@@ -26,6 +26,19 @@
   box-sizing: border-box;
 }
 
+img,
+picture,
+video,
+canvas,
+svg {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+img {
+  pointer-events: none;
+}
+
 html {
   scroll-behavior: smooth;
   scrollbar-width: thin;

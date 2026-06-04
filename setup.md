@@ -78,6 +78,8 @@ We keep Blob paths section-based so uploads, restores, and migrations all agree 
 - `assets/` - shared site images and generated assets
 - `ariyin-kavithaigal/hero.webp` - section hero image
 - `ariyin-kavithaigal/<entry-slug>.webp` - poem images
+- `ari-resume/resume.pdf` - resume PDF
+- `ari-resume/pages/<page-slug>.webp` - resume page images
 - `books-read/hero.webp` - section hero image
 - `books-read/<language>/<fiction-or-non-fiction>/<book-slug>.webp` - book cover images
 - `clay-play/hero.webp` - section hero image
@@ -101,6 +103,7 @@ Rules:
 
 - `hero.webp` is reserved for each section's header image.
 - Gallery sections use a nested `<entry-slug>/` folder so related images stay grouped.
+- Resume assets are stored under `ari-resume/` with the PDF at `resume.pdf` and page images under `pages/`.
 - Uploaded images are converted to `.webp` before storage.
 - Re-uploads keep the same path when the current blob path already matches the section structure.
 

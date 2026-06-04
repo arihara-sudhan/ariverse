@@ -1,7 +1,7 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
-import { ensureResumeImages } from '../lib/resumePdfToImages';
+import { getProfileLinkByLabel, getResumeAssets, getSectionHero } from '../lib/adminData';
+import { readFallbackResumeAssets } from '../lib/resumeAssets';
 
 const DEFAULT_DESCRIPTION = 'Resume building is like a bird building its nest, carefully collecting pieces from different places and shaping them into something meaningful. This document is a small reflection of what Ari brings to the table, and a glimpse into the work, learning, and projects built over the years.';
 const DEFAULT_RESUME_DOC_URL = 'https://arihara-sudhan.github.io/resume/resume.pdf';
@@ -11,13 +11,12 @@ export async function getServerSideProps() {
   const hero = link
     ? await getSectionHero(link.id, 'Resume')
     : { heading: 'Resume', description: '', quote: '', imageUrl: '' };
-  const resumeDocUrl = process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
-  let resumeImages = [];
-  try {
-    resumeImages = await ensureResumeImages(resumeDocUrl);
-  } catch (_error) {
-    resumeImages = [];
-  }
+  const fallbackAssets = await readFallbackResumeAssets();
+  const resumeAssets = link ? await getResumeAssets(link.id) : null;
+  const resumeDocUrl = resumeAssets?.pdfUrl || fallbackAssets.pdfUrl || process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
+  const resumeImages = Array.isArray(resumeAssets?.pageImageUrls) && resumeAssets.pageImageUrls.length > 0
+    ? resumeAssets.pageImageUrls
+    : fallbackAssets.pageImageUrls;
 
   return {
     props: {
@@ -91,12 +90,7 @@ export default function ResumePage({ hero, resumeDocUrl, resumeImages }) {
                 ))}
               </div>
             ) : (
-              <iframe
-                title="Ari Resume"
-                src={resumeDocUrl}
-                className="resume-document-frame"
-                loading="lazy"
-              />
+              <iframe title="Ari Resume" src={resumeDocUrl} className="resume-document-frame" loading="lazy" />
             )}
           </div>
         </section>

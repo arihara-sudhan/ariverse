@@ -3,7 +3,8 @@ import { useRef, useState } from 'react';
 import Header from '../../../src/components/Header';
 import SectionHero from '../../../src/components/SectionHero';
 import { isAdminRequest } from '../../../lib/adminAuth';
-import { getProfileLinkById, getSectionHero, listLinkItems } from '../../../lib/adminData';
+import { getProfileLinkById, getResumeAssets, getSectionHero, listLinkItems } from '../../../lib/adminData';
+import { readFallbackResumeAssets } from '../../../lib/resumeAssets';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 const DEFAULT_PROJECT_CATEGORIES = ['Deep Learning', 'Product Engineering', 'AI Engineering', 'Robotic Process Automation'];
@@ -59,22 +60,26 @@ export async function getServerSideProps({ req, params }) {
     ...item,
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : item?.createdAt || '',
   }));
+  const fallbackResumeAssets = link.label === 'Resume' ? await readFallbackResumeAssets() : null;
+  const initialResumeAssets = link.label === 'Resume' ? await getResumeAssets(linkId) : null;
 
   return {
     props: {
       link,
       initialHero: await getSectionHero(linkId, link.label),
       initialItems,
+      initialResumeAssets: initialResumeAssets || fallbackResumeAssets,
     },
   };
 }
 
-export default function LinkAdminPage({ link, initialItems, initialHero }) {
+export default function LinkAdminPage({ link, initialItems, initialHero, initialResumeAssets }) {
   const sectionLabel = String(link?.label || '').trim();
   const isBinomialSection = sectionLabel === 'Binomial Names';
   const isClayPlaySection = sectionLabel === 'Clay Play';
   const isGuestLecturesSection = sectionLabel === 'Guest Lectures';
   const isBookReviewsSection = sectionLabel === 'Book Reviews';
+  const isResumeSection = sectionLabel === 'Resume';
   const isGallerySection = isClayPlaySection || isGuestLecturesSection || isBookReviewsSection;
   const isBooksReadSection = sectionLabel === 'Books Read';
   const isExperimentsSection = sectionLabel === 'Experiments';
@@ -108,6 +113,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [newProjectCategory, setNewProjectCategory] = useState('');
   const [bookCategory, setBookCategory] = useState(isBookReviewsSection ? 'TAMIL' : 'ENGLISH');
   const [bookSubcategory, setBookSubcategory] = useState('FICTION');
+  const [resumePdfUrl, setResumePdfUrl] = useState(initialResumeAssets?.pdfUrl || '');
+  const [resumePageImageUrls, setResumePageImageUrls] = useState(
+    Array.isArray(initialResumeAssets?.pageImageUrls) ? initialResumeAssets.pageImageUrls : [],
+  );
+  const [uploadingResumeAssets, setUploadingResumeAssets] = useState(false);
   const [markdownText, setMarkdownText] = useState('');
   const [bigDescription, setBigDescription] = useState('');
   const [projectTags, setProjectTags] = useState([]);
@@ -435,6 +445,61 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     });
   }
 
+  async function persistResumeAssets(nextPdfUrl, nextPageImageUrls) {
+    const res = await fetch('/api/admin/resume-assets', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        linkId: link.id,
+        pdfUrl: nextPdfUrl || '',
+        pageImageUrls: Array.isArray(nextPageImageUrls) ? nextPageImageUrls : [],
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Could not save resume assets.');
+    }
+    return data.asset || null;
+  }
+
+  async function uploadResumePdf(file) {
+    const formData = new FormData();
+    formData.append('pdf', file);
+    formData.append('currentUrl', resumePdfUrl || '');
+    const res = await fetch('/api/admin/upload-resume-pdf', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'PDF upload failed.');
+    }
+    return data.pdfUrl;
+  }
+
+  async function uploadResumePageImages(files) {
+    const uploadedUrls = [];
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('section', 'Resume');
+      formData.append('sectionHref', '/ari-resume');
+      formData.append('title', `page-${index + 1}`);
+      formData.append('currentUrl', resumePageImageUrls[index] || '');
+      const res = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Resume page upload failed.');
+      }
+      uploadedUrls.push(data.imageUrl);
+    }
+    return uploadedUrls;
+  }
+
   async function saveItem(item) {
     setPendingSaveIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
     try {
@@ -633,6 +698,82 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
               </form>
             )}
           </section>
+
+          {isResumeSection ? (
+            <section className="contact-card">
+              <p className="contact-note">Resume assets</p>
+              <p className="contact-note" style={{ marginTop: 0 }}>
+                PDF: {' '}
+                {resumePdfUrl ? (
+                  <a href={resumePdfUrl} target="_blank" rel="noreferrer">
+                    Open current PDF
+                  </a>
+                ) : (
+                  'No PDF uploaded yet.'
+                )}
+              </p>
+              <label htmlFor="resume-pdf-upload">Upload / Replace Resume PDF</label>
+              <input
+                id="resume-pdf-upload"
+                type="file"
+                accept="application/pdf"
+                onChange={async (event) => {
+                  const files = Array.from(event.target.files || []);
+                  if (files.length === 0) return;
+                  setUploadingResumeAssets(true);
+                  setError('');
+                  try {
+                    const uploadedPdfUrl = await uploadResumePdf(files[0]);
+                    setResumePdfUrl(uploadedPdfUrl);
+                    await persistResumeAssets(uploadedPdfUrl, resumePageImageUrls);
+                  } catch (uploadError) {
+                    setError(uploadError.message || 'PDF upload failed.');
+                  } finally {
+                    setUploadingResumeAssets(false);
+                  }
+                }}
+              />
+
+              <label htmlFor="resume-pages-upload">Upload / Replace Resume Pages</label>
+              <input
+                id="resume-pages-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={async (event) => {
+                  const files = Array.from(event.target.files || []);
+                  if (files.length === 0) return;
+                  setUploadingResumeAssets(true);
+                  setError('');
+                  try {
+                    const uploadedPageUrls = await uploadResumePageImages(files);
+                    setResumePageImageUrls(uploadedPageUrls);
+                    await persistResumeAssets(resumePdfUrl, uploadedPageUrls);
+                  } catch (uploadError) {
+                    setError(uploadError.message || 'Resume page upload failed.');
+                  } finally {
+                    setUploadingResumeAssets(false);
+                  }
+                }}
+              />
+              {Array.isArray(resumePageImageUrls) && resumePageImageUrls.length > 0 ? (
+                <div className="admin-upload-list" style={{ marginTop: '0.75rem' }}>
+                  {resumePageImageUrls.map((url, index) => (
+                    <div key={`${url}-${index}`} className="admin-upload-item">
+                      <span>
+                        Page {index + 1}: {url}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <div className="admin-item-actions" style={{ marginTop: '0.8rem' }}>
+                <button type="button" disabled={uploadingResumeAssets}>
+                  {uploadingResumeAssets ? 'Uploading...' : 'Resume assets ready'}
+                </button>
+              </div>
+            </section>
+          ) : null}
 
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>

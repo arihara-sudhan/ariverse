@@ -4,7 +4,6 @@
     "version": "0.0.0",
     "scripts": {
         "dev": "next dev --webpack",
-        "prebuild": "node scripts/generate-resume-images.mjs",
         "build": "next build",
         "start": "next start",
         "resume:images": "node scripts/generate-resume-images.mjs",

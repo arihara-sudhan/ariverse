@@ -67,6 +67,7 @@ function resolveSectionFolder(section, sectionHref = '') {
   if (rawHref === '/ari-read-books' || rawSection === 'Books Read') return 'books-read';
   if (rawHref === '/guest-lectures' || rawSection === 'Guest Lectures') return 'guest-lectures';
   if (rawHref === '/book-reviews' || rawSection === 'Book Reviews') return 'book-reviews';
+  if (rawHref === '/ari-resume' || rawSection === 'Resume') return 'ari-resume';
   if (rawHref === '/clay-play' || rawSection === 'Clay Play') return 'clay-play';
   if (rawHref === '/aris-xperiments' || rawSection === 'Experiments') return 'experiments';
   if (rawHref === '/mini-projects' || rawSection === 'Mini-Projects') return 'mini-projects';
@@ -132,6 +133,13 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
 
   if (sectionFolder === 'book-reviews') {
     return joinBlobPath('book-reviews', titleBase, `${baseName}${ext}`);
+  }
+
+  if (sectionFolder === 'ari-resume') {
+    if (titleFolder === 'hero') {
+      return `ari-resume/hero${ext}`;
+    }
+    return joinBlobPath('ari-resume', 'pages', `${titleBase}${ext}`);
   }
 
   if (sectionFolder === 'mini-projects' || sectionFolder === 'experiments' || sectionFolder === 'guest-lectures' || sectionFolder === 'binomial-names') {

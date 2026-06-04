@@ -11,7 +11,7 @@
 10. kavthai bg not good;
 11. need comment option for kavithai
 12. like options as well
-13. cehck hardcoded stuffs in data
+13. check hardcoded stuffs in data
 14. need filter categories for http://localhost:3000/aris-xperiments: after hero All, DL- Computer Vision
 15. REMOVE LOCALLY
  create mode 100644 public/generated/resume/05ed8882157ce3c7/manifest.json

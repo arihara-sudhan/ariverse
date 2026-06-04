@@ -2,9 +2,9 @@ import { listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
-const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.png';
-const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.jpg';
-const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.jpg';
+const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
+const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
+const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.webp';
 const FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
@@ -56,55 +56,98 @@ export default function HomePage({ profileLinks }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [contactIndex, setContactIndex] = useState(0);
   const [isContactPaused, setIsContactPaused] = useState(false);
+  const [subscriptionState, setSubscriptionState] = useState('idle');
+  const [subscriptionMessage, setSubscriptionMessage] = useState('');
   const contactResumeTimerRef = useRef(null);
+  const subscriptionResetTimerRef = useRef(null);
+
+  async function handleSubscribeSubmit(event) {
+    event.preventDefault();
+    if (subscriptionState === 'sending') return;
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setSubscriptionState('sending');
+    setSubscriptionMessage('Subscribing you to Ariverse...');
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          email: String(formData.get('email') || '').trim(),
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to subscribe right now.');
+      }
+
+      form.reset();
+      setSubscriptionState('success');
+      setSubscriptionMessage(payload?.message || 'Subscribed! You will receive Ariverse updates.');
+
+      if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
+      subscriptionResetTimerRef.current = setTimeout(() => {
+        setSubscriptionState('idle');
+        setSubscriptionMessage('');
+        subscriptionResetTimerRef.current = null;
+      }, 3500);
+    } catch (_error) {
+      setSubscriptionState('error');
+      setSubscriptionMessage('Unable to subscribe right now. Please try again.');
+
+      if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
+      subscriptionResetTimerRef.current = setTimeout(() => {
+        setSubscriptionState('idle');
+        setSubscriptionMessage('');
+        subscriptionResetTimerRef.current = null;
+      }, 4500);
+    }
+  }
 
   const contactSlides = [
     {
       eyebrow: 'leaf',
-      title: 'Get in Touch',
-      note: "Drop ARI a message and He'll get back to you!",
+      title: 'Subscribe to Ariverse',
+      note: 'Get updates when new career posts, projects, experiments, lectures, books, clay play, and books read entries are added.',
       body: (
-        <form action="https://formspree.io/f/xaqddpnz" method="POST">
-          <label htmlFor="contact-email">Your Email</label>
+        <form onSubmit={handleSubscribeSubmit}>
+          <label htmlFor="subscribe-email">Your Email</label>
           <input
-            id="contact-email"
+            id="subscribe-email"
             name="email"
             type="email"
             placeholder="you@example.com"
             required
           />
 
-          <label htmlFor="contact-message">Your Message</label>
-          <textarea
-            id="contact-message"
-            name="message"
-            placeholder="Write your message here..."
-            rows="4"
-            required
-          />
-
-          <button type="submit">Send Message</button>
+          <button type="submit" disabled={subscriptionState === 'sending' || subscriptionState === 'success'}>
+            {subscriptionState === 'sending' ? 'Subscribing...' : subscriptionState === 'success' ? 'Subscribed ✓' : 'Subscribe'}
+          </button>
+          {subscriptionMessage ? (
+            <p className={`contact-status ${subscriptionState}`}>{subscriptionMessage}</p>
+          ) : null}
         </form>
       ),
     },
     {
       eyebrow: 'ember',
-      title: 'Quick Connect',
-      note: 'If you want a faster reply, share your goal, timeline, and the best place to reach you.',
+      title: 'What you will receive',
+      note: 'One email when new content lands, across the sections you care about.',
       body: (
         <>
           <p className="contact-note" style={{ marginTop: 0 }}>
-            I usually reply with a short next step, a question or two, and the cleanest way to move forward.
+            You will get updates for new posts in:
           </p>
-          <div className="contact-links">
-            <a href="mailto:aravindariharan@gmail.com">Email</a>
-            <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer">
-              LinkedIn
-            </a>
-            <a href="https://github.com/arihara-sudhan" target="_blank" rel="noreferrer">
-              GitHub
-            </a>
-          </div>
+          <p className="contact-note" style={{ marginBottom: 0 }}>
+            Career, Projects, Mini-Projects, Experiments, Guest Lectures, Clay Play, and Books Read.
+          </p>
         </>
       ),
     },
@@ -156,6 +199,7 @@ export default function HomePage({ profileLinks }) {
 
   useEffect(() => () => {
     if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
+    if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
   }, []);
 
   function handleContactCardClick() {

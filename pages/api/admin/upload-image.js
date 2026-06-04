@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { del, put } from '@vercel/blob';
 import formidable from 'formidable';
+import sharp from 'sharp';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
 
@@ -85,11 +86,11 @@ function joinBlobPath(...parts) {
 function buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext }) {
   const sectionFolder = resolveSectionFolder(section, sectionHref);
   const titleFolder = toFolderName(title);
-  const categoryFolder = toFolderName(category);
   const subcategoryFolder = toFolderName(subcategory);
   const rawCategory = String(category || '').trim().toLowerCase();
   const rawSubcategory = String(subcategory || '').trim().toLowerCase();
   const titleBase = toFileNameBase(title) || baseName;
+  const looksLikeLogo = titleFolder.endsWith('-company-logo') || titleFolder.includes('company-logo') || titleFolder.includes('logo');
 
   if (titleFolder === 'hero') {
     return `${sectionFolder}/hero${ext}`;
@@ -100,11 +101,20 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   }
 
   if (sectionFolder === 'careers') {
-    const isCompanyLogo = titleFolder.endsWith('-company-logo') || titleFolder.includes('company-logo');
-    if (isCompanyLogo) {
+    if (looksLikeLogo) {
       return `careers/company-logos/${baseName}${ext}`;
     }
     return `careers/company-photos/${titleBase}${ext}`;
+  }
+
+  if (sectionFolder === 'projects') {
+    if (titleFolder === 'hero') {
+      return `projects/hero${ext}`;
+    }
+    if (looksLikeLogo) {
+      return `projects/company-logos/${titleBase}${ext}`;
+    }
+    return `projects/company-photos/${titleBase}${ext}`;
   }
 
   if (sectionFolder === 'books-read') {
@@ -119,7 +129,7 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
     return joinBlobPath('aris-books', 'book-covers', `${titleBase}${ext}`);
   }
 
-  if (sectionFolder === 'mini-projects' || sectionFolder === 'projects' || sectionFolder === 'experiments' || sectionFolder === 'guest-lectures' || sectionFolder === 'binomial-names') {
+  if (sectionFolder === 'mini-projects' || sectionFolder === 'experiments' || sectionFolder === 'guest-lectures' || sectionFolder === 'binomial-names') {
     return joinBlobPath(sectionFolder, `${titleBase}${ext}`);
   }
 
@@ -153,6 +163,12 @@ function normalizeBlobPath(url) {
   }
 }
 
+function replaceBlobExt(pathname, ext = '.webp') {
+  const clean = String(pathname || '').trim();
+  if (!clean) return '';
+  return clean.replace(/\.[^/.]+$/, ext);
+}
+
 function isCleanSectionPath(pathname, sectionFolder) {
   const path = String(pathname || '').trim();
   const section = String(sectionFolder || '').trim();
@@ -184,7 +200,6 @@ export default async function handler(req, res) {
       return;
     }
 
-    const ext = ALLOWED_MIME_TO_EXT[file.mimetype] || '.png';
     const section = Array.isArray(fields?.section) ? fields.section[0] : fields?.section;
     const sectionHref = Array.isArray(fields?.sectionHref) ? fields.sectionHref[0] : fields?.sectionHref;
     const title = Array.isArray(fields?.title) ? fields.title[0] : fields?.title;
@@ -194,9 +209,10 @@ export default async function handler(req, res) {
     const baseName = toFileBaseFromOriginalName(file.originalFilename || '');
     const sectionFolder = resolveSectionFolder(section, sectionHref);
     const currentPath = normalizeBlobPath(currentUrl);
+    const outputExt = '.webp';
     const fileName = isCleanSectionPath(currentPath, sectionFolder)
-      ? currentPath
-      : buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext });
+      ? replaceBlobExt(currentPath, outputExt)
+      : buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext: outputExt });
 
     if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
       res.status(413).json({ error: 'File too large.' });
@@ -204,6 +220,9 @@ export default async function handler(req, res) {
     }
 
     const fileBuffer = await readFile(file.filepath);
+    const webpBuffer = await sharp(fileBuffer, { animated: true })
+      .webp({ quality: 100, effort: 3 })
+      .toBuffer();
     const existingUrl = normalizeBlobUrl(currentUrl);
     if (existingUrl && normalizeBlobPath(existingUrl) !== fileName) {
       try {
@@ -214,12 +233,12 @@ export default async function handler(req, res) {
       }
     }
 
-    const blob = await put(fileName, fileBuffer, {
+    const blob = await put(fileName, webpBuffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
       addRandomSuffix: false,
       allowOverwrite: true,
-      contentType: file.mimetype,
+      contentType: 'image/webp',
     });
 
     res.status(200).json({ imageUrl: `${blob.url}?v=${Date.now()}`, storageUrl: blob.url });

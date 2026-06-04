@@ -9,7 +9,8 @@
         "migrate:kavithai-images": "node scripts/migrate-kavithai-images-to-blob.mjs",
         "migrate:assets": "node scripts/migrate-assets-to-blob.mjs",
         "migrate:mini-project-pngs": "node scripts/migrate-mini-project-pngs-to-blob.mjs",
-        "blob:download": "node scripts/download-blob-to-local.mjs"
+        "blob:download": "node scripts/download-blob-to-local.mjs",
+        "blob:webp": "node scripts/squoosh-webp-and-force-push.mjs"
     },
     "dependencies": {
         "@neondatabase/serverless": "^1.1.0",

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Head from 'next/head';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DiscussionThread from '../src/components/DiscussionThread';
@@ -95,9 +94,6 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
   if (selectedPoem) {
     return (
       <>
-        <Head>
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-        </Head>
         <main className="kavithai-stage kavithai-detail-stage">
           <section className="kavithai-media">
             {selectedPoem.imageUrl ? (
@@ -153,9 +149,6 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
   if (showAll) {
     return (
       <>
-        <Head>
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-        </Head>
         <main className="kavithai-stage">
           <nav className="kavithai-top-nav" aria-label="Poem navigation">
             <Link href="/ariyin-kavithaigal" aria-label="Home">

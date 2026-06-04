@@ -14,61 +14,56 @@ const sql = neon(databaseUrl);
 const shouldDeleteOld = process.argv.includes('--delete-old');
 const isDryRun = process.argv.includes('--dry-run');
 
-function normalizePathStepOne(rawPath) {
-  let p = String(rawPath || '').replace(/\\/g, '/').replace(/^\/+/, '');
-  p = p.replace(/\/uploads\/uploads\//g, '/uploads/');
-  if (p.startsWith('assets/mini-projects/')) {
-    p = p.replace(/^assets\/mini-projects\//, 'mini-projects/');
+function toPosixPath(value) {
+  return String(value || '').replace(/\\/g, '/').replace(/^\/+/, '');
+}
+
+function getBaseName(pathname) {
+  const clean = toPosixPath(pathname);
+  const idx = clean.lastIndexOf('/');
+  return idx === -1 ? clean : clean.slice(idx + 1);
+}
+
+function canonicalizeBlobPath(rawPath) {
+  const p = toPosixPath(rawPath);
+  if (!p) return '';
+  const lower = p.toLowerCase();
+  const base = getBaseName(p);
+  const looksLikeLogo = lower.includes('company-logo') || base.toLowerCase().includes('logo');
+
+  if (lower.startsWith('career/uploads/uploads/')) {
+    return looksLikeLogo
+      ? `careers/company-logos/${base}`
+      : `careers/company-photos/${base}`;
+  }
+  if (lower.startsWith('projects/company-logos/')) {
+    return `careers/company-logos/${base}`;
+  }
+  if (lower.startsWith('projects/uploads/uploads/hero/')) {
+    return 'projects/hero.webp';
+  }
+  if (lower.startsWith('projects/uploads/uploads/')) {
+    return `projects/company-photos/${base}`;
+  }
+  if (lower.startsWith('mini-projects/uploads/uploads/hero/')) {
+    return 'mini-projects/hero.webp';
+  }
+  if (lower.startsWith('mini-projects/uploads/uploads/')) {
+    return `mini-projects/${base}`;
+  }
+  if (lower.startsWith('experiments/uploads/uploads/hero/')) {
+    return 'experiments/hero.webp';
+  }
+  if (lower.startsWith('experiments/uploads/uploads/')) {
+    return `experiments/${base}`;
+  }
+  if (lower.startsWith('skillset/uploads/uploads/hero/')) {
+    return 'skillset/hero.webp';
+  }
+  if (lower.startsWith('career/')) {
+    return p.replace(/^career\//, 'careers/');
   }
   return p;
-}
-
-function dirnamePosix(p) {
-  const idx = p.lastIndexOf('/');
-  return idx === -1 ? '' : p.slice(0, idx);
-}
-
-function basenamePosix(p) {
-  const idx = p.lastIndexOf('/');
-  return idx === -1 ? p : p.slice(idx + 1);
-}
-
-function buildUploadsFileOnlyDirs(paths) {
-  const dirHasSubdir = new Set();
-  const dirHasFiles = new Set();
-  const allDirs = new Set();
-
-  for (const p of paths) {
-    const parts = p.split('/');
-    for (let i = 0; i < parts.length - 1; i += 1) {
-      allDirs.add(parts.slice(0, i + 1).join('/'));
-    }
-    const fileDir = dirnamePosix(p);
-    if (fileDir) dirHasFiles.add(fileDir);
-    for (let i = 0; i < parts.length - 2; i += 1) {
-      const parent = parts.slice(0, i + 1).join('/');
-      const childDir = parts.slice(0, i + 2).join('/');
-      if (parent && childDir) dirHasSubdir.add(parent);
-    }
-  }
-
-  const flattenDirs = new Set();
-  for (const d of allDirs) {
-    if (!d.endsWith('/uploads')) continue;
-    if (dirHasFiles.has(d) && !dirHasSubdir.has(d)) {
-      flattenDirs.add(d);
-    }
-  }
-  return flattenDirs;
-}
-
-function applyFinalPathRules(stepOnePath, flattenDirs) {
-  const dir = dirnamePosix(stepOnePath);
-  if (flattenDirs.has(dir)) {
-    const parent = dirnamePosix(dir);
-    return parent ? `${parent}/${basenamePosix(stepOnePath)}` : basenamePosix(stepOnePath);
-  }
-  return stepOnePath;
 }
 
 function tryTransformBlobUrl(url, finalPathByOldPath, finalUrlByPath) {
@@ -109,15 +104,11 @@ async function main() {
   }
   console.log(`Loaded ${blobs.length} blob objects.`);
 
-  const stepOnePaths = blobs.map((b) => normalizePathStepOne(b.pathname));
-  const flattenDirs = buildUploadsFileOnlyDirs(stepOnePaths);
-
   const finalPathByOldPath = new Map();
   const oldBlobByPath = new Map();
   for (const blob of blobs) {
     const oldPath = String(blob.pathname || '').replace(/^\/+/, '');
-    const stepOne = normalizePathStepOne(oldPath);
-    const finalPath = applyFinalPathRules(stepOne, flattenDirs);
+    const finalPath = canonicalizeBlobPath(oldPath);
     finalPathByOldPath.set(oldPath, finalPath);
     oldBlobByPath.set(oldPath, blob);
   }
@@ -183,6 +174,32 @@ async function main() {
     if (next !== row.image_url) updates.push(updateTableUrlColumn('ariyin_kavithaigal', 'id', row.id, 'image_url', next));
   }
 
+  const projectRows = await sql`SELECT id, logo_url FROM projects_entries`;
+  for (const row of projectRows) {
+    const next = tryTransformBlobUrl(String(row.logo_url || ''), finalPathByOldPath, finalUrlByPath);
+    if (next !== row.logo_url) updates.push(updateTableUrlColumn('projects_entries', 'id', row.id, 'logo_url', next));
+  }
+
+  const miniRows = await sql`SELECT id, logo_url FROM mini_projects_entries`;
+  for (const row of miniRows) {
+    const next = tryTransformBlobUrl(String(row.logo_url || ''), finalPathByOldPath, finalUrlByPath);
+    if (next !== row.logo_url) updates.push(updateTableUrlColumn('mini_projects_entries', 'id', row.id, 'logo_url', next));
+  }
+
+  const experimentRows = await sql`SELECT id, image_url FROM experiments_entries`;
+  for (const row of experimentRows) {
+    const next = tryTransformBlobUrl(String(row.image_url || ''), finalPathByOldPath, finalUrlByPath);
+    if (next !== row.image_url) updates.push(updateTableUrlColumn('experiments_entries', 'id', row.id, 'image_url', next));
+  }
+
+  const careerRows = await sql`SELECT id, image_url, company_logo_url FROM career_entries`;
+  for (const row of careerRows) {
+    const nextImage = tryTransformBlobUrl(String(row.image_url || ''), finalPathByOldPath, finalUrlByPath);
+    const nextLogo = tryTransformBlobUrl(String(row.company_logo_url || ''), finalPathByOldPath, finalUrlByPath);
+    if (nextImage !== row.image_url) updates.push(updateTableUrlColumn('career_entries', 'id', row.id, 'image_url', nextImage));
+    if (nextLogo !== row.company_logo_url) updates.push(updateTableUrlColumn('career_entries', 'id', row.id, 'company_logo_url', nextLogo));
+  }
+
   const clayRows = await sql`SELECT id, image_url, image_urls FROM clay_play_entries`;
   for (const row of clayRows) {
     const nextImage = tryTransformBlobUrl(String(row.image_url || ''), finalPathByOldPath, finalUrlByPath);
@@ -225,4 +242,3 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-

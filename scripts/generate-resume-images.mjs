@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const RESUME_ROOT_DIR = path.join(process.cwd(), 'public', 'generated', 'resume');
 const LATEST_MANIFEST_PATH = path.join(RESUME_ROOT_DIR, 'latest.json');
+const DEFAULT_RESUME_DOC_URL = 'https://arihara-sudhan.github.io/resume/resume.pdf';
 
 function hashBuffer(buffer) {
   return crypto.createHash('sha1').update(buffer).digest('hex').slice(0, 16);
@@ -20,6 +21,14 @@ async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
+async function readJson(filePath) {
+  try {
+    return JSON.parse(await fs.readFile(filePath, 'utf8'));
+  } catch (_error) {
+    return null;
+  }
+}
+
 async function cleanupOldGenerations(rootDir, keepHash) {
   try {
     const entries = await fs.readdir(rootDir, { withFileTypes: true });
@@ -30,14 +39,6 @@ async function cleanupOldGenerations(rootDir, keepHash) {
     );
   } catch (_error) {
     // Nothing to clean yet.
-  }
-}
-
-async function readJson(filePath) {
-  try {
-    return JSON.parse(await fs.readFile(filePath, 'utf8'));
-  } catch (_error) {
-    return null;
   }
 }
 
@@ -57,17 +58,6 @@ async function writeLatestManifest({ source, hash, images, totalPages }) {
     ),
     'utf8',
   );
-}
-
-async function readLatestImages(trimmedUrl) {
-  const latest = await readJson(LATEST_MANIFEST_PATH);
-  if (!latest || latest.source !== trimmedUrl || !latest.hash) return null;
-
-  const manifestPath = path.join(RESUME_ROOT_DIR, latest.hash, 'manifest.json');
-  const manifest = await readJson(manifestPath);
-  if (!Array.isArray(manifest?.images) || manifest.images.length === 0) return null;
-
-  return { hash: latest.hash, images: manifest.images };
 }
 
 async function generateResumeImagesFromBuffer({ pdfBuffer, sourceUrl }) {
@@ -121,20 +111,35 @@ async function generateResumeImagesFromBuffer({ pdfBuffer, sourceUrl }) {
   return images;
 }
 
-export async function ensureResumeImages(pdfUrl) {
-  if (!pdfUrl || typeof pdfUrl !== 'string') return [];
-  const trimmedUrl = pdfUrl.trim();
-  const latestImages = await readLatestImages(trimmedUrl);
-  if (latestImages) {
-    await cleanupOldGenerations(RESUME_ROOT_DIR, latestImages.hash);
-    return latestImages.images;
+function getSourceUrl() {
+  const arg = process.argv.slice(2).find((item) => item.startsWith('--source='));
+  const sourceFromArg = arg ? arg.slice('--source='.length).trim() : '';
+  const source = sourceFromArg || process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
+  return source.trim();
+}
+
+async function main() {
+  const sourceUrl = getSourceUrl();
+  if (!sourceUrl) {
+    throw new Error('A resume PDF URL is required.');
   }
 
-  const response = await fetch(trimmedUrl);
-  if (!response.ok) throw new Error(`Resume PDF fetch failed: ${response.status}`);
+  const response = await fetch(sourceUrl);
+  if (!response.ok) {
+    throw new Error(`Resume PDF fetch failed: ${response.status}`);
+  }
+
   const arrayBuffer = await response.arrayBuffer();
   const pdfBuffer = Buffer.from(arrayBuffer);
-  if (!isPdfBuffer(pdfBuffer)) return [];
+  if (!isPdfBuffer(pdfBuffer)) {
+    throw new Error('Resume source did not look like a PDF.');
+  }
 
-  return generateResumeImagesFromBuffer({ pdfBuffer, sourceUrl: trimmedUrl });
+  const images = await generateResumeImagesFromBuffer({ pdfBuffer, sourceUrl });
+  console.log(JSON.stringify({ sourceUrl, count: images.length, images }, null, 2));
 }
+
+main().catch((error) => {
+  console.error(error && error.stack ? error.stack : error);
+  process.exitCode = 1;
+});

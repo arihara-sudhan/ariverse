@@ -1,18 +1,23 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listProjectEntries } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Projects');
   const hero = link ? await getSectionHero(link.id, "#Ari'sProjects") : { heading: "#Ari'sProjects", description: '', quote: '', imageUrl: '' };
   const projects = await listProjectEntries();
-  return { props: { hero, projects }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'projects',
+    entryIds: projects.map((project) => project.id),
+  });
+  return { props: { hero, projects, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
-export default function ProjectsPage({ hero, projects }) {
+export default function ProjectsPage({ hero, projects, likesByEntry }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const heroHeading = String(hero?.heading || '').trim() || "#Ari'sProjects";
   const heroDescription = String(hero?.description || '').trim() || 'Lorem ipsum as description';
@@ -103,6 +108,13 @@ export default function ProjectsPage({ hero, projects }) {
                             ))}
                           </div>
                         ) : null}
+                        <LikeButton
+                          endpoint="/api/content/reactions"
+                          entryId={project.id}
+                          initialCount={likesByEntry?.[project.id]?.likesCount || 0}
+                          storageNamespace="projects"
+                          className="projects-like"
+                        />
                       </div>
                     </div>
                   </Link>

@@ -14,6 +14,7 @@ function buildCommentLocation(comment) {
     'guest-lectures': '/guest-lectures',
     'book-reviews': '/book-reviews',
     'clay-play': '/clay-play',
+    testimonials: '/#testimonials',
   };
   return sectionMap[comment.sectionKey] || '#';
 }

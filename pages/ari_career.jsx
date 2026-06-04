@@ -1,6 +1,7 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listCareerEntries } from '../lib/adminData';
+import LikeButton from '../src/components/LikeButton';
+import { getProfileLinkByLabel, getSectionHero, listCareerEntries, listContentEntryReactions } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function renderParagraphs(text) {
@@ -33,16 +34,21 @@ export async function getStaticProps() {
     ...item,
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : String(item?.createdAt || ''),
   }));
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'career',
+    entryIds: items.map((item) => item.id),
+  });
   return {
     props: {
       hero,
       items,
+      likesByEntry,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function CareerPage({ hero, items }) {
+export default function CareerPage({ hero, items, likesByEntry }) {
   const safeItems = Array.isArray(items) ? [...items].reverse() : [];
 
   return (
@@ -86,6 +92,13 @@ export default function CareerPage({ hero, items }) {
                       </div>
                     </div>
                     <div className="career-post-desc">{renderParagraphs(item.markdownText)}</div>
+                    <LikeButton
+                      endpoint="/api/content/reactions"
+                      entryId={item.id}
+                      initialCount={likesByEntry?.[item.id]?.likesCount || 0}
+                      storageNamespace="career"
+                      className="career-post-like"
+                    />
                   </div>
                   {getCareerDateLabel(item) ? (
                     <div className="career-post-date-corner">

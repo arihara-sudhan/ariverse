@@ -1,6 +1,7 @@
 import Header from '../../src/components/Header';
+import LikeButton from '../../src/components/LikeButton';
 import DiscussionThread from '../../src/components/DiscussionThread';
-import { listProjectEntries, listProjectComments } from '../../lib/adminData';
+import { listContentEntryReactions, listProjectComments, listProjectEntries } from '../../lib/adminData';
 
 function slugify(input) {
   return (
@@ -73,10 +74,14 @@ export async function getServerSideProps({ params }) {
   const project = (projects || []).find((item) => slugify(item.title) === slug) || null;
   if (!project) return { notFound: true };
   const comments = await listProjectComments(project.id);
-  return { props: { project, comments } };
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'projects',
+    entryIds: [project.id],
+  });
+  return { props: { project, comments, likesByEntry } };
 }
 
-export default function ProjectDetailPage({ project, comments }) {
+export default function ProjectDetailPage({ project, comments, likesByEntry }) {
   const shortLines = toLines(project?.caption);
   const readmeContent = String(project?.bigDescription || project?.caption || '');
   const summary = shortLines.slice(0, 3);
@@ -111,6 +116,13 @@ export default function ProjectDetailPage({ project, comments }) {
           <div className="project-legend-full">
             <hr className="project-legend-rule" />
             {legendNodes.length > 0 ? legendNodes : <p>More learnings will be added soon.</p>}
+            <LikeButton
+              endpoint="/api/content/reactions"
+              entryId={project.id}
+              initialCount={likesByEntry?.[project.id]?.likesCount || 0}
+              storageNamespace="projects"
+              className="project-detail-like"
+            />
             <DiscussionThread
               title="Comments"
               endpoint="/api/projects/comments"

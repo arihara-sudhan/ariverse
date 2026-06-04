@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listExperimentsEntries } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listExperimentsEntries } from '../lib/adminData';
 
 function parseExperimentReadme(rawText) {
   const lines = String(rawText || '').split('\n');
@@ -55,6 +56,10 @@ export async function getServerSideProps({ query }) {
   const link = await getProfileLinkByLabel('Experiments');
   const hero = link ? await getSectionHero(link.id, 'Experiments') : { heading: 'Experiments', description: '', imageUrl: '' };
   const experiments = await listExperimentsEntries();
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'xperiments',
+    entryIds: experiments.map((item) => item.id),
+  });
   const requestedId = Number(query?.id);
   const selectedTrial = Number.isInteger(requestedId) ? experiments.find((item) => item.id === requestedId) || null : null;
   const selectedIndex = selectedTrial ? experiments.findIndex((item) => item.id === selectedTrial.id) : -1;
@@ -62,10 +67,10 @@ export async function getServerSideProps({ query }) {
     ? await listContentComments({ sectionKey: 'xperiments', entryId: selectedTrial.id })
     : [];
   const showAll = query?.view === 'all';
-  return { props: { hero, selectedTrial, selectedIndex, showAll, experiments, initialComments } };
+  return { props: { hero, selectedTrial, selectedIndex, showAll, experiments, initialComments, likesByEntry } };
 }
 
-export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, showAll, experiments, initialComments }) {
+export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, showAll, experiments, initialComments, likesByEntry }) {
   const safeExperiments = Array.isArray(experiments) ? experiments : [];
   const panelRef = useRef(null);
   const [hideTopNav, setHideTopNav] = useState(false);
@@ -165,6 +170,13 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
               );
             })}
           </div>
+          <LikeButton
+            endpoint="/api/content/reactions"
+            entryId={selectedTrial.id}
+            initialCount={likesByEntry?.[selectedTrial.id]?.likesCount || 0}
+            storageNamespace="xperiments"
+            className="kavithai-like"
+          />
           <DiscussionThread
             title="Comments"
             endpoint="/api/content/comments"
@@ -221,6 +233,13 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
               <div className="trial-row-content">
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
+                <LikeButton
+                  endpoint="/api/content/reactions"
+                  entryId={item.id}
+                  initialCount={likesByEntry?.[item.id]?.likesCount || 0}
+                  storageNamespace="xperiments"
+                  className="trial-row-like"
+                />
                 <a className="trial-read-more-btn" href={item.readMoreUrl || '#'}>READ MORE</a>
               </div>
             </article>

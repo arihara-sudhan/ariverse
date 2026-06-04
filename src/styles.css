@@ -773,18 +773,37 @@ footer {
 }
 
 .contact-carousel-track {
-  display: flex;
+  display: grid;
   align-items: stretch;
-  will-change: transform;
-  transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  width: 100%;
 }
 
 .contact-carousel-panel {
-  flex: 0 0 100%;
-  min-width: 100%;
+  grid-area: 1 / 1;
+  width: 100%;
   box-sizing: border-box;
   min-height: 100%;
   position: relative;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 0s linear 220ms;
+}
+
+.contact-carousel-panel.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  z-index: 1;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 0s;
 }
 
 .contact-carousel-controls {
@@ -2340,6 +2359,41 @@ body.mini-project-open-body::-webkit-scrollbar {
   cursor: not-allowed;
 }
 
+.contact-testimonial-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.contact-testimonial-layout {
+  display: grid;
+  grid-template-columns: minmax(290px, 1.05fr) minmax(0, 0.95fr);
+  align-items: stretch;
+  min-height: 100%;
+}
+
+.contact-testimonial-art {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1.1rem 1rem 1.1rem 1.35rem;
+  background: #ffffff;
+}
+
+.contact-testimonial-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 460px;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  filter: grayscale(1) contrast(1.04);
+}
+
+.contact-testimonial-copy {
+  padding: 0.95rem 1.25rem 1.15rem 0.35rem;
+}
+
 .contact-status {
   margin: 0.8rem 0 0;
   font-size: 0.9rem;
@@ -2357,6 +2411,24 @@ body.mini-project-open-body::-webkit-scrollbar {
 
 .contact-status.loading {
   color: #3d3d3d;
+}
+
+@media (max-width: 900px) {
+  .contact-testimonial-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-testimonial-copy {
+    padding: 0 1rem 1rem;
+  }
+
+  .contact-testimonial-art {
+    padding: 1rem 1rem 0;
+  }
+
+  .contact-testimonial-art img {
+    max-width: 320px;
+  }
 }
 
 .contact-links {
@@ -2604,6 +2676,10 @@ body.mini-project-open-body::-webkit-scrollbar {
     font-size: clamp(3.6rem, 12vw, 5.2rem);
   }
 
+  .intro-title-sub {
+    display: none;
+  }
+
   .photo-block {
     order: 2;
     width: min(100%, 620px);
@@ -2671,7 +2747,6 @@ body.mini-project-open-body::-webkit-scrollbar {
     width: 100%;
     margin-inline: 0;
     border-radius: 8px;
-    aspect-ratio: 4 / 3;
   }
 
   .feature-image img {

@@ -4,9 +4,14 @@ import { useEffect } from 'react';
 
 const SITE_TITLE = 'AriVerse';
 const SITE_IMAGE = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
+const IS_INSPECTABLE = String(process.env.NEXT_PUBLIC_INSPECTABLE ?? '0').trim() !== '0';
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
+    if (IS_INSPECTABLE) {
+      return undefined;
+    }
+
     const isDevtoolsShortcut = (event) => {
       const key = String(event.key || '').toLowerCase();
       return (
@@ -59,6 +64,7 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{SITE_TITLE}</title>
         <meta name="application-name" content={SITE_TITLE} />
         <meta name="apple-mobile-web-app-title" content={SITE_TITLE} />

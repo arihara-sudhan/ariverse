@@ -1,17 +1,22 @@
 import { useMemo, useState } from 'react';
+import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listMiniProjectEntries } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listMiniProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Mini-Projects');
   const hero = link ? await getSectionHero(link.id, 'Mini-Projects') : { heading: 'Mini-Projects', description: '', imageUrl: '' };
   const miniProjects = await listMiniProjectEntries();
-  return { props: { hero, miniProjects }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'mini-projects',
+    entryIds: (Array.isArray(miniProjects) ? miniProjects : []).map((project) => project.id),
+  });
+  return { props: { hero, miniProjects, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
-export default function MiniProjectsPage({ hero, miniProjects }) {
+export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [brokenImageByTitle, setBrokenImageByTitle] = useState({});
   const heroQuote = String(hero?.quote || '').trim();
@@ -86,6 +91,13 @@ export default function MiniProjectsPage({ hero, miniProjects }) {
                   <div>
                     <h3>{project.title}</h3>
                     <p>{project.caption || project.category}</p>
+                    <LikeButton
+                      endpoint="/api/content/reactions"
+                      entryId={project.id}
+                      initialCount={likesByEntry?.[project.id]?.likesCount || 0}
+                      storageNamespace="mini-projects"
+                      className="mini-project-like"
+                    />
                     <div className="mini-project-actions">
                       <a
                         href={viewerHref}

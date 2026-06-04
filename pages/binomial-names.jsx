@@ -1,6 +1,7 @@
+import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listLinkItems } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listLinkItems } from '../lib/adminData';
 import { isAllowedYouTubeUrl } from '../lib/security';
 
 function toEmbedUrl(value) {
@@ -35,6 +36,10 @@ export async function getServerSideProps({ query }) {
   const entries = (await listLinkItems(binomialLink.id)).filter(
     (item) => String(item.youtubeUrl || '').trim() && String(item.kavithaiFrom || '').trim(),
   );
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'binomial-names',
+    entryIds: entries.map((entry) => entry.id),
+  });
 
   if (entries.length === 0) {
     return { props: { selectedEntry: null, hero } };
@@ -49,11 +54,12 @@ export async function getServerSideProps({ query }) {
     props: {
       hero,
       selectedEntry: requestedEntry || entries[0],
+      likesByEntry,
     },
   };
 }
 
-export default function BinomialNamesPage({ selectedEntry, hero }) {
+export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry }) {
   if (!selectedEntry) {
     return (
       <div className="site">
@@ -131,6 +137,13 @@ export default function BinomialNamesPage({ selectedEntry, hero }) {
                 .map((line, idx) => (
                   <p key={`${selectedEntry.id}-${idx}`}>{line}</p>
                 ))}
+              <LikeButton
+                endpoint="/api/content/reactions"
+                entryId={selectedEntry.id}
+                initialCount={likesByEntry?.[selectedEntry.id]?.likesCount || 0}
+                storageNamespace="binomial-names"
+                className="binomial-like"
+              />
             </div>
           </article>
         </section>

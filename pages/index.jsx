@@ -1,13 +1,15 @@
-import { listVisibleProfileLinks } from '../lib/adminData';
+import { listContentComments, listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
 const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
 const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
 const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.webp';
+const TIGER_URL = '/assets/tiger.png';
 const FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
+  { src: TIGER_URL, alt: 'Tiger illustration' },
 ];
 const WELCOME_MESSAGES = [
   { lang: 'en', text: 'Welcome to ARIVERSE...' },
@@ -60,9 +62,26 @@ export default function HomePage({ profileLinks }) {
   const [mailMessage, setMailMessage] = useState('');
   const [subscriptionState, setSubscriptionState] = useState('idle');
   const [subscriptionMessage, setSubscriptionMessage] = useState('');
+  const [featureImage, setFeatureImage] = useState(FEATURE_IMAGES[0]);
   const contactResumeTimerRef = useRef(null);
   const mailResetTimerRef = useRef(null);
   const subscriptionResetTimerRef = useRef(null);
+  const CAROUSEL_RESUME_DELAY_MS = 5000;
+
+  function clearCarouselResumeTimer(timerRef) {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  function scheduleCarouselResume(setPaused, timerRef) {
+    clearCarouselResumeTimer(timerRef);
+    timerRef.current = setTimeout(() => {
+      setPaused(false);
+      timerRef.current = null;
+    }, CAROUSEL_RESUME_DELAY_MS);
+  }
 
   async function handleMailSubmit(event) {
     event.preventDefault();
@@ -116,6 +135,19 @@ export default function HomePage({ profileLinks }) {
       }, 4500);
     }
   }
+
+  useEffect(() => {
+    setFeatureImage(FEATURE_IMAGES[Math.floor(Math.random() * FEATURE_IMAGES.length)]);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
+      if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
+      if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
+    },
+    [],
+  );
 
   async function handleSubscribeSubmit(event) {
     event.preventDefault();
@@ -280,43 +312,34 @@ export default function HomePage({ profileLinks }) {
     return () => clearInterval(timer);
   }, [contactSlides.length, isContactPaused]);
 
-  useEffect(() => () => {
-    if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
-    if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
-    if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
-  }, []);
-
   function handleContactCardClick() {
     setIsContactPaused(true);
-    if (contactResumeTimerRef.current) {
-      clearTimeout(contactResumeTimerRef.current);
-      contactResumeTimerRef.current = null;
-    }
+    scheduleCarouselResume(setIsContactPaused, contactResumeTimerRef);
+  }
+
+  function shouldIgnoreCarouselKey(event) {
+    const target = event.target;
+    return Boolean(
+      target &&
+      target.closest &&
+      target.closest('input, textarea, select, button, a, [contenteditable="true"]')
+    );
   }
 
   function handleContactMouseEnter() {
-    if (contactResumeTimerRef.current) {
-      clearTimeout(contactResumeTimerRef.current);
-      contactResumeTimerRef.current = null;
-    }
+    setIsContactPaused(true);
+    clearCarouselResumeTimer(contactResumeTimerRef);
   }
 
   function handleContactMouseLeave() {
     if (!isContactPaused) return;
-    if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
-    contactResumeTimerRef.current = setTimeout(() => {
-      setIsContactPaused(false);
-      contactResumeTimerRef.current = null;
-    }, 5000);
+    scheduleCarouselResume(setIsContactPaused, contactResumeTimerRef);
   }
 
   function goToContactSlide(nextIndex) {
     setContactIndex(nextIndex);
     setIsContactPaused(true);
-    if (contactResumeTimerRef.current) {
-      clearTimeout(contactResumeTimerRef.current);
-      contactResumeTimerRef.current = null;
-    }
+    scheduleCarouselResume(setIsContactPaused, contactResumeTimerRef);
   }
 
   const safeLinks = Array.isArray(profileLinks) && profileLinks.length > 0 ? profileLinks : HOME_FALLBACK_LINKS;
@@ -463,24 +486,14 @@ export default function HomePage({ profileLinks }) {
 
         <section className="feature" id="contact">
           <figure className="feature-image">
-            <div className="feature-image-viewport">
-              <div
-                className="feature-image-track"
-                style={{ transform: `translateX(-${contactIndex * 100}%)` }}
-              >
-                {FEATURE_IMAGES.map((image) => (
-                  <div className="feature-image-panel" key={image.src}>
-                    <img
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      src={image.src}
-                      alt={image.alt}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <img
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              draggable={false}
+              src={featureImage.src}
+              alt={featureImage.alt}
+            />
           </figure>
           <section className="feature-copy">
             <div
@@ -493,6 +506,7 @@ export default function HomePage({ profileLinks }) {
               aria-pressed={isContactPaused}
               aria-label="Contact card carousel"
               onKeyDown={(event) => {
+                if (shouldIgnoreCarouselKey(event)) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
                   handleContactCardClick();
@@ -500,12 +514,13 @@ export default function HomePage({ profileLinks }) {
               }}
             >
               <div className="contact-carousel-viewport">
-                <div
-                  className="contact-carousel-track"
-                  style={{ transform: `translateX(-${contactIndex * 100}%)` }}
-                >
-                  {contactSlides.map((slide) => (
-                    <article className="contact-card contact-carousel-panel" key={slide.title}>
+                <div className="contact-carousel-track">
+                  {contactSlides.map((slide, index) => (
+                    <article
+                      className={`contact-card contact-carousel-panel ${index === contactIndex ? 'is-active' : ''}`}
+                      key={slide.title}
+                      aria-hidden={index !== contactIndex}
+                    >
                       <p className="eyebrow">{slide.eyebrow}</p>
                       <h2>{slide.title}</h2>
                       <p className="contact-note">{slide.note}</p>
@@ -526,7 +541,7 @@ export default function HomePage({ profileLinks }) {
                         goToContactSlide(contactIndex - 1);
                       }}
                     >
-                      <span aria-hidden="true">←</span>
+                      <span aria-hidden="true">{"\u2190"}</span>
                     </button>
                   ) : null}
                   <span className="contact-carousel-count" aria-live="polite">
@@ -542,7 +557,7 @@ export default function HomePage({ profileLinks }) {
                         goToContactSlide(contactIndex + 1);
                       }}
                     >
-                      <span aria-hidden="true">→</span>
+                      <span aria-hidden="true">{"\u2192"}</span>
                     </button>
                   ) : null}
                 </div>
@@ -555,3 +570,6 @@ export default function HomePage({ profileLinks }) {
     </div>
   );
 }
+
+
+

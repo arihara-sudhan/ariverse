@@ -1,7 +1,8 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listLinkItems } from '../lib/adminData';
+import LikeButton from '../src/components/LikeButton';
+import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listLinkItems } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { useRef, useState } from 'react';
 
@@ -21,6 +22,10 @@ export async function getStaticProps() {
     (item) => String(item.kavithaiFrom || '').trim() && String(item.markdownText || '').trim(),
   );
   const hero = await getSectionHero(link.id, 'Guest Lectures');
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'guest-lectures',
+    entryIds: entries.map((entry) => entry.id),
+  });
   const commentsRows = await Promise.all(
     entries.map(async (entry) => ({
       entryId: entry.id,
@@ -32,10 +37,10 @@ export async function getStaticProps() {
     return acc;
   }, {});
 
-  return { props: { entries, hero, initialCommentsByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  return { props: { entries, hero, initialCommentsByEntry, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
-export default function GuestLecturesPage({ entries, hero, initialCommentsByEntry }) {
+export default function GuestLecturesPage({ entries, hero, initialCommentsByEntry, likesByEntry }) {
   const imageMetricsRef = useRef({});
   const [galleryHeightByEntry, setGalleryHeightByEntry] = useState({});
   const heroQuote = String(hero?.quote || '').trim() || DEFAULT_GUEST_LECTURES_QUOTE;
@@ -119,6 +124,13 @@ export default function GuestLecturesPage({ entries, hero, initialCommentsByEntr
                     ))}
                   </div>
                 ) : null}
+                <LikeButton
+                  endpoint="/api/content/reactions"
+                  entryId={entry.id}
+                  initialCount={likesByEntry?.[entry.id]?.likesCount || 0}
+                  storageNamespace="guest-lectures"
+                  className="guest-lectures-like"
+                />
                 <DiscussionThread
                   title="Were you there?"
                   endpoint="/api/content/comments"

@@ -1,26 +1,34 @@
 import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listBooksReadEntries } from '../lib/adminData';
+import LikeButton from '../src/components/LikeButton';
+import { getProfileLinkByLabel, getSectionHero, listBooksReadEntries, listContentEntryReactions } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 export async function getStaticProps() {
   let entries = [];
   let hero = { heading: 'Books Read', imageUrl: '' };
+  let likesByEntry = {};
   try {
     const booksReadLink = await getProfileLinkByLabel('Books Read');
     if (booksReadLink) {
       hero = await getSectionHero(booksReadLink.id, 'Books Read');
     }
     entries = await listBooksReadEntries();
+    likesByEntry = await listContentEntryReactions({
+      sectionKey: 'books-read',
+      entryIds: (Array.isArray(entries) ? entries : []).map((entry) => entry.id),
+    });
   } catch (_error) {
     entries = [];
+    likesByEntry = {};
   }
 
   return {
     props: {
       entries,
       hero,
+      likesByEntry,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
@@ -34,62 +42,26 @@ function toParagraphs(text) {
     .filter(Boolean);
 }
 
-export default function AriReadBooksPage({ entries, hero }) {
+export default function AriReadBooksPage({ entries, hero, likesByEntry }) {
   const safeEntries = Array.isArray(entries) ? entries : [];
   const [activeCategory, setActiveCategory] = useState('');
-  const [activeSubcategory, setActiveSubcategory] = useState('');
-
-  const categoryCounts = useMemo(() => {
-    const counts = { ENGLISH: 0, TAMIL: 0 };
-    for (const book of safeEntries) {
-      const category = (book.category || 'ENGLISH').toUpperCase();
-      if (category === 'TAMIL') counts.TAMIL += 1;
-      else counts.ENGLISH += 1;
-    }
-    return counts;
-  }, [safeEntries]);
-
-  const subcategoryCounts = useMemo(() => {
-    const counts = {
-      ENGLISH: { FICTION: 0, NON_FICTION: 0 },
-      TAMIL: { 'புனைவு': 0, 'புனைவிலி': 0 },
-    };
-    for (const book of safeEntries) {
-      const category = (book.category || 'ENGLISH').toUpperCase() === 'TAMIL' ? 'TAMIL' : 'ENGLISH';
-      const subcategory = book.subcategory || (category === 'TAMIL' ? 'புனைவு' : 'FICTION');
-      if (category === 'TAMIL') {
-        if (subcategory === 'புனைவிலி') counts.TAMIL['புனைவிலி'] += 1;
-        else counts.TAMIL['புனைவு'] += 1;
-      } else if (subcategory === 'NON_FICTION') {
-        counts.ENGLISH.NON_FICTION += 1;
-      } else {
-        counts.ENGLISH.FICTION += 1;
-      }
-    }
-    return counts;
-  }, [safeEntries]);
+  const categories = useMemo(
+    () => Array.from(new Set(safeEntries.map((book) => (book.category || 'ENGLISH').toUpperCase()))),
+    [safeEntries],
+  );
+  const categoryCounts = useMemo(
+    () =>
+      categories.reduce((acc, category) => {
+        acc[category] = safeEntries.filter((book) => (book.category || 'ENGLISH').toUpperCase() === category).length;
+        return acc;
+      }, {}),
+    [categories, safeEntries],
+  );
 
   const filteredEntries = useMemo(() => {
     if (!activeCategory) return safeEntries;
-    return safeEntries.filter((book) => {
-      const category = (book.category || 'ENGLISH').toUpperCase() === 'TAMIL' ? 'TAMIL' : 'ENGLISH';
-      if (category !== activeCategory) return false;
-      if (!activeSubcategory) return true;
-      const subcategory = book.subcategory || (category === 'TAMIL' ? 'புனைவு' : 'FICTION');
-      return subcategory === activeSubcategory;
-    });
-  }, [activeCategory, activeSubcategory, safeEntries]);
-
-  const activeSubcategoryOptions =
-    activeCategory === 'TAMIL'
-      ? [
-          { value: 'புனைவு', label: 'புனைவு', count: subcategoryCounts.TAMIL['புனைவு'] },
-          { value: 'புனைவிலி', label: 'புனைவிலி', count: subcategoryCounts.TAMIL['புனைவிலி'] },
-        ]
-      : [
-          { value: 'FICTION', label: 'Fiction', count: subcategoryCounts.ENGLISH.FICTION },
-          { value: 'NON_FICTION', label: 'Non Fiction', count: subcategoryCounts.ENGLISH.NON_FICTION },
-        ];
+    return safeEntries.filter((book) => (book.category || 'ENGLISH').toUpperCase() === activeCategory);
+  }, [activeCategory, safeEntries]);
 
   const booksReadMetaBlock = (
     <div className="books-read-hero-meta">
@@ -107,39 +79,18 @@ export default function AriReadBooksPage({ entries, hero }) {
           <button
             type="button"
             className={`books-filter-btn${activeCategory === 'ENGLISH' ? ' is-active' : ''}`}
-            onClick={() => {
-              setActiveCategory((prev) => (prev === 'ENGLISH' ? '' : 'ENGLISH'));
-              setActiveSubcategory('');
-            }}
+            onClick={() => setActiveCategory((prev) => (prev === 'ENGLISH' ? '' : 'ENGLISH'))}
           >
-            English ({categoryCounts.ENGLISH})
+            English ({categoryCounts.ENGLISH || 0})
           </button>
           <button
             type="button"
             className={`books-filter-btn${activeCategory === 'TAMIL' ? ' is-active' : ''}`}
-            onClick={() => {
-              setActiveCategory((prev) => (prev === 'TAMIL' ? '' : 'TAMIL'));
-              setActiveSubcategory('');
-            }}
+            onClick={() => setActiveCategory((prev) => (prev === 'TAMIL' ? '' : 'TAMIL'))}
           >
-            Tamil ({categoryCounts.TAMIL})
+            Tamil ({categoryCounts.TAMIL || 0})
           </button>
         </div>
-
-        {activeCategory ? (
-          <div className="books-read-subfilters" aria-label="Books read subfilters">
-            {activeSubcategoryOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`books-subfilter-btn${activeSubcategory === option.value ? ' is-active' : ''}`}
-                onClick={() => setActiveSubcategory((prev) => (prev === option.value ? '' : option.value))}
-              >
-                {option.label} ({option.count})
-              </button>
-            ))}
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -174,6 +125,13 @@ export default function AriReadBooksPage({ entries, hero }) {
                       <p key={`${book.id}-${idx}`}>{line}</p>
                     ))}
                   </div>
+                  <LikeButton
+                    endpoint="/api/content/reactions"
+                    entryId={book.id}
+                    initialCount={likesByEntry?.[book.id]?.likesCount || 0}
+                    storageNamespace="books-read"
+                    className="books-read-like"
+                  />
                 </div>
               </article>
             ))}

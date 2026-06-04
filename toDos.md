@@ -1,6 +1,3 @@
-1. Need README write for Experiements
-
-1. RSS
 2. PAGINATION FOR APT PAGES
 6. Index in Google
 7. Qn Polling section
@@ -8,8 +5,6 @@
 2. in /ari_career, need heart emoji for liking
 4. tweets
 9. slow rendering of svg icons in http://localhost:3000/ariyin-kavithaigal?id=1
-10. kavthai bg not good;
-11. need comment option for kavithai
 12. like options as well
 13. check hardcoded stuffs in data
 14. need filter categories for http://localhost:3000/aris-xperiments: after hero All, DL- Computer Vision
@@ -22,3 +17,4 @@
  create mode 100644 public/generated/resume/05ed8882157ce3c7/source.pdf
  Keep only on blobs for each generations and write over
  16. Internalizing Thirukkural & Blog
+ 17. Testimonials

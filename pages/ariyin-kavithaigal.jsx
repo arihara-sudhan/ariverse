@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import LikeButton from '../src/components/LikeButton';
 import DiscussionThread from '../src/components/DiscussionThread';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
@@ -10,6 +11,7 @@ import {
   getProfileLinkByLabel,
   getSectionHero,
   listContentComments,
+  listContentEntryReactions,
   listKavithaiEntries,
   listKavithaiSummaries,
 } from '../lib/adminData';
@@ -18,6 +20,10 @@ export async function getServerSideProps({ query }) {
   const requestedId = Number(query?.id);
   const showAll = query?.view === 'all';
   const poems = showAll || Number.isInteger(requestedId) ? await listKavithaiSummaries() : await listKavithaiEntries();
+  const likesByEntry = await listContentEntryReactions({
+    sectionKey: 'kavithaigal',
+    entryIds: poems.map((poem) => poem.id),
+  });
   const selectedPoem = Number.isInteger(requestedId) ? await getKavithaiEntryById(requestedId) : null;
   const selectedIndex = selectedPoem ? poems.findIndex((poem) => poem.id === selectedPoem.id) : -1;
   const initialComments = selectedPoem
@@ -44,11 +50,12 @@ export async function getServerSideProps({ query }) {
       selectedIndex,
       initialComments,
       showAll,
+      likesByEntry,
     },
   };
 }
 
-export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selectedIndex, initialComments, showAll }) {
+export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selectedIndex, initialComments, showAll, likesByEntry }) {
   const panelRef = useRef(null);
   const [hideTopNav, setHideTopNav] = useState(false);
   const hasPoems = Array.isArray(poems) && poems.length > 0;
@@ -127,6 +134,13 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
             <div className="kavithai-markdown tamil-text" lang="ta">
               <ReactMarkdown>{(selectedPoem.markdownText || '').replace(/\n/g, '  \n')}</ReactMarkdown>
             </div>
+            <LikeButton
+              endpoint="/api/content/reactions"
+              entryId={selectedPoem.id}
+              initialCount={likesByEntry?.[selectedPoem.id]?.likesCount || 0}
+              storageNamespace="kavithaigal"
+              className="kavithai-like"
+            />
             <div className="ariyin-comments-block">
               <DiscussionThread
                 title="கருத்துகள்"
@@ -203,6 +217,13 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
                       </figure>
                     ) : null}
                     <h2>{`${index + 1}. ${poem.kavithaiName}`}</h2>
+                    <LikeButton
+                      endpoint="/api/content/reactions"
+                      entryId={poem.id}
+                      initialCount={likesByEntry?.[poem.id]?.likesCount || 0}
+                      storageNamespace="kavithaigal"
+                      className="ariyin-poem-like"
+                    />
                   </article>
                 </Link>
               ))}

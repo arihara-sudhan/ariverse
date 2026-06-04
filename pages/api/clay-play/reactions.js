@@ -42,6 +42,7 @@ export default async function handler(req, res) {
       const entryId = toPositiveInt(req.body?.entryId);
       const name = toCleanText(req.body?.name, 80);
       const comment = toCleanText(req.body?.comment, 800);
+      const count = Math.max(1, toPositiveInt(req.body?.count) || 1);
 
       if (action === 'batch') {
         const events = Array.isArray(req.body?.events) ? req.body.events : [];
@@ -77,7 +78,7 @@ export default async function handler(req, res) {
         return;
       }
       if (action === 'like') {
-        const result = await addClayPlayEntryLike({ entryId, name });
+        const result = await addClayPlayEntryLike({ entryId, name, count });
         res.status(200).json({ ok: true, likesCount: result.likesCount || 0 });
         return;
       }

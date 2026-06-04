@@ -1,7 +1,8 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listLinkItems } from '../lib/adminData';
+import LikeButton from '../src/components/LikeButton';
+import { getProfileLinkByLabel, getSectionHero, listClayPlayEntryReactions, listContentComments, listLinkItems } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { useRef, useState } from 'react';
 
@@ -20,6 +21,7 @@ export async function getStaticProps() {
     (item) => String(item.kavithaiFrom || '').trim() && String(item.markdownText || '').trim(),
   );
   const hero = await getSectionHero(clayLink.id, 'Clay Play');
+  const reactions = await listClayPlayEntryReactions(entries.map((entry) => entry.id));
 
   const commentsRows = await Promise.all(
     entries.map(async (entry) => ({
@@ -36,13 +38,14 @@ export async function getStaticProps() {
     props: {
       entries,
       hero,
+      likesByEntry: reactions,
       initialCommentsByEntry,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function ClayPlayPage({ entries, hero, initialCommentsByEntry }) {
+export default function ClayPlayPage({ entries, hero, likesByEntry, initialCommentsByEntry }) {
   const imageMetricsRef = useRef({});
   const [galleryHeightByEntry, setGalleryHeightByEntry] = useState({});
   const heroQuote = String(hero?.quote || '').trim() || DEFAULT_CLAY_QUOTE;
@@ -126,6 +129,15 @@ export default function ClayPlayPage({ entries, hero, initialCommentsByEntry }) 
                     ))}
                   </div>
                 ) : null}
+                <div className="clay-play-reactions">
+                  <LikeButton
+                    endpoint="/api/clay-play/reactions"
+                    entryId={entry.id}
+                    initialCount={likesByEntry?.[entry.id]?.likesCount || 0}
+                    storageNamespace="clay-play"
+                    className="clay-play-like"
+                  />
+                </div>
                 <DiscussionThread
                   title="Comments"
                   endpoint="/api/content/comments"

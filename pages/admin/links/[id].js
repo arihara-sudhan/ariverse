@@ -74,7 +74,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const isBinomialSection = sectionLabel === 'Binomial Names';
   const isClayPlaySection = sectionLabel === 'Clay Play';
   const isGuestLecturesSection = sectionLabel === 'Guest Lectures';
-  const isGallerySection = isClayPlaySection || isGuestLecturesSection;
+  const isBookReviewsSection = sectionLabel === 'Book Reviews';
+  const isGallerySection = isClayPlaySection || isGuestLecturesSection || isBookReviewsSection;
   const isBooksReadSection = sectionLabel === 'Books Read';
   const isExperimentsSection = sectionLabel === 'Experiments';
   const isMiniProjectsSection = sectionLabel === 'Mini-Projects';
@@ -105,7 +106,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
   const [newMiniProjectCategory, setNewMiniProjectCategory] = useState('');
   const [projectCategory, setProjectCategory] = useState(DEFAULT_PROJECT_CATEGORIES[0]);
   const [newProjectCategory, setNewProjectCategory] = useState('');
-  const [bookCategory, setBookCategory] = useState('ENGLISH');
+  const [bookCategory, setBookCategory] = useState(isBookReviewsSection ? 'TAMIL' : 'ENGLISH');
   const [bookSubcategory, setBookSubcategory] = useState('FICTION');
   const [markdownText, setMarkdownText] = useState('');
   const [bigDescription, setBigDescription] = useState('');
@@ -125,10 +126,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         ? 'kavithaigal'
         : isGuestLecturesSection
           ? 'guest-lectures'
-          : isClayPlaySection
-            ? 'clay-play'
-          : '';
-  const supportsComments = isProjectsSection || isExperimentsSection || isKavithaiSection || isGuestLecturesSection || isClayPlaySection;
+          : isBookReviewsSection
+            ? 'book-reviews'
+            : isClayPlaySection
+              ? 'clay-play'
+              : '';
+  const supportsComments = isProjectsSection || isExperimentsSection || isKavithaiSection || isGuestLecturesSection || isBookReviewsSection || isClayPlaySection;
   const projectCategoryOptions = Array.from(
     new Set([
       ...DEFAULT_PROJECT_CATEGORIES,
@@ -364,14 +367,20 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         imageUrl: isBinomialSection ? '' : imageUrl,
         companyLogoUrl: isCareerSection ? companyLogoUrl : '',
         imageUrls: isGallerySection ? imageUrls : undefined,
-        youtubeUrl: isBinomialSection || isMiniProjectsSection || isExperimentsSection ? youtubeUrl : '',
+        youtubeUrl: isBinomialSection || isMiniProjectsSection || isExperimentsSection || isBookReviewsSection ? youtubeUrl : '',
         markdownText,
         bigDescription: isProjectsSection || isExperimentsSection ? bigDescription : '',
         projectTags: isProjectsSection ? projectTags : [],
         kavithaiFrom,
         subtitle: isCareerSection ? subtitle : '',
         dateText: isCareerSection ? dateText : '',
-        category: isMiniProjectsSection ? miniProjectCategory : isProjectsSection ? projectCategory : isBooksReadSection ? bookCategory : undefined,
+        category: isMiniProjectsSection
+          ? miniProjectCategory
+          : isProjectsSection
+            ? projectCategory
+            : isBooksReadSection || isBookReviewsSection
+              ? bookCategory
+              : undefined,
         subcategory: isBooksReadSection ? bookSubcategory : undefined,
       }),
     });
@@ -394,7 +403,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     setMiniProjectCategory('');
     setNewMiniProjectCategory('');
     setProjectCategory(DEFAULT_PROJECT_CATEGORIES[0]);
-    setBookCategory('ENGLISH');
+    setBookCategory(isBookReviewsSection ? 'TAMIL' : 'ENGLISH');
     setBookSubcategory('FICTION');
     setMarkdownText('');
     setBigDescription('');
@@ -416,6 +425,16 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
     });
   }
 
+  function handleCreateBookReviewsCategoryChange(nextCategory) {
+    setBookCategory(nextCategory === 'TAMIL' ? 'TAMIL' : 'ENGLISH');
+  }
+
+  function handleEditBookReviewsCategoryChange(item, nextCategory) {
+    updateLocalItem(item.id, {
+      category: nextCategory === 'TAMIL' ? 'TAMIL' : 'ENGLISH',
+    });
+  }
+
   async function saveItem(item) {
     setPendingSaveIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
     try {
@@ -423,6 +442,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
         ...item,
         linkId: item.linkId || link.id,
       };
+
+      if (isBookReviewsSection) {
+        const primaryImage = item.imageUrl || '';
+        payload.imageUrl = primaryImage;
+        payload.imageUrls = primaryImage ? [primaryImage] : [];
+      }
 
       if (isGallerySection) {
         const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
@@ -638,6 +663,21 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                 />
               </>
             ) : null}
+            {isBookReviewsSection ? (
+              <>
+                <label htmlFor="item-book-category">Category</label>
+                <select
+                  id="item-book-category"
+                  value={bookCategory}
+                  onChange={(event) => handleCreateBookReviewsCategoryChange(event.target.value)}
+                  required
+                >
+                  <option value="TAMIL">Tamil</option>
+                  <option value="ENGLISH">English</option>
+                </select>
+              </>
+            ) : null}
+
             {isBooksReadSection ? (
               <>
                 <label htmlFor="item-book-category">Category</label>
@@ -751,15 +791,17 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
               </>
             ) : null}
 
-            {isMiniProjectsSection || isExperimentsSection ? (
+            {isMiniProjectsSection || isExperimentsSection || isBookReviewsSection ? (
               <>
-                <label htmlFor="item-youtube-url">{isExperimentsSection ? 'Read More URL' : 'Project URL'}</label>
+                <label htmlFor="item-youtube-url">
+                  {isExperimentsSection ? 'Read More URL' : isBookReviewsSection ? 'YouTube video URL' : 'Project URL'}
+                </label>
                 <input
                   id="item-youtube-url"
                   type="url"
                   value={youtubeUrl}
                   onChange={(event) => setYoutubeUrl(event.target.value)}
-                  placeholder="https://..."
+                  placeholder={isBookReviewsSection ? 'https://www.youtube.com/live/...' : 'https://...'}
                   required
                 />
               </>
@@ -780,20 +822,20 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
             ) : (
               <>
                 <label htmlFor="item-image-upload">
-                  {isGallerySection ? 'Upload images' : 'Upload image'}
+                  {isBookReviewsSection ? 'Upload cover image' : isGallerySection ? 'Upload images' : 'Upload image'}
                 </label>
                 <input
                   id="item-image-upload"
                   type="file"
                   accept="image/*"
-                  multiple={isGallerySection}
+                  multiple={isGallerySection && !isBookReviewsSection}
                   onChange={async (event) => {
                     const files = Array.from(event.target.files || []);
                     if (files.length === 0) return;
                     setUploading(true);
                     setError('');
                     try {
-                      if (isGallerySection) {
+                      if (isGallerySection && !isBookReviewsSection) {
                         const uploadedUrls = await uploadMultipleImages(files, kavithaiFrom);
                         setImageUrls((prev) => [...prev, ...uploadedUrls]);
                         setImageUrl((prev) => prev || uploadedUrls[0] || '');
@@ -808,7 +850,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                     }
                   }}
                 />
-                {isGallerySection ? (
+                {isGallerySection && !isBookReviewsSection ? (
                   imageUrls.length > 0 ? (
                     <div className="admin-upload-list">
                       {imageUrls.map((url, index) => (
@@ -1103,6 +1145,17 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                           onChange={(event) => updateLocalItem(item.id, { youtubeUrl: event.target.value })}
                         />
                       </>
+                    ) : isBookReviewsSection ? (
+                      <>
+                        <label htmlFor={`edit-youtube-${item.id}`}>YouTube video URL</label>
+                        <input
+                          id={`edit-youtube-${item.id}`}
+                          type="url"
+                          value={item.youtubeUrl || ''}
+                          placeholder="https://www.youtube.com/live/..."
+                          onChange={(event) => updateLocalItem(item.id, { youtubeUrl: event.target.value })}
+                        />
+                      </>
                     ) : null}
                     {isProjectsSection ? (
                       <>
@@ -1240,20 +1293,59 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                           }}
                         />
                       </>
-                    ) : (
+                    ) : isBookReviewsSection ? (
                       <>
-                        <label htmlFor={`edit-image-${item.id}`}>{isMiniProjectsSection ? 'Replace Project Image' : 'Replace Image'}</label>
+                        <label htmlFor={`edit-book-category-${item.id}`}>Category</label>
+                        <select
+                          id={`edit-book-category-${item.id}`}
+                          value={item.category || 'TAMIL'}
+                          onChange={(event) => handleEditBookReviewsCategoryChange(item, event.target.value)}
+                        >
+                          <option value="TAMIL">Tamil</option>
+                          <option value="ENGLISH">English</option>
+                        </select>
+                        <label htmlFor={`edit-image-${item.id}`}>Replace Cover</label>
                         <input
                           id={`edit-image-${item.id}`}
                           type="file"
                           accept="image/*"
-                          multiple={isGallerySection}
                           onChange={async (event) => {
                             const files = Array.from(event.target.files || []);
                             if (files.length === 0) return;
                             setError('');
                             try {
-                              if (isGallerySection) {
+                              const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom, {
+                                currentUrl: item.imageUrl || '',
+                              });
+                              const nextItem = { ...item, imageUrl: uploadedUrl };
+                              updateLocalItem(item.id, { imageUrl: uploadedUrl });
+                              await saveItem(nextItem);
+                            } catch (uploadError) {
+                              setError(uploadError.message || 'Upload failed.');
+                            }
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label htmlFor={`edit-image-${item.id}`}>
+                          {isBookReviewsSection
+                            ? 'Replace Cover'
+                            : isMiniProjectsSection
+                              ? 'Replace Project Image'
+                              : 'Replace Image'}
+                        </label>
+                        <input
+                          id={`edit-image-${item.id}`}
+                          type="file"
+                          accept="image/*"
+                          multiple={isGallerySection && !isBookReviewsSection}
+                          onChange={async (event) => {
+                            const files = Array.from(event.target.files || []);
+                            if (files.length === 0) return;
+                            setError('');
+                            try {
+                              if (isGallerySection && !isBookReviewsSection) {
                                 const uploadedUrls = await uploadMultipleImages(files, item.kavithaiFrom);
                                 const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
                                 const nextUrls = [...currentUrls, ...uploadedUrls];
@@ -1274,7 +1366,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero }) {
                             }
                           }}
                         />
-                        {isGallerySection && Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? (
+                        {isGallerySection && !isBookReviewsSection && Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? (
                           <div className="admin-upload-list">
                             {item.imageUrls.map((url, index) => (
                               <div

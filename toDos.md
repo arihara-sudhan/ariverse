@@ -21,3 +21,4 @@
  create mode 100644 public/generated/resume/05ed8882157ce3c7/page-4.png
  create mode 100644 public/generated/resume/05ed8882157ce3c7/source.pdf
  Keep only on blobs for each generations and write over
+ 16. Internalizing Thirukkural & Blog

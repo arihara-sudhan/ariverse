@@ -12,6 +12,7 @@ function buildCommentLocation(comment) {
     xperiments: '/aris-xperiments',
     kavithaigal: '/ariyin-kavithaigal',
     'guest-lectures': '/guest-lectures',
+    'book-reviews': '/book-reviews',
     'clay-play': '/clay-play',
   };
   return sectionMap[comment.sectionKey] || '#';

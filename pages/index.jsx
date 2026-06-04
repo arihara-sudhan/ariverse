@@ -56,10 +56,66 @@ export default function HomePage({ profileLinks }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [contactIndex, setContactIndex] = useState(0);
   const [isContactPaused, setIsContactPaused] = useState(false);
+  const [mailState, setMailState] = useState('idle');
+  const [mailMessage, setMailMessage] = useState('');
   const [subscriptionState, setSubscriptionState] = useState('idle');
   const [subscriptionMessage, setSubscriptionMessage] = useState('');
   const contactResumeTimerRef = useRef(null);
+  const mailResetTimerRef = useRef(null);
   const subscriptionResetTimerRef = useRef(null);
+
+  async function handleMailSubmit(event) {
+    event.preventDefault();
+    if (mailState === 'sending') return;
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setMailState('sending');
+    setMailMessage('Sending your message...');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          name: String(formData.get('name') || '').trim(),
+          email: String(formData.get('email') || '').trim(),
+          subject: 'Message from Ariverse',
+          message: String(formData.get('message') || '').trim(),
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to send your message right now.');
+      }
+
+      form.reset();
+      setMailState('success');
+      setMailMessage(payload?.message || 'Message sent. ARI will get back to you soon.');
+
+      if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
+      mailResetTimerRef.current = setTimeout(() => {
+        setMailState('idle');
+        setMailMessage('');
+        mailResetTimerRef.current = null;
+      }, 3500);
+    } catch (_error) {
+      setMailState('error');
+      setMailMessage('Unable to send right now. Please try again.');
+
+      if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
+      mailResetTimerRef.current = setTimeout(() => {
+        setMailState('idle');
+        setMailMessage('');
+        mailResetTimerRef.current = null;
+      }, 4500);
+    }
+  }
 
   async function handleSubscribeSubmit(event) {
     event.preventDefault();
@@ -114,6 +170,48 @@ export default function HomePage({ profileLinks }) {
   const contactSlides = [
     {
       eyebrow: 'leaf',
+      title: 'Drop ARI a message',
+      note: "Drop ARI a message and He'll get back to you!",
+      body: (
+        <form onSubmit={handleMailSubmit}>
+          <label htmlFor="contact-name">Your Name</label>
+          <input
+            id="contact-name"
+            name="name"
+            type="text"
+            placeholder="Your name"
+            required
+          />
+
+          <label htmlFor="contact-email">Your Email</label>
+          <input
+            id="contact-email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            required
+          />
+
+          <label htmlFor="contact-message">Your Message</label>
+          <textarea
+            id="contact-message"
+            name="message"
+            placeholder="Write your message here..."
+            rows="4"
+            required
+          />
+
+          <button type="submit" disabled={mailState === 'sending' || mailState === 'success'}>
+            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent ✓' : 'Send Message'}
+          </button>
+          {mailMessage ? (
+            <p className={`contact-status ${mailState}`}>{mailMessage}</p>
+          ) : null}
+        </form>
+      ),
+    },
+    {
+      eyebrow: 'ember',
       title: 'Subscribe to Ariverse',
       note: 'Get updates when new career posts, projects, experiments, lectures, books, clay play, and books read entries are added.',
       body: (
@@ -134,21 +232,6 @@ export default function HomePage({ profileLinks }) {
             <p className={`contact-status ${subscriptionState}`}>{subscriptionMessage}</p>
           ) : null}
         </form>
-      ),
-    },
-    {
-      eyebrow: 'ember',
-      title: 'What you will receive',
-      note: 'One email when new content lands, across the sections you care about.',
-      body: (
-        <>
-          <p className="contact-note" style={{ marginTop: 0 }}>
-            You will get updates for new posts in:
-          </p>
-          <p className="contact-note" style={{ marginBottom: 0 }}>
-            Career, Projects, Mini-Projects, Experiments, Guest Lectures, Clay Play, and Books Read.
-          </p>
-        </>
       ),
     },
   ];
@@ -199,6 +282,7 @@ export default function HomePage({ profileLinks }) {
 
   useEffect(() => () => {
     if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
+    if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
     if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
   }, []);
 
@@ -291,7 +375,7 @@ export default function HomePage({ profileLinks }) {
     PROFESSIONAL:
       'This space holds my practical journey: real work, crafted projects, core skills, and lived experience. I focus on solving meaningful problems with consistent learning, clean execution, and long-term thinking.',
     PASSIONAL:
-      'Beyond formal work, these are the things I pursue with heart: lectures, experiments, writing, and timeless wisdom. This section reflects how I learn, share, and grow through ideas that truly move me.',
+      'Beyond formal work, these are the things I pursue with heart: lectures, experiments, trophies, writing, and timeless wisdom. This section reflects how I learn, share, and grow through ideas that truly move me.',
     HOBBYAL:
       'Here live my creative and personal explorations - clay, poetry, reading trails, reflections, and scientific wonder. These are not side notes; they are the quiet roots that shape how I think and build.',
   };
@@ -350,7 +434,7 @@ export default function HomePage({ profileLinks }) {
                       : link.label === 'Books Read'
                         ? '/ari-read-books'
                         : link.href;
-                    const safeHref = typeof resolvedHref === 'string' && (resolvedHref.startsWith('/') || resolvedHref.startsWith('https://'))
+                    const safeHref = typeof resolvedHref === 'string' && (resolvedHref === '#' || resolvedHref.startsWith('/') || resolvedHref.startsWith('https://'))
                       ? resolvedHref
                       : '/';
                     const isExternal = safeHref.startsWith('http');

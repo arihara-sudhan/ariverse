@@ -305,6 +305,237 @@ footer {
   font-weight: 700;
 }
 
+.quote-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 28rem;
+  padding: 1.4rem 1rem 0;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.quote-panel:hover {
+  border-color: #9f9f9f;
+  transform: translateY(-1px);
+}
+
+.quote-panel-text {
+  margin: 0;
+  font-size: clamp(0.95rem, 2.1vw, 1.35rem);
+  line-height: 1.6;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.quote-panel-strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 0.11em;
+  text-decoration-skip-ink: none;
+  text-decoration-color: #c1121f;
+}
+
+.quote-panel-everything {
+  font-weight: 700;
+}
+
+.quote-panel-author {
+  margin: 0.7rem 0 0;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  transform: translateX(10%);
+}
+
+.quote-panel-role {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: rgba(85, 85, 85, 0.8);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.quote-panel-copy {
+  position: absolute;
+  inset: 1.4rem 1rem auto 1rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.quote-panel-copy.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.quote-panel-copy-outgoing {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.quote-panel-blob {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  display: block;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.quote-panel-measure {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.quote-panel-measure-item {
+  width: 100%;
+}
+
+.quote-panel-controls {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+  align-items: center;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.quote-panel-controls.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.quote-panel-controls .contact-carousel-count {
+  color: rgba(17, 17, 17, 0.75);
+  font-size: 0.76rem;
+}
+
+.quote-panel-arrow {
+  width: 1.7rem;
+  height: 1.7rem;
+  background: transparent;
+  border-color: #111111;
+  box-shadow: none;
+}
+
+.quote-panel-arrow:hover {
+  background: transparent;
+  border-color: #111111;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .quote-panel {
+    min-height: 22rem;
+    padding: 1rem 0.75rem 0;
+  }
+
+  .quote-panel-copy {
+    inset: 1rem 0.75rem auto 0.75rem;
+  }
+
+  .quote-panel-text {
+    font-size: clamp(0.84rem, 3.6vw, 1rem);
+    line-height: 1.45;
+  }
+
+  .quote-panel-author {
+    margin-top: 0.45rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    transform: none;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .quote-panel-controls {
+    top: 0.3rem;
+    right: 0.3rem;
+    gap: 0.25rem;
+  }
+
+  .quote-panel-controls .contact-carousel-count {
+    font-size: 0.7rem;
+  }
+
+  .quote-panel-arrow {
+    width: 1.55rem;
+    height: 1.55rem;
+    font-size: 0.92rem;
+  }
+
+  .quote-panel-role {
+    font-size: 0.66rem;
+    line-height: 1.25;
+    color: rgba(85, 85, 85, 0.78);
+    font-weight: 500;
+  }
+
+  .quote-panel-write-btn {
+    right: 0.3rem;
+    bottom: 0.28rem;
+    font-size: 0.62rem;
+    padding: 0.28rem 0.42rem;
+    border-radius: 5px;
+    max-width: calc(100% - 0.65rem);
+  }
+}
+
+.quote-panel-write-btn {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.3rem;
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid #111111;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.42rem 0.66rem;
+  cursor: pointer;
+  z-index: 2;
+  transition: opacity 220ms ease, transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.quote-panel-write-btn.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.quote-panel-write-btn:hover,
+.quote-panel-write-btn:focus-visible {
+  background: #f7f7f7;
+  border-color: #111111;
+  transform: translateY(-1px);
+}
+
+.quote-panel-write-btn:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--muted);
@@ -346,7 +577,6 @@ footer {
 
 .feature:hover {
   border-color: #9f9f9f;
-  box-shadow: inset 0 0 0 1px #8f8f8f;
   transform: translateY(-1px);
 }
 
@@ -368,7 +598,6 @@ footer {
 
 .category-band:hover {
   border-color: #9f9f9f;
-  box-shadow: inset 0 0 0 1px #8f8f8f;
   transform: translateY(-1px);
 }
 
@@ -1297,6 +1526,65 @@ footer {
   text-align: center;
   font-size: 0.98rem;
   line-height: 1.4;
+}
+
+.aris-shelf-grid-wrap {
+  margin-top: 1.15rem;
+}
+
+.aris-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.aris-shelf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.aris-shelf-cover {
+  display: block;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: #ffffff;
+  aspect-ratio: 1 / 1;
+}
+
+.aris-shelf-cover img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  padding: 0.35rem;
+  box-sizing: border-box;
+}
+
+.aris-shelf-card h3,
+.aris-shelf-card p {
+  margin: 0;
+  text-align: center;
+}
+
+.aris-shelf-card h3 {
+  margin-top: 0.2rem;
+  font-size: 0.98rem;
+  line-height: 1.4;
+}
+
+.aris-shelf-card p {
+  margin-bottom: 0.1rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #5f5f5f;
 }
 
 .clay-play-list h1,
@@ -2317,6 +2605,12 @@ body.mini-project-open-body::-webkit-scrollbar {
   padding: 0.65rem 0.75rem;
 }
 
+.contact-card select,
+.rss-card select {
+  font-weight: 400;
+  line-height: 1.45;
+}
+
 .contact-card textarea,
 .rss-card textarea {
   resize: vertical;
@@ -2739,6 +3033,24 @@ body.mini-project-open-body::-webkit-scrollbar {
     background: #ffffff;
   }
 
+  .quote-panel {
+    min-height: 24rem;
+    padding: 1.1rem 0.85rem 0;
+  }
+
+  .quote-panel-text {
+    font-size: clamp(0.9rem, 3.8vw, 1.15rem);
+  }
+
+  .quote-panel-blob {
+    width: 100%;
+  }
+
+  .quote-panel-write-btn {
+    right: 0.45rem;
+    bottom: 0.3rem;
+  }
+
   .feature-image {
     width: 100%;
     margin-inline: 0;
@@ -2777,6 +3089,10 @@ body.mini-project-open-body::-webkit-scrollbar {
   }
 
   .aris-books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aris-shelf-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2997,6 +3313,10 @@ body.mini-project-open-body::-webkit-scrollbar {
   }
 
   .aris-books-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aris-shelf-grid {
     grid-template-columns: 1fr;
   }
 }

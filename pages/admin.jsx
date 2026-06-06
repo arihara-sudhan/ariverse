@@ -1,64 +1,44 @@
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Header from '../src/components/Header';
 import { isAdminRequest } from '../lib/adminAuth';
-import { listAllCommentApprovals, listProfileLinks } from '../lib/adminData';
-
-function buildCommentLocation(comment) {
-  if (comment.source === 'project') {
-    return '/projects';
-  }
-  const sectionMap = {
-    xperiments: '/aris-xperiments',
-    kavithaigal: '/ariyin-kavithaigal',
-    'guest-lectures': '/guest-lectures',
-    'book-reviews': '/book-reviews',
-    'clay-play': '/clay-play',
-    testimonials: '/#testimonials',
-  };
-  return sectionMap[comment.sectionKey] || '#';
-}
+import { listAllCommentApprovals, listProfileLinks, listTestimonialsForAdmin } from '../lib/adminData';
 
 export async function getServerSideProps({ req }) {
   const isAuthed = isAdminRequest(req);
+  const [initialLinks, initialPendingApprovals] = isAuthed
+    ? await Promise.all([
+        listProfileLinks(),
+        Promise.all([listAllCommentApprovals(), listTestimonialsForAdmin({ includePending: true })]),
+      ])
+    : [[], [[], []]];
+
+  const [initialApprovals, initialTestimonials] = initialPendingApprovals;
+  const awaitingApprovalsCount = [
+    ...(Array.isArray(initialApprovals) ? initialApprovals : []),
+    ...(Array.isArray(initialTestimonials) ? initialTestimonials : []),
+  ].filter((item) => String(item?.status || '').toLowerCase() === 'pending').length;
 
   return {
     props: {
       isAuthed,
-      initialLinks: isAuthed ? await listProfileLinks() : [],
-      initialApprovals: isAuthed ? await listAllCommentApprovals() : [],
+      initialLinks,
+      awaitingApprovalsCount,
     },
   };
 }
 
-export default function AdminPage({ isAuthed, initialLinks, initialApprovals }) {
+export default function AdminPage({ isAuthed, initialLinks, awaitingApprovalsCount }) {
   const [authed, setAuthed] = useState(isAuthed);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoadingLinks, setIsLoadingLinks] = useState(false);
 
   const [links, setLinks] = useState(initialLinks);
-  const [approvals, setApprovals] = useState(initialApprovals || []);
   const [label, setLabel] = useState('');
   const [href, setHref] = useState('');
   const [category, setCategory] = useState('PROFESSIONAL');
   const [saving, setSaving] = useState(false);
-
-  const pendingApprovals = useMemo(
-    () => approvals.filter((item) => item.status === 'pending'),
-    [approvals],
-  );
-  const greenApprovals = useMemo(
-    () => approvals.filter((item) => item.status === 'green'),
-    [approvals],
-  );
-
-  async function loadApprovals() {
-    const res = await fetch('/api/admin/comment-approvals');
-    if (!res.ok) throw new Error('Could not load approvals.');
-    const data = await res.json();
-    setApprovals(Array.isArray(data.comments) ? data.comments : []);
-  }
 
   async function login(event) {
     event.preventDefault();
@@ -85,15 +65,11 @@ export default function AdminPage({ isAuthed, initialLinks, initialApprovals }) 
     setAuthed(true);
     setIsLoadingLinks(true);
 
-    Promise.all([fetch('/api/admin/links'), fetch('/api/admin/comment-approvals')])
-      .then(async ([linksRes, approvalsRes]) => {
+    Promise.all([fetch('/api/admin/links')])
+      .then(async ([linksRes]) => {
         if (!linksRes.ok) throw new Error('Could not load admin links.');
         const linksData = await linksRes.json();
         setLinks(linksData.links || []);
-
-        if (!approvalsRes.ok) throw new Error('Could not load approvals.');
-        const approvalsData = await approvalsRes.json();
-        setApprovals(Array.isArray(approvalsData.comments) ? approvalsData.comments : []);
       })
       .catch((loadError) => {
         setError(loadError?.message || 'Could not load admin data.');
@@ -144,50 +120,10 @@ export default function AdminPage({ isAuthed, initialLinks, initialApprovals }) 
     setLinks((prev) => prev.map((link) => (link.id === id ? { ...link, isHidden: hidden ? 0 : 1 } : link)));
   }
 
-  async function updateApprovalComment(comment, patch) {
-    const res = await fetch('/api/admin/comment-approvals', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source: comment.source,
-        sectionKey: comment.sectionKey,
-        entryId: comment.entryId,
-        commentId: comment.id,
-        ...patch,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(data.error || 'Could not update comment.');
-      return;
-    }
-    await loadApprovals();
-  }
-
-  async function deleteApprovalComment(comment) {
-    const res = await fetch('/api/admin/comment-approvals', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source: comment.source,
-        sectionKey: comment.sectionKey,
-        entryId: comment.entryId,
-        commentId: comment.id,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(data.error || 'Could not delete comment.');
-      return;
-    }
-    await loadApprovals();
-  }
-
   async function logout() {
     await fetch('/api/admin/logout', { method: 'POST' });
     setAuthed(false);
     setLinks([]);
-    setApprovals([]);
     setPassword('');
   }
 
@@ -230,52 +166,6 @@ export default function AdminPage({ isAuthed, initialLinks, initialApprovals }) 
                 <button type="submit" disabled={saving}>{saving ? 'Adding...' : 'Add Link'}</button>
               </form>
 
-              <div className="contact-card">
-                <h3>Approvals ({pendingApprovals.length})</h3>
-                {pendingApprovals.length === 0 ? <p className="contact-note">No pending comments.</p> : null}
-                {pendingApprovals.map((comment) => (
-                  <div key={`pending-${comment.source}-${comment.id}`} className="admin-upload-item" style={{ marginBottom: '0.6rem' }}>
-                    <span><strong>{comment.name || 'anonymous'}:</strong> {comment.comment}</span>
-                    <p className="contact-note" style={{ margin: '0.25rem 0' }}>
-                      {comment.source === 'project' ? `Project #${comment.entryId}` : `${comment.sectionKey} #${comment.entryId}`}
-                      {' | '}
-                      <Link href={buildCommentLocation(comment)}>Open location</Link>
-                    </p>
-                    <div className="admin-item-actions">
-                      <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={() => updateApprovalComment(comment, { status: 'green' })}>Green</button>
-                      <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={() => {
-                        const next = window.prompt('Edit comment', comment.comment || '');
-                        if (typeof next === 'string') updateApprovalComment(comment, { comment: next });
-                      }}>Edit</button>
-                      <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={() => deleteApprovalComment(comment)}>Delete</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="contact-card">
-                <h3>Green List ({greenApprovals.length})</h3>
-                {greenApprovals.length === 0 ? <p className="contact-note">No green comments yet.</p> : null}
-                {greenApprovals.map((comment) => (
-                  <div key={`green-${comment.source}-${comment.id}`} className="admin-upload-item" style={{ marginBottom: '0.6rem' }}>
-                    <span><strong>{comment.name || 'anonymous'}:</strong> {comment.comment}</span>
-                    <p className="contact-note" style={{ margin: '0.25rem 0' }}>
-                      {comment.source === 'project' ? `Project #${comment.entryId}` : `${comment.sectionKey} #${comment.entryId}`}
-                      {' | '}
-                      <Link href={buildCommentLocation(comment)}>Open location</Link>
-                    </p>
-                    <div className="admin-item-actions">
-                      <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={() => updateApprovalComment(comment, { status: 'pending' })}>Move to Approvals</button>
-                      <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={() => {
-                        const next = window.prompt('Edit comment', comment.comment || '');
-                        if (typeof next === 'string') updateApprovalComment(comment, { comment: next });
-                      }}>Edit</button>
-                      <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={() => deleteApprovalComment(comment)}>Delete</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <div className="playlist-grid">
                 {isLoadingLinks && <p className="contact-note">Loading section links...</p>}
                 {links.map((link) => {
@@ -301,6 +191,14 @@ export default function AdminPage({ isAuthed, initialLinks, initialApprovals }) 
                     </article>
                   );
                 })}
+              </div>
+
+              <div className="contact-card">
+                <Link className="ai-channel-subscribe" href="/admin/approvals">
+                  {awaitingApprovalsCount > 0
+                    ? `View Awaiting Approvals (${awaitingApprovalsCount})`
+                    : 'View Awaiting Approvals'}
+                </Link>
               </div>
 
               <button type="button" className="ai-channel-subscribe" onClick={logout}>

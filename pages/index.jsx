@@ -1,16 +1,52 @@
-import { listContentComments, listVisibleProfileLinks } from '../lib/adminData';
+﻿import { listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
 const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
 const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
 const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.webp';
-const TIGER_URL = '/assets/tiger.png';
+const CYNODON_BLOB_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/cynodon.webp';
 const FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
-  { src: TIGER_URL, alt: 'Tiger illustration' },
 ];
+const FIXED_TESTIMONIAL = {
+  testimonial: 'Be Nothing! Everything!',
+  name: 'ARISTOTLE',
+  relation: '',
+};
+
+function renderFixedTestimonialText() {
+  return (
+    <>
+      Be <span className="quote-panel-strike">Nothing!</span>{' '}
+      <span className="quote-panel-everything">Everything!</span>
+    </>
+  );
+}
+
+function renderFixedAuthor() {
+  return (
+    <>
+      ARI<span className="quote-panel-strike">STOTLE</span>
+    </>
+  );
+}
+
+function renderTestimonialAuthor(slide, index) {
+  return index === 0 ? renderFixedAuthor() : slide?.name || 'anonymous';
+}
+
+function renderTestimonialRole(slide, index) {
+  if (index === 0) return '';
+  return formatTestimonialRole(slide?.relation || '');
+}
+
+function formatTestimonialRole(role) {
+  const cleanRole = String(role || '').trim();
+  if (!cleanRole) return '';
+  return cleanRole.startsWith("Ari's ") ? cleanRole : `Ari's ${cleanRole}`;
+}
 const WELCOME_MESSAGES = [
   { lang: 'en', text: 'Welcome to ARIVERSE...' },
   { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
@@ -25,11 +61,12 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-experiments', label: 'Experiments', href: '/aris-xperiments', category: 'PASSIONAL' },
   { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PROFESSIONAL' },
   { id: 'f-my-books', label: 'My Books', href: '/aris-books', category: 'PASSIONAL' },
+  { id: 'f-shelf', label: 'Shelf', href: '/aris-shelf', category: 'PASSIONAL' },
   { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'HOBBYAL' },
-  { id: 'f-thirukkural', label: 'திருக்குறள்', href: 'https://arihara-sudhan.github.io/uyir-kural/', category: 'PASSIONAL' },
+  { id: 'f-thirukkural', label: 'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯', href: 'https://arihara-sudhan.github.io/uyir-kural/', category: 'PASSIONAL' },
   { id: 'f-guest', label: 'Guest Lectures', href: '/guest-lectures', category: 'PASSIONAL' },
   { id: 'f-clay', label: 'Clay Play', href: '/clay-play', category: 'HOBBYAL' },
-  { id: 'f-kavithaigal', label: 'அரியின் கவிதைகள்', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
+  { id: 'f-kavithaigal', label: 'à®…à®°à®¿à®¯à®¿à®©à¯ à®•à®µà®¿à®¤à¯ˆà®•à®³à¯', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
   { id: 'f-books-read', label: 'Books Read', href: '/ari-read-books', category: 'HOBBYAL' },
   { id: 'f-reviews', label: 'Book Reviews', href: '/book-reviews', category: 'HOBBYAL' },
   { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },
@@ -56,17 +93,35 @@ export default function HomePage({ profileLinks }) {
   const [welcomeIndex, setWelcomeIndex] = useState(0);
   const [typedText, setTypedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [isQuotePaused, setIsQuotePaused] = useState(false);
+  const [quoteOutgoingIndex, setQuoteOutgoingIndex] = useState(null);
+  const [isQuoteTextVisible, setIsQuoteTextVisible] = useState(true);
+  const [quotePanelHeight, setQuotePanelHeight] = useState(null);
+  const [publicTestimonials, setPublicTestimonials] = useState([]);
+  const quoteSlides = [FIXED_TESTIMONIAL, ...publicTestimonials];
   const [contactIndex, setContactIndex] = useState(0);
   const [isContactPaused, setIsContactPaused] = useState(false);
   const [mailState, setMailState] = useState('idle');
   const [mailMessage, setMailMessage] = useState('');
   const [subscriptionState, setSubscriptionState] = useState('idle');
   const [subscriptionMessage, setSubscriptionMessage] = useState('');
+  const [testimonialState, setTestimonialState] = useState('idle');
+  const [testimonialMessage, setTestimonialMessage] = useState('');
   const [featureImage, setFeatureImage] = useState(FEATURE_IMAGES[0]);
+  const quotePanelRef = useRef(null);
+  const quoteBlobRef = useRef(null);
+  const quoteMeasureRefs = useRef([]);
+  const quoteResumeTimerRef = useRef(null);
+  const quoteTextShowTimerRef = useRef(null);
+  const quoteTextClearTimerRef = useRef(null);
   const contactResumeTimerRef = useRef(null);
   const mailResetTimerRef = useRef(null);
   const subscriptionResetTimerRef = useRef(null);
+  const testimonialResetTimerRef = useRef(null);
   const CAROUSEL_RESUME_DELAY_MS = 5000;
+  const QUOTE_PANEL_GAP_PX = 16;
+  const TESTIMONIAL_SLIDE_INDEX = 2;
 
   function clearCarouselResumeTimer(timerRef) {
     if (timerRef.current) {
@@ -75,12 +130,64 @@ export default function HomePage({ profileLinks }) {
     }
   }
 
+  function clearQuoteTransitionTimers() {
+    if (quoteTextShowTimerRef.current) {
+      clearTimeout(quoteTextShowTimerRef.current);
+      quoteTextShowTimerRef.current = null;
+    }
+    if (quoteTextClearTimerRef.current) {
+      clearTimeout(quoteTextClearTimerRef.current);
+      quoteTextClearTimerRef.current = null;
+    }
+  }
+
+  function transitionToQuoteSlide(nextIndex) {
+    if (nextIndex === quoteIndex) return;
+
+    clearQuoteTransitionTimers();
+    setQuoteOutgoingIndex(quoteIndex);
+    setIsQuoteTextVisible(false);
+    setQuoteIndex(nextIndex);
+
+    quoteTextShowTimerRef.current = setTimeout(() => {
+      setIsQuoteTextVisible(true);
+      quoteTextShowTimerRef.current = null;
+    }, 20);
+
+    quoteTextClearTimerRef.current = setTimeout(() => {
+      setQuoteOutgoingIndex(null);
+      quoteTextClearTimerRef.current = null;
+    }, 240);
+  }
+
   function scheduleCarouselResume(setPaused, timerRef) {
     clearCarouselResumeTimer(timerRef);
     timerRef.current = setTimeout(() => {
       setPaused(false);
       timerRef.current = null;
     }, CAROUSEL_RESUME_DELAY_MS);
+  }
+
+  async function loadPublicTestimonials() {
+    try {
+      const response = await fetch('/api/testimonials');
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Could not load testimonials.');
+      }
+      const items = Array.isArray(payload.testimonials)
+        ? payload.testimonials
+            .map((item) => ({
+              testimonial: String(item?.testimonial || '').trim(),
+              name: String(item?.name || '').trim() || 'anonymous',
+              relation: String(item?.relation || '').trim(),
+            }))
+            .filter((item) => item.testimonial)
+        : [];
+      setPublicTestimonials(items);
+    } catch (_error) {
+      setPublicTestimonials([]);
+    }
   }
 
   async function handleMailSubmit(event) {
@@ -140,11 +247,57 @@ export default function HomePage({ profileLinks }) {
     setFeatureImage(FEATURE_IMAGES[Math.floor(Math.random() * FEATURE_IMAGES.length)]);
   }, []);
 
+  useEffect(() => {
+    loadPublicTestimonials();
+  }, []);
+
+  useEffect(() => {
+    function updateQuotePanelHeight() {
+      const panel = quotePanelRef.current;
+      if (!panel) return;
+
+      const blob = quoteBlobRef.current;
+      const panelStyles = window.getComputedStyle(panel);
+      const paddingTop = Number.parseFloat(panelStyles.paddingTop) || 0;
+      const textHeights = quoteMeasureRefs.current.reduce((maxHeight, element) => {
+        if (!element) return maxHeight;
+        return Math.max(maxHeight, element.getBoundingClientRect().height);
+      }, 0);
+      const blobHeight = blob ? blob.getBoundingClientRect().height : 0;
+
+      if (textHeights > 0 && blobHeight > 0) {
+        setQuotePanelHeight(Math.ceil(paddingTop + textHeights + blobHeight + QUOTE_PANEL_GAP_PX));
+      }
+    }
+
+    const raf = window.requestAnimationFrame(updateQuotePanelHeight);
+    window.addEventListener('resize', updateQuotePanelHeight);
+
+    const blob = quoteBlobRef.current;
+    blob?.addEventListener('load', updateQuotePanelHeight);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener('resize', updateQuotePanelHeight);
+      blob?.removeEventListener('load', updateQuotePanelHeight);
+    };
+  }, [quoteSlides.length]);
+
+  useEffect(() => {
+    setQuoteIndex(0);
+    setQuoteOutgoingIndex(null);
+    setIsQuoteTextVisible(true);
+  }, [publicTestimonials.length]);
+
   useEffect(
     () => () => {
+      if (quoteResumeTimerRef.current) clearTimeout(quoteResumeTimerRef.current);
+      if (quoteTextShowTimerRef.current) clearTimeout(quoteTextShowTimerRef.current);
+      if (quoteTextClearTimerRef.current) clearTimeout(quoteTextClearTimerRef.current);
       if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
       if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
       if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
+      if (testimonialResetTimerRef.current) clearTimeout(testimonialResetTimerRef.current);
     },
     [],
   );
@@ -199,6 +352,59 @@ export default function HomePage({ profileLinks }) {
     }
   }
 
+  async function handleTestimonialSubmit(event) {
+    event.preventDefault();
+    if (testimonialState === 'sending') return;
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setTestimonialState('sending');
+    setTestimonialMessage('Sending your testimonial...');
+
+    try {
+      const response = await fetch('/api/testimonials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          name: String(formData.get('name') || '').trim(),
+          relation: String(formData.get('relation') || '').trim(),
+          testimonial: String(formData.get('testimonial') || '').trim(),
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to submit testimonial right now.');
+      }
+
+      form.reset();
+      setTestimonialState('success');
+      setTestimonialMessage(payload?.message || 'Testimonial submitted for approval.');
+      await loadPublicTestimonials();
+
+      if (testimonialResetTimerRef.current) clearTimeout(testimonialResetTimerRef.current);
+      testimonialResetTimerRef.current = setTimeout(() => {
+        setTestimonialState('idle');
+        setTestimonialMessage('');
+        testimonialResetTimerRef.current = null;
+      }, 3500);
+    } catch (_error) {
+      setTestimonialState('error');
+      setTestimonialMessage('Unable to submit right now. Please try again.');
+
+      if (testimonialResetTimerRef.current) clearTimeout(testimonialResetTimerRef.current);
+      testimonialResetTimerRef.current = setTimeout(() => {
+        setTestimonialState('idle');
+        setTestimonialMessage('');
+        testimonialResetTimerRef.current = null;
+      }, 4500);
+    }
+  }
+
   const contactSlides = [
     {
       eyebrow: 'leaf',
@@ -234,7 +440,7 @@ export default function HomePage({ profileLinks }) {
           />
 
           <button type="submit" disabled={mailState === 'sending' || mailState === 'success'}>
-            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent ✓' : 'Send Message'}
+            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent âœ“' : 'Send Message'}
           </button>
           {mailMessage ? (
             <p className={`contact-status ${mailState}`}>{mailMessage}</p>
@@ -258,10 +464,55 @@ export default function HomePage({ profileLinks }) {
           />
 
           <button type="submit" disabled={subscriptionState === 'sending' || subscriptionState === 'success'}>
-            {subscriptionState === 'sending' ? 'Subscribing...' : subscriptionState === 'success' ? 'Subscribed ✓' : 'Subscribe'}
+            {subscriptionState === 'sending' ? 'Subscribing...' : subscriptionState === 'success' ? 'Subscribed âœ“' : 'Subscribe'}
           </button>
           {subscriptionMessage ? (
             <p className={`contact-status ${subscriptionState}`}>{subscriptionMessage}</p>
+          ) : null}
+        </form>
+      ),
+    },
+    {
+      eyebrow: 'petal',
+      title: 'Share a testimonial for ARI',
+      note: 'Tell ARI how you know him and what you feel about working, learning, or being with him.',
+      body: (
+        <form id="testimonial-form" onSubmit={handleTestimonialSubmit}>
+          <label htmlFor="testimonial-name">Name</label>
+          <input
+            id="testimonial-name"
+            name="name"
+            type="text"
+            placeholder="Your name"
+            required
+          />
+
+          <label htmlFor="testimonial-relation">You are what to ARI?</label>
+          <select id="testimonial-relation" name="relation" required defaultValue="">
+            <option value="" disabled>
+              Choose one
+            </option>
+            <option value="Class Mate">Class Mate</option>
+            <option value="Friend">Friend</option>
+            <option value="Colleague">Colleague</option>
+            <option value="Manager">Manager</option>
+            <option value="Let ARI infer">Let ARI infer</option>
+          </select>
+
+          <label htmlFor="testimonial-text">Testimonial</label>
+          <textarea
+            id="testimonial-text"
+            name="testimonial"
+            placeholder="Write your testimonial here..."
+            rows="4"
+            required
+          />
+
+          <button type="submit" disabled={testimonialState === 'sending' || testimonialState === 'success'}>
+            {testimonialState === 'sending' ? 'Sending...' : testimonialState === 'success' ? 'Sent âœ“' : 'Submit'}
+          </button>
+          {testimonialMessage ? (
+            <p className={`contact-status ${testimonialState}`}>{testimonialMessage}</p>
           ) : null}
         </form>
       ),
@@ -311,6 +562,37 @@ export default function HomePage({ profileLinks }) {
 
     return () => clearInterval(timer);
   }, [contactSlides.length, isContactPaused]);
+
+  useEffect(() => {
+    if (isQuotePaused || quoteSlides.length <= 1) return undefined;
+
+    const timer = setInterval(() => {
+      transitionToQuoteSlide((quoteIndex + 1) % quoteSlides.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [isQuotePaused, quoteIndex, quoteSlides.length]);
+
+  function handleQuoteCardClick() {
+    setIsQuotePaused(true);
+    scheduleCarouselResume(setIsQuotePaused, quoteResumeTimerRef);
+  }
+
+  function handleQuoteMouseEnter() {
+    setIsQuotePaused(true);
+    clearCarouselResumeTimer(quoteResumeTimerRef);
+  }
+
+  function handleQuoteMouseLeave() {
+    if (!isQuotePaused) return;
+    scheduleCarouselResume(setIsQuotePaused, quoteResumeTimerRef);
+  }
+
+  function goToQuoteSlide(nextIndex) {
+    transitionToQuoteSlide(nextIndex);
+    setIsQuotePaused(true);
+    scheduleCarouselResume(setIsQuotePaused, quoteResumeTimerRef);
+  }
 
   function handleContactCardClick() {
     setIsContactPaused(true);
@@ -369,11 +651,12 @@ export default function HomePage({ profileLinks }) {
     'Guest Lectures',
     'AI with ARI (YouTube)',
     'My Books',
+    'Shelf',
     'AriZone (Blog)',
-    'திருக்குறள்',
+    'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯',
     'Thirukkural',
     'Clay Play',
-    'அரியின் கவிதைகள்',
+    'à®…à®°à®¿à®¯à®¿à®©à¯ à®•à®µà®¿à®¤à¯ˆà®•à®³à¯',
     'Books Read',
     'Book Reviews',
     'Binomial Names',
@@ -432,14 +715,125 @@ export default function HomePage({ profileLinks }) {
           </figure>
         </section>
 
-        <section className="quote-band" aria-label="Quote">
-          <p className="quote-line">
-            Be <span className="quote-strike">Nothing!</span> <span className="quote-everything">Everything!</span>
-          </p>
-          <p className="quote-author">
-            - ARI<span className="quote-strike">STOTLE</span>
-          </p>
-        </section>
+        <div
+          ref={quotePanelRef}
+          className={`quote-panel ${isQuotePaused ? 'is-paused' : ''}`}
+          aria-label="Timeless quotes"
+          onMouseEnter={handleQuoteMouseEnter}
+          onMouseLeave={handleQuoteMouseLeave}
+          onClick={handleQuoteCardClick}
+          role="button"
+          tabIndex={0}
+          aria-pressed={isQuotePaused}
+          onKeyDown={(event) => {
+            if (shouldIgnoreCarouselKey(event)) return;
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              handleQuoteCardClick();
+            }
+          }}
+          style={quotePanelHeight ? { minHeight: `${quotePanelHeight}px` } : undefined}
+        >
+          {quoteOutgoingIndex !== null ? (
+            <div className="quote-panel-copy quote-panel-copy-outgoing" aria-hidden="true">
+              <p className="quote-panel-text">
+                {quoteOutgoingIndex === 0 ? renderFixedTestimonialText() : quoteSlides[quoteOutgoingIndex]?.testimonial}
+              </p>
+              <p className="quote-panel-author">
+                - {renderTestimonialAuthor(quoteSlides[quoteOutgoingIndex], quoteOutgoingIndex)}
+                {renderTestimonialRole(quoteSlides[quoteOutgoingIndex], quoteOutgoingIndex) ? (
+                  <span className="quote-panel-role">, {renderTestimonialRole(quoteSlides[quoteOutgoingIndex], quoteOutgoingIndex)}</span>
+                ) : null}
+              </p>
+            </div>
+          ) : null}
+          <div className={`quote-panel-copy ${isQuoteTextVisible ? 'is-visible' : ''}`}>
+            <p className="quote-panel-text">
+              {quoteIndex === 0 ? renderFixedTestimonialText() : quoteSlides[quoteIndex]?.testimonial}
+            </p>
+            <p className="quote-panel-author">
+              - {renderTestimonialAuthor(quoteSlides[quoteIndex], quoteIndex)}
+              {renderTestimonialRole(quoteSlides[quoteIndex], quoteIndex) ? (
+                <span className="quote-panel-role">, {renderTestimonialRole(quoteSlides[quoteIndex], quoteIndex)}</span>
+              ) : null}
+            </p>
+          </div>
+          <img
+            ref={quoteBlobRef}
+            className="quote-panel-blob"
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            src={CYNODON_BLOB_URL}
+            alt=""
+            aria-hidden="true"
+          />
+          <div className="quote-panel-measure" aria-hidden="true">
+            {quoteSlides.map((slide, index) => (
+              <article
+                key={`${slide.name || 'testimonial'}-${index}`}
+                ref={(element) => {
+                  quoteMeasureRefs.current[index] = element;
+                }}
+                className="quote-panel-measure-item"
+              >
+                <p className="quote-panel-text">{index === 0 ? renderFixedTestimonialText() : slide.testimonial}</p>
+                <p className="quote-panel-author">
+                  - {renderTestimonialAuthor(slide, index)}
+                  {renderTestimonialRole(slide, index) ? (
+                    <span className="quote-panel-role">, {renderTestimonialRole(slide, index)}</span>
+                  ) : null}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <div className={`quote-panel-controls ${isQuotePaused ? 'is-visible' : ''}`} aria-label="Quote navigation">
+            {quoteIndex > 0 ? (
+              <button
+                type="button"
+                className="contact-carousel-arrow quote-panel-arrow"
+                aria-label="Previous quote"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goToQuoteSlide(quoteIndex - 1);
+                }}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+            ) : null}
+            <span className="contact-carousel-count" aria-live="polite">
+              {quoteIndex + 1}/{quoteSlides.length}
+            </span>
+            {quoteIndex < quoteSlides.length - 1 ? (
+              <button
+                type="button"
+                className="contact-carousel-arrow quote-panel-arrow"
+                aria-label="Next quote"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goToQuoteSlide(quoteIndex + 1);
+                }}
+              >
+                <span aria-hidden="true">→</span>
+              </button>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            className={`quote-panel-write-btn ${isQuotePaused ? 'is-visible' : ''}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              goToContactSlide(TESTIMONIAL_SLIDE_INDEX);
+              const target = document.getElementById('testimonial-form');
+              target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            aria-label="Write about ARI"
+          >
+            Write about ARI
+          </button>
+        </div>
 
         <section className="category-sections" aria-label="Link categories">
           {groupedLinks.map((group, idx) => (
@@ -484,7 +878,7 @@ export default function HomePage({ profileLinks }) {
           ))}
         </section>
 
-        <section className="feature" id="contact">
+        <section className="feature" id="testimonials">
           <figure className="feature-image">
             <img
               loading="eager"
@@ -570,6 +964,7 @@ export default function HomePage({ profileLinks }) {
     </div>
   );
 }
+
 
 
 

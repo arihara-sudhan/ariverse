@@ -82,12 +82,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const isResumeSection = sectionLabel === 'Resume';
   const isGallerySection = isClayPlaySection || isGuestLecturesSection || isBookReviewsSection;
   const isBooksReadSection = sectionLabel === 'Books Read';
+  const isShelfSection = sectionLabel === 'Shelf';
   const isExperimentsSection = sectionLabel === 'Experiments';
   const isMiniProjectsSection = sectionLabel === 'Mini-Projects';
   const isProjectsSection = sectionLabel === 'Projects';
   const isCareerSection = sectionLabel === 'Career' || sectionLabel === 'Works' || sectionLabel === 'Experience';
   const isKavithaiSection = sectionLabel === 'அரியின் கவிதைகள்' || sectionLabel === 'Ariyin Kavithaigal';
-  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection || isExperimentsSection;
+  const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isShelfSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection || isExperimentsSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
@@ -778,7 +779,15 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
           {isItemManagedSection ? (
           <form className="contact-card" onSubmit={addItem}>
             <label htmlFor="item-kavithai-from">
-              {isMiniProjectsSection || isProjectsSection || isExperimentsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+              {isShelfSection
+                ? 'Name'
+                : isMiniProjectsSection || isProjectsSection || isExperimentsSection
+                  ? 'Project Title'
+                  : isBinomialSection
+                    ? 'Entry Name'
+                    : isGallerySection || isBooksReadSection || isKavithaiSection || isCareerSection
+                      ? 'Title'
+                      : 'Kavithai Name'}
             </label>
             <input
               id="item-kavithai-from"
@@ -786,6 +795,17 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
               onChange={(event) => setKavithaiFrom(event.target.value)}
               required
             />
+            {isShelfSection ? (
+              <>
+                <label htmlFor="item-shelf-subname">Subname</label>
+                <input
+                  id="item-shelf-subname"
+                  value={markdownText}
+                  onChange={(event) => setMarkdownText(event.target.value)}
+                  required
+                />
+              </>
+            ) : null}
             {isCareerSection ? (
               <>
                 <label htmlFor="item-subtitle">Subtitle</label>
@@ -1072,16 +1092,30 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
               </>
             )}
 
-            <label htmlFor="item-markdown">
-              {isMiniProjectsSection ? 'Project Description' : isProjectsSection || isExperimentsSection ? 'Small Description (List Page)' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Markdown (.md) content'}
-            </label>
-            <textarea
-              id="item-markdown"
-              rows="7"
-              value={markdownText}
-              onChange={(event) => setMarkdownText(event.target.value)}
-              required
-            />
+            {!isShelfSection ? (
+              <>
+                <label htmlFor="item-markdown">
+                  {isMiniProjectsSection
+                    ? 'Project Description'
+                    : isProjectsSection || isExperimentsSection
+                      ? 'Small Description (List Page)'
+                      : isBinomialSection || isBooksReadSection
+                        ? 'Caption'
+                        : isCareerSection
+                          ? 'Description'
+                          : isGallerySection
+                            ? 'Write-up'
+                            : 'Markdown (.md) content'}
+                </label>
+                <textarea
+                  id="item-markdown"
+                  rows="7"
+                  value={markdownText}
+                  onChange={(event) => setMarkdownText(event.target.value)}
+                  required
+                />
+              </>
+            ) : null}
             {isProjectsSection || isExperimentsSection ? (
               <>
                 <label htmlFor="item-big-description">README / Full Description (Detail Page)</label>
@@ -1190,6 +1224,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                   />
                 ) : null}
                 <p className="admin-item-title">{item.kavithaiFrom || 'Untitled'}</p>
+                {isShelfSection && item.markdownText ? (
+                  <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
+                    {item.markdownText}
+                  </p>
+                ) : null}
                 {isCareerSection && item.subtitle ? (
                   <p className="contact-note" style={{ margin: '0.25rem 0 0' }}>
                     {item.subtitle}
@@ -1221,12 +1260,28 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                 {editingItemId === item.id ? (
                   <div className="admin-item-editor">
                     <label htmlFor={`edit-name-${item.id}`}>
-                      {isMiniProjectsSection || isProjectsSection || isExperimentsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+                      {isShelfSection
+                        ? 'Name'
+                        : isMiniProjectsSection || isProjectsSection || isExperimentsSection
+                          ? 'Project Title'
+                          : isBinomialSection
+                            ? 'Entry Name'
+                            : isGallerySection || isBooksReadSection || isCareerSection
+                              ? 'Title'
+                              : 'Kavithai Name'}
                     </label>
                     <input
                       id={`edit-name-${item.id}`}
                       value={item.kavithaiFrom || ''}
-                      placeholder={isMiniProjectsSection || isProjectsSection || isExperimentsSection ? 'Project Title' : isBinomialSection ? 'Entry Name' : isGallerySection || isBooksReadSection || isCareerSection ? 'Title' : 'Kavithai Name'}
+                      placeholder={isShelfSection
+                        ? 'Name'
+                        : isMiniProjectsSection || isProjectsSection || isExperimentsSection
+                          ? 'Project Title'
+                          : isBinomialSection
+                            ? 'Entry Name'
+                            : isGallerySection || isBooksReadSection || isCareerSection
+                              ? 'Title'
+                              : 'Kavithai Name'}
                       onChange={(event) => updateLocalItem(item.id, { kavithaiFrom: event.target.value })}
                     />
                     {isCareerSection ? (
@@ -1606,15 +1661,38 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                       </>
                     )}
 
-                    <label htmlFor={`edit-markdown-${item.id}`}>
-                      {isMiniProjectsSection ? 'Project Description' : isProjectsSection || isExperimentsSection ? 'Small Description (List Page)' : isBinomialSection || isBooksReadSection ? 'Caption' : isCareerSection ? 'Description' : isGallerySection ? 'Write-up' : 'Poem'}
-                    </label>
-                    <textarea
-                      id={`edit-markdown-${item.id}`}
-                      rows="8"
-                      value={item.markdownText || item.description || ''}
-                      onChange={(event) => updateLocalItem(item.id, { markdownText: event.target.value })}
-                    />
+                    {isShelfSection ? (
+                      <>
+                        <label htmlFor={`edit-subname-${item.id}`}>Subname</label>
+                        <input
+                          id={`edit-subname-${item.id}`}
+                          value={item.markdownText || ''}
+                          onChange={(event) => updateLocalItem(item.id, { markdownText: event.target.value })}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label htmlFor={`edit-markdown-${item.id}`}>
+                          {isMiniProjectsSection
+                            ? 'Project Description'
+                            : isProjectsSection || isExperimentsSection
+                              ? 'Small Description (List Page)'
+                              : isBinomialSection || isBooksReadSection
+                                ? 'Caption'
+                                : isCareerSection
+                                  ? 'Description'
+                                  : isGallerySection
+                                    ? 'Write-up'
+                                    : 'Poem'}
+                        </label>
+                        <textarea
+                          id={`edit-markdown-${item.id}`}
+                          rows="8"
+                          value={item.markdownText || item.description || ''}
+                          onChange={(event) => updateLocalItem(item.id, { markdownText: event.target.value })}
+                        />
+                      </>
+                    )}
                     {isProjectsSection || isExperimentsSection ? (
                       <>
                         <label htmlFor={`edit-big-description-${item.id}`}>README / Full Description (Detail Page)</label>

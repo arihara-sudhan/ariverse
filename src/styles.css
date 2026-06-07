@@ -2796,6 +2796,18 @@ body.mini-project-open-body::-webkit-scrollbar {
 .rss-card select {
   font-weight: 400;
   line-height: 1.45;
+  padding-right: 2.25rem;
+}
+
+.testimonial-relation-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #111111 50%), linear-gradient(135deg, #111111 50%, transparent 50%);
+  background-position: calc(100% - 1.2rem) 50%, calc(100% - 0.85rem) 50%;
+  background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
+  background-repeat: no-repeat;
+  padding-right: 3.25rem;
 }
 
 .contact-card textarea,

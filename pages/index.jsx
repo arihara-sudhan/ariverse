@@ -488,7 +488,13 @@ export default function HomePage({ profileLinks }) {
           />
 
           <label htmlFor="testimonial-relation">You are what to ARI?</label>
-          <select id="testimonial-relation" name="relation" required defaultValue="">
+          <select
+            id="testimonial-relation"
+            className="testimonial-relation-select"
+            name="relation"
+            required
+            defaultValue=""
+          >
             <option value="" disabled>
               Choose one
             </option>
@@ -964,6 +970,5 @@ export default function HomePage({ profileLinks }) {
     </div>
   );
 }
-
 
 

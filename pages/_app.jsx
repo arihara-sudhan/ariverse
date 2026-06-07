@@ -1,5 +1,6 @@
 import '../src/styles.css';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 const SITE_TITLE = 'AriVerse';
@@ -7,6 +8,10 @@ const SITE_IMAGE = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/asse
 const IS_INSPECTABLE = String(process.env.NEXT_PUBLIC_INSPECTABLE ?? '0').trim() !== '0';
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter();
+  const pathname = String(router.pathname || '');
+  const isNoIndexRoute = pathname.startsWith('/admin');
+
   useEffect(() => {
     if (IS_INSPECTABLE) {
       return undefined;
@@ -66,6 +71,10 @@ export default function App({ Component, pageProps }) {
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{SITE_TITLE}</title>
+        <meta
+          name="robots"
+          content={isNoIndexRoute ? 'noindex, nofollow' : 'index, follow'}
+        />
         <meta name="application-name" content={SITE_TITLE} />
         <meta name="apple-mobile-web-app-title" content={SITE_TITLE} />
         <meta name="theme-color" content="#111111" />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
@@ -18,7 +18,9 @@ export async function getStaticProps() {
 }
 
 export default function ProjectsPage({ hero, projects, likesByEntry }) {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [loadingProjectId, setLoadingProjectId] = useState(null);
   const heroHeading = String(hero?.heading || '').trim() || "#Ari'sProjects";
   const heroDescription = String(hero?.description || '').trim() || 'Lorem ipsum as description';
   const heroQuote = String(hero?.quote || '').trim() || 'lorm ipsum for hero text';
@@ -39,6 +41,16 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'project';
+
+  async function openProject(project) {
+    const slug = slugify(project.title);
+    setLoadingProjectId(project.id);
+    try {
+      await router.push(`/projects/${slug}`);
+    } catch (_error) {
+      setLoadingProjectId(null);
+    }
+  }
 
   return (
     <div className="site">
@@ -89,25 +101,25 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
             ) : (
               filteredProjects.map((project) => (
                 <article key={project.title} className="projects-card">
-                  <Link className="projects-card-link" href={`/projects/${slugify(project.title)}`}>
-                    <div className="projects-card-top">
-                      <div className="projects-card-left">
-                        {project.logo ? (
-                          <img src={project.logo} alt={project.title || 'Project image'} />
-                        ) : (
-                          <div className="projects-card-image-placeholder" aria-hidden="true">No Image</div>
-                        )}
-                      </div>
-                      <div className="projects-card-right">
-                        <h3>{project.title || 'Project'}</h3>
-                        <p>{project.caption || project.category || 'Project description'}</p>
-                        {Array.isArray(project.projectTags) && project.projectTags.length > 0 ? (
-                          <div className="projects-skill-tags" aria-label="Skills used">
-                            {project.projectTags.map((tag) => (
-                              <span key={`${project.title}-${tag}`} className="projects-skill-tag">{tag}</span>
-                            ))}
-                          </div>
-                        ) : null}
+                  <div className="projects-card-top">
+                    <div className="projects-card-left">
+                      {project.logo ? (
+                        <img src={project.logo} alt={project.title || 'Project image'} />
+                      ) : (
+                        <div className="projects-card-image-placeholder" aria-hidden="true">No Image</div>
+                      )}
+                    </div>
+                    <div className="projects-card-right">
+                      <h3>{project.title || 'Project'}</h3>
+                      <p>{project.caption || project.category || 'Project description'}</p>
+                      {Array.isArray(project.projectTags) && project.projectTags.length > 0 ? (
+                        <div className="projects-skill-tags" aria-label="Skills used">
+                          {project.projectTags.map((tag) => (
+                            <span key={`${project.title}-${tag}`} className="projects-skill-tag">{tag}</span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="projects-card-actions">
                         <LikeButton
                           endpoint="/api/content/reactions"
                           entryId={project.id}
@@ -115,9 +127,17 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
                           storageNamespace="projects"
                           className="projects-like"
                         />
+                        <button
+                          type="button"
+                          className="projects-open-btn"
+                          onClick={() => openProject(project)}
+                          disabled={loadingProjectId === project.id}
+                        >
+                          {loadingProjectId === project.id ? 'Loading' : 'Open'}
+                        </button>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </article>
               ))
             )}

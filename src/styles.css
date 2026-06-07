@@ -922,6 +922,57 @@ footer {
   padding: 0.2rem 0.5rem;
 }
 
+.admin-existing-image-picker {
+  margin-top: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid #e1e1e1;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.admin-existing-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+
+.admin-existing-image-card {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+  text-align: left;
+  border: 1px solid #e2e2e2;
+  border-radius: 10px;
+  background: #fcfcfc;
+  padding: 0.45rem;
+  cursor: pointer;
+}
+
+.admin-existing-image-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #d7d7d7;
+}
+
+.admin-existing-image-card span {
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #111111;
+}
+
+.admin-existing-image-card small {
+  display: block;
+  width: 100%;
+  color: #4b4b4b;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
 .admin-item-action-btn {
   position: static;
   min-width: 64px;
@@ -1289,10 +1340,22 @@ footer {
   justify-content: center;
 }
 
-.career-post-date-corner {
-  position: absolute;
-  right: 0.75rem;
-  bottom: 0.65rem;
+.career-post-meta-row {
+  margin-top: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.career-post-like {
+  margin: 0;
+}
+
+.career-post-like .like-button {
+  padding: 0.22rem 0.46rem;
+  font-size: 0.8rem;
 }
 
 .career-post-desc p {
@@ -1534,11 +1597,12 @@ footer {
 
 .aris-shelf-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
 .aris-shelf-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -1547,6 +1611,43 @@ footer {
   border-radius: 12px;
   background: #ffffff;
   overflow: hidden;
+}
+
+.aris-shelf-like-badge {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  z-index: 2;
+  border-radius: 999px;
+  overflow: visible;
+  padding: 0;
+}
+
+.aris-shelf-like {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(17, 17, 17, 0.28);
+  border-radius: 999px;
+  margin: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.aris-shelf-like .like-button {
+  min-width: 0;
+  padding: 0.16rem 0.38rem;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.aris-shelf-like .like-button:hover {
+  background: rgba(17, 17, 17, 0.04);
+}
+
+.aris-shelf-like .like-button-icon,
+.aris-shelf-like .like-button-count {
+  font-size: 0.66rem;
 }
 
 .aris-shelf-cover {
@@ -1671,6 +1772,8 @@ body.mini-project-open-body::-webkit-scrollbar {
   display: flex;
   gap: 0.45rem;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .mini-project-actions button,
@@ -1753,6 +1856,7 @@ body.mini-project-open-body::-webkit-scrollbar {
   flex-direction: column;
   justify-content: flex-start;
   gap: 0.45rem;
+  min-width: 0;
 }
 
 .projects-card-right h3 {
@@ -1772,6 +1876,70 @@ body.mini-project-open-body::-webkit-scrollbar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+}
+
+.projects-card-actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.projects-open-btn {
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.24rem 0.58rem;
+  cursor: pointer;
+}
+
+.projects-open-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+}
+
+.projects-open-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.aris-books-title-row,
+.ariyin-poem-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.aris-books-title-row h3,
+.ariyin-poem-title-row h2 {
+  margin: 0;
+}
+
+.aris-books-like,
+.ariyin-poem-like {
+  margin: 0;
+}
+
+.aris-books-like .like-button,
+.ariyin-poem-like .like-button {
+  padding: 0.22rem 0.46rem;
+  font-size: 0.8rem;
+}
+
+.ariyin-poem-like .like-button {
+  padding: 0.18rem 0.42rem;
+}
+
+.ariyin-poem-like .like-button-icon,
+.ariyin-poem-like .like-button-count {
+  font-size: 0.68rem;
 }
 
 .projects-skill-tag {
@@ -2037,6 +2205,24 @@ body.mini-project-open-body::-webkit-scrollbar {
   padding: 0.1rem 0.2rem;
   font-size: 0.86rem;
   font-weight: 600;
+}
+
+.binomial-like {
+  margin-top: 0.55rem;
+}
+
+.binomial-like .like-button {
+  background: #ffffff;
+  color: #111111;
+  border-color: #111111;
+}
+
+.binomial-like .like-button:hover {
+  background: #f3f3f3;
+}
+
+.binomial-comments {
+  margin-top: 0.9rem;
 }
 
 .project-comment-reply-box {
@@ -2307,11 +2493,13 @@ body.mini-project-open-body::-webkit-scrollbar {
   display: flex;
   align-items: center;
   flex: 0 0 auto;
+  margin: 0.1rem;
+  border-radius: 999px;
 }
 
 .like-button {
   border: 1px solid #ddd8d3;
-  background: #ffffff;
+  background: transparent;
   color: #111111;
   border-radius: 999px;
   padding: 0.38rem 0.7rem;
@@ -2321,7 +2509,6 @@ body.mini-project-open-body::-webkit-scrollbar {
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
 }
 
 .like-button[aria-busy='true'] {
@@ -3341,13 +3528,6 @@ body.mini-project-open-body::-webkit-scrollbar {
   display: none;
 }
 
-.resume-document-frame {
-  display: block;
-  width: 100%;
-  min-height: 80vh;
-  border: 0;
-}
-
 .resume-images-list {
   display: grid;
   gap: 0.85rem;
@@ -3420,9 +3600,27 @@ body.mini-project-open-body::-webkit-scrollbar {
   min-height: 110px;
 }
 
+.trial-row-actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.trial-row-like {
+  margin: 0;
+}
+
+.trial-row-like .like-button {
+  padding: 0.22rem 0.46rem;
+  font-size: 0.8rem;
+}
+
 .trial-read-more-btn {
   margin-top: auto;
-  margin-left: auto;
+  margin-left: 0;
   display: inline-flex;
   align-items: center;
   border: 1px solid #111111;
@@ -3440,6 +3638,25 @@ body.mini-project-open-body::-webkit-scrollbar {
 .xperiment-detail-stage section,
 .xperiment-detail-stage div {
   background: transparent;
+}
+
+.kavithai-like {
+  margin-top: 0.55rem;
+  align-self: flex-end;
+}
+
+.guest-lectures-like {
+  margin-top: 0.85rem;
+}
+
+.guest-lectures-like .like-button {
+  padding: 0.22rem 0.46rem;
+  font-size: 0.8rem;
+}
+
+.guest-lectures-like .like-button-icon,
+.guest-lectures-like .like-button-count {
+  font-size: 0.68rem;
 }
 
 .kavithai-detail-stage,
@@ -3470,10 +3687,6 @@ body.mini-project-open-body::-webkit-scrollbar {
     border-right: 0;
     border-top: 0;
     border-bottom: 0;
-  }
-
-  .resume-document-frame {
-    min-height: 100vh;
   }
 
   .resume-images-list {

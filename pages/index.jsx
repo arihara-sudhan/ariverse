@@ -53,7 +53,7 @@ const WELCOME_MESSAGES = [
 ];
 
 const HOME_FALLBACK_LINKS = [
-  { id: 'f-career', label: 'Career', href: '/ari_career', category: 'PROFESSIONAL' },
+  { id: 'f-career', label: 'Career', href: '/ari-career', category: 'PROFESSIONAL' },
   { id: 'f-projects', label: 'Projects', href: '/projects', category: 'PROFESSIONAL' },
   { id: 'f-skillset', label: 'Skillset', href: '/skillset', category: 'PROFESSIONAL' },
   { id: 'f-resume', label: 'Resume', href: '/ari-resume', category: 'PROFESSIONAL' },
@@ -964,7 +964,6 @@ export default function HomePage({ profileLinks }) {
     </div>
   );
 }
-
 
 
 

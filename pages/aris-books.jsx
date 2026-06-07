@@ -81,14 +81,16 @@ export default function ArisBooksPage({ hero, books, likesByEntry }) {
                 >
                   <img src={book.coverUrl} alt={book.name || 'Book cover'} loading="lazy" decoding="async" />
                 </a>
-                <h3>{book.name || 'Untitled Book'}</h3>
-                <LikeButton
-                  endpoint="/api/content/reactions"
-                  entryId={book.id}
-                  initialCount={likesByEntry?.[book.id]?.likesCount || 0}
-                  storageNamespace="my-books"
-                  className="aris-books-like"
-                />
+                <div className="aris-books-title-row">
+                  <h3>{book.name || 'Untitled Book'}</h3>
+                  <LikeButton
+                    endpoint="/api/content/reactions"
+                    entryId={book.id}
+                    initialCount={likesByEntry?.[book.id]?.likesCount || 0}
+                    storageNamespace="my-books"
+                    className="aris-books-like"
+                  />
+                </div>
               </article>
             ))}
           </div>

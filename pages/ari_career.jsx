@@ -92,19 +92,19 @@ export default function CareerPage({ hero, items, likesByEntry }) {
                       </div>
                     </div>
                     <div className="career-post-desc">{renderParagraphs(item.markdownText)}</div>
-                    <LikeButton
-                      endpoint="/api/content/reactions"
-                      entryId={item.id}
-                      initialCount={likesByEntry?.[item.id]?.likesCount || 0}
-                      storageNamespace="career"
-                      className="career-post-like"
-                    />
-                  </div>
-                  {getCareerDateLabel(item) ? (
-                    <div className="career-post-date-corner">
-                      <span className="career-post-date">{getCareerDateLabel(item)}</span>
+                    <div className="career-post-meta-row">
+                      {getCareerDateLabel(item) ? (
+                        <span className="career-post-date">{getCareerDateLabel(item)}</span>
+                      ) : null}
+                      <LikeButton
+                        endpoint="/api/content/reactions"
+                        entryId={item.id}
+                        initialCount={likesByEntry?.[item.id]?.likesCount || 0}
+                        storageNamespace="career"
+                        className="career-post-like"
+                      />
                     </div>
-                  ) : null}
+                  </div>
                 </article>
                 {index < safeItems.length - 1 ? (
                   <div className="career-post-up-arrow" aria-hidden="true">↑</div>

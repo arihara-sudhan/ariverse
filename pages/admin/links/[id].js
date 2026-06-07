@@ -126,6 +126,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingInlineImage, setUploadingInlineImage] = useState(false);
+  const [existingShelfImagePickerOpen, setExistingShelfImagePickerOpen] = useState(false);
   const [pendingSaveIds, setPendingSaveIds] = useState([]);
   const [commentsByProjectId, setCommentsByProjectId] = useState({});
   const [loadingCommentsFor, setLoadingCommentsFor] = useState([]);
@@ -165,6 +166,20 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
             .filter(Boolean),
         ),
       ).sort((a, b) => a.localeCompare(b))
+    : [];
+  const existingShelfImages = isShelfSection
+    ? Array.from(
+        new Map(
+          (items || [])
+            .map((item) => ({
+              url: String(item?.imageUrl || '').trim(),
+              name: String(item?.kavithaiFrom || item?.name || 'Untitled').trim() || 'Untitled',
+              subname: String(item?.markdownText || item?.subname || '').trim(),
+            }))
+            .filter((item) => item.url)
+            .map((item) => [item.url, item]),
+        ).values(),
+      ).sort((a, b) => a.name.localeCompare(b.name))
     : [];
 
   function addProjectTagToSelection(rawTag, itemId = null) {
@@ -249,6 +264,13 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     });
     await Promise.all(workers);
     return uploaded;
+  }
+
+  function applyExistingShelfImage(url) {
+    const nextUrl = String(url || '').trim();
+    if (!nextUrl) return;
+    setImageUrl(nextUrl);
+    setExistingShelfImagePickerOpen(false);
   }
 
   function openInlineImagePicker(target) {
@@ -1011,6 +1033,42 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     }
                   }}
                 />
+                {isShelfSection ? (
+                  <>
+                    <div className="admin-item-actions" style={{ marginTop: '0.45rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setExistingShelfImagePickerOpen((prev) => !prev)}
+                      >
+                        {existingShelfImagePickerOpen ? 'Hide Existing Shelf Images' : 'Select Existing Shelf Image'}
+                      </button>
+                    </div>
+                    {existingShelfImagePickerOpen ? (
+                      <div className="admin-existing-image-picker">
+                        {existingShelfImages.length > 0 ? (
+                          <div className="admin-existing-image-list">
+                            {existingShelfImages.map((image) => (
+                              <button
+                                key={image.url}
+                                type="button"
+                                className="admin-existing-image-row"
+                                onClick={() => applyExistingShelfImage(image.url)}
+                                title={image.url}
+                              >
+                                <span>{image.name}</span>
+                                {image.subname ? <small>{image.subname}</small> : null}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="contact-note" style={{ marginTop: '0.35rem' }}>
+                            No existing Shelf images found yet.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
                 {isGallerySection && !isBookReviewsSection ? (
                   imageUrls.length > 0 ? (
                     <div className="admin-upload-list">
@@ -1663,6 +1721,27 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
 
                     {isShelfSection ? (
                       <>
+                        {existingShelfImages.length > 0 ? (
+                          <>
+                            <label htmlFor={`edit-image-existing-${item.id}`}>Reuse Existing Shelf Image</label>
+                            <select
+                              id={`edit-image-existing-${item.id}`}
+                              value=""
+                              onChange={(event) => {
+                                const nextValue = event.target.value;
+                                if (nextValue) updateLocalItem(item.id, { imageUrl: nextValue });
+                                event.target.value = '';
+                              }}
+                            >
+                              <option value="">Select existing shelf image...</option>
+                              {existingShelfImages.map((image) => (
+                                <option key={`${item.id}-${image.url}`} value={image.url}>
+                                  {image.name}
+                                </option>
+                              ))}
+                            </select>
+                          </>
+                        ) : null}
                         <label htmlFor={`edit-subname-${item.id}`}>Subname</label>
                         <input
                           id={`edit-subname-${item.id}`}

@@ -1,7 +1,8 @@
 import LikeButton from '../src/components/LikeButton';
+import DiscussionThread from '../src/components/DiscussionThread';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listLinkItems } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listLinkItems } from '../lib/adminData';
 import { isAllowedYouTubeUrl } from '../lib/security';
 
 function toEmbedUrl(value) {
@@ -40,6 +41,16 @@ export async function getServerSideProps({ query }) {
     sectionKey: 'binomial-names',
     entryIds: entries.map((entry) => entry.id),
   });
+  const commentsByEntry = await Promise.all(
+    entries.map(async (entry) => ({
+      entryId: entry.id,
+      comments: await listContentComments({ sectionKey: 'binomial-names', entryId: entry.id }),
+    })),
+  );
+  const initialCommentsByEntry = commentsByEntry.reduce((acc, row) => {
+    acc[row.entryId] = Array.isArray(row.comments) ? row.comments : [];
+    return acc;
+  }, {});
 
   if (entries.length === 0) {
     return { props: { selectedEntry: null, hero } };
@@ -55,11 +66,12 @@ export async function getServerSideProps({ query }) {
       hero,
       selectedEntry: requestedEntry || entries[0],
       likesByEntry,
+      initialCommentsByEntry,
     },
   };
 }
 
-export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry }) {
+export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry, initialCommentsByEntry }) {
   if (!selectedEntry) {
     return (
       <div className="site">
@@ -144,6 +156,16 @@ export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry })
                 storageNamespace="binomial-names"
                 className="binomial-like"
               />
+              <div className="binomial-comments">
+                <DiscussionThread
+                  title="Comments"
+                  endpoint="/api/content/comments"
+                  itemId={selectedEntry.id}
+                  itemIdField="entryId"
+                  extraPayload={{ section: 'binomial-names' }}
+                  initialComments={initialCommentsByEntry?.[selectedEntry.id] || []}
+                />
+              </div>
             </div>
           </article>
         </section>

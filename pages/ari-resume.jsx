@@ -13,10 +13,10 @@ export async function getServerSideProps() {
     : { heading: 'Resume', description: '', quote: '', imageUrl: '' };
   const fallbackAssets = await readFallbackResumeAssets();
   const resumeAssets = link ? await getResumeAssets(link.id) : null;
-  const resumeDocUrl = resumeAssets?.pdfUrl || fallbackAssets.pdfUrl || process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
   const resumeImages = Array.isArray(resumeAssets?.pageImageUrls) && resumeAssets.pageImageUrls.length > 0
     ? resumeAssets.pageImageUrls
-    : fallbackAssets.pageImageUrls;
+    : Array.isArray(fallbackAssets.pageImageUrls) ? fallbackAssets.pageImageUrls : [];
+  const resumeDocUrl = resumeAssets?.pdfUrl || fallbackAssets.pdfUrl || process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
 
   return {
     props: {
@@ -76,24 +76,24 @@ export default function ResumePage({ hero, resumeDocUrl, resumeImages }) {
                 </g>
               </svg>
             </a>
-            {Array.isArray(resumeImages) && resumeImages.length > 0 ? (
-              <div className="resume-images-list">
-                {resumeImages.map((imageUrl, index) => (
-                  <img
-                    key={imageUrl}
-                    src={imageUrl}
-                    alt={`Resume page ${index + 1}`}
-                    className="resume-page-image"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ))}
-              </div>
-            ) : (
-              <iframe title="Ari Resume" src={resumeDocUrl} className="resume-document-frame" loading="lazy" />
-            )}
-          </div>
-        </section>
+          {Array.isArray(resumeImages) && resumeImages.length > 0 ? (
+            <div className="resume-images-list">
+              {resumeImages.map((imageUrl, index) => (
+                <img
+                  key={imageUrl}
+                  src={imageUrl}
+                  alt={`Resume page ${index + 1}`}
+                  className="resume-page-image"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="contact-note">Resume page images are not available yet.</p>
+          )}
+        </div>
+      </section>
       </main>
     </div>
   );

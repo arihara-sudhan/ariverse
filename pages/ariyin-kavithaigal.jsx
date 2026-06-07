@@ -216,14 +216,16 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
                         <img loading="lazy" decoding="async" className="ariyin-poem-image" src={poem.imageUrl} alt={poem.kavithaiName || 'Poem image'} />
                       </figure>
                     ) : null}
-                    <h2>{`${index + 1}. ${poem.kavithaiName}`}</h2>
-                    <LikeButton
-                      endpoint="/api/content/reactions"
-                      entryId={poem.id}
-                      initialCount={likesByEntry?.[poem.id]?.likesCount || 0}
-                      storageNamespace="kavithaigal"
-                      className="ariyin-poem-like"
-                    />
+                    <div className="ariyin-poem-title-row">
+                      <h2>{`${index + 1}. ${poem.kavithaiName}`}</h2>
+                      <LikeButton
+                        endpoint="/api/content/reactions"
+                        entryId={poem.id}
+                        initialCount={likesByEntry?.[poem.id]?.likesCount || 0}
+                        storageNamespace="kavithaigal"
+                        className="ariyin-poem-like"
+                      />
+                    </div>
                   </article>
                 </Link>
               ))}

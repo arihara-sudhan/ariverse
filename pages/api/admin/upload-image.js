@@ -74,7 +74,7 @@ function resolveSectionFolder(section, sectionHref = '') {
   if (rawHref === '/projects' || rawSection === 'Projects') return 'projects';
   if (rawHref === '/aris-books' || rawSection === 'My Books') return 'aris-books';
   if (rawHref === '/aris-shelf' || rawSection === 'Shelf') return 'aris-shelf';
-  if (rawHref === '/ari_career' || rawSection === 'Career' || rawSection === 'Works' || rawSection === 'Experience') return 'careers';
+  if (rawHref === '/ari_career' || rawHref === '/ari-career' || rawSection === 'Career' || rawSection === 'Works' || rawSection === 'Experience') return 'careers';
   if (rawHref === '/binomial-names' || rawSection === 'Binomial Names') return 'binomial-names';
   return toFolderName(rawSection) || 'misc';
 }

@@ -91,14 +91,14 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
                   <div>
                     <h3>{project.title}</h3>
                     <p>{project.caption || project.category}</p>
-                    <LikeButton
-                      endpoint="/api/content/reactions"
-                      entryId={project.id}
-                      initialCount={likesByEntry?.[project.id]?.likesCount || 0}
-                      storageNamespace="mini-projects"
-                      className="mini-project-like"
-                    />
                     <div className="mini-project-actions">
+                      <LikeButton
+                        endpoint="/api/content/reactions"
+                        entryId={project.id}
+                        initialCount={likesByEntry?.[project.id]?.likesCount || 0}
+                        storageNamespace="mini-projects"
+                        className="mini-project-like"
+                      />
                       <a
                         href={viewerHref}
                         target="_blank"

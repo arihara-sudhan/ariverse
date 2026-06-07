@@ -11,7 +11,9 @@ function parseExperimentReadme(rawText) {
   const lines = String(rawText || '').split('\n');
   const imageUrlByName = new Map();
   const tokenRegex = /^\[ARIVERSE_IMAGE\]\s+(.+?)\s*$/;
-  const mapRegex = /^\[ARIVERSE_IMAGE_URL\]\s+(.+?)\s*::\s*(\S+)\s*$/;
+  const mapRegex = /^\[ARIVERSE_IMAGE_URL\]\s+(.+?)\s*::\s*(.+?)\s*$/;
+  const markdownImageRegex = /^!\[(.*?)\]\((.+?)\)\s*$/;
+  const plainImageUrlRegex = /^https?:\/\/\S+\.(?:png|jpe?g|webp|gif)(?:\?\S*)?$/i;
   const blocks = [];
   let paragraphLines = [];
   let anchorIndex = 0;
@@ -38,6 +40,27 @@ function parseExperimentReadme(rawText) {
       continue;
     }
 
+    const markdownImageMatch = line.match(markdownImageRegex);
+    if (markdownImageMatch) {
+      flushParagraph();
+      blocks.push({
+        type: 'image',
+        name: String(markdownImageMatch[1] || '').trim(),
+        imageUrl: String(markdownImageMatch[2] || '').trim(),
+      });
+      continue;
+    }
+
+    if (plainImageUrlRegex.test(line.trim())) {
+      flushParagraph();
+      blocks.push({
+        type: 'image',
+        name: '',
+        imageUrl: line.trim(),
+      });
+      continue;
+    }
+
     paragraphLines.push(line);
   }
   flushParagraph();
@@ -48,6 +71,11 @@ function parseExperimentReadme(rawText) {
           ...block,
           imageUrl: imageUrlByName.get(block.name) || '',
         }
+      : block.type === 'image'
+        ? {
+            ...block,
+            imageUrl: imageUrlByName.get(block.name) || block.imageUrl || '',
+          }
       : block,
   );
 }
@@ -152,6 +180,21 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
                   </ReactMarkdown>
                 );
               }
+              if (block.type === 'image') {
+                return (
+                  <figure key={`img-${index}`} className="ariverse-image-anchor">
+                    {block.imageUrl ? (
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        className="ariverse-inline-anchor-image"
+                        src={block.imageUrl}
+                        alt={block.name || selectedTrial.title}
+                      />
+                    ) : null}
+                  </figure>
+                );
+              }
               return (
                 <div
                   key={block.anchorId}
@@ -230,9 +273,10 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
           {safeExperiments.map((item) => (
             <article key={item.id} className="trial-row">
               <img className="trial-row-image" src={item.imageUrl} alt={item.title} loading="lazy" decoding="async" />
-              <div className="trial-row-content">
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
+            <div className="trial-row-content">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <div className="trial-row-actions">
                 <LikeButton
                   endpoint="/api/content/reactions"
                   entryId={item.id}
@@ -242,8 +286,9 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
                 />
                 <a className="trial-read-more-btn" href={item.readMoreUrl || '#'}>READ MORE</a>
               </div>
-            </article>
-          ))}
+            </div>
+          </article>
+        ))}
         </section>
       </main>
     </div>

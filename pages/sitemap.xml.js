@@ -1,6 +1,6 @@
 import { listProjectEntries } from '../lib/adminData';
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://ariverse.in').replace(/\/+$/, '');
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ariverse.in').replace(/\/+$/, '');
 
 const STATIC_ROUTES = [
   '/',

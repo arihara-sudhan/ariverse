@@ -37,6 +37,7 @@ export default function LikeButton({
   entryId,
   initialCount = 0,
   storageNamespace = 'default',
+  section = storageNamespace,
   className = '',
   label = 'like this',
   showText = false,
@@ -70,6 +71,7 @@ export default function LikeButton({
 
     const payload = {
       action: 'like',
+      section,
       entryId: Number(entryId),
       count: delta,
     };

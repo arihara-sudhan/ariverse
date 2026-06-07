@@ -69,15 +69,32 @@ function parseExperimentReadme(rawText) {
     block.type === 'anchor'
       ? {
           ...block,
-          imageUrl: imageUrlByName.get(block.name) || '',
+          imageUrl: normalizeExperimentImageUrl(imageUrlByName.get(block.name) || ''),
         }
       : block.type === 'image'
         ? {
             ...block,
-            imageUrl: imageUrlByName.get(block.name) || block.imageUrl || '',
+            imageUrl: normalizeExperimentImageUrl(imageUrlByName.get(block.name) || block.imageUrl || ''),
           }
       : block,
   );
+}
+
+function normalizeExperimentImageUrl(url) {
+  const input = String(url || '').trim();
+  if (!input) return '';
+
+  try {
+    const parsed = new URL(input);
+    const pathname = parsed.pathname.replace(/\/uploads\/uploads\/experiment-inline\//, '/');
+    parsed.pathname = pathname.replace(/\.[^/.]+$/, '.webp');
+    return parsed.toString();
+  } catch (_error) {
+    if (input.startsWith('/')) {
+      return input.replace(/\/uploads\/uploads\/experiment-inline\//, '/').replace(/\.[^/.]+$/, '.webp');
+    }
+    return input;
+  }
 }
 
 export async function getServerSideProps({ query }) {

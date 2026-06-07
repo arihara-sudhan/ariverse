@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: '/works',
-        destination: '/ari_career',
+        destination: '/ari-career',
         permanent: false,
       },
       {

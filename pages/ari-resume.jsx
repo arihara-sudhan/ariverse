@@ -1,6 +1,6 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getResumeAssets, getSectionHero } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
 import { readFallbackResumeAssets } from '../lib/resumeAssets';
 
 const DEFAULT_DESCRIPTION = 'Resume building is like a bird building its nest, carefully collecting pieces from different places and shaping them into something meaningful. This document is a small reflection of what Ari brings to the table, and a glimpse into the work, learning, and projects built over the years.';
@@ -12,11 +12,8 @@ export async function getServerSideProps() {
     ? await getSectionHero(link.id, 'Resume')
     : { heading: 'Resume', description: '', quote: '', imageUrl: '' };
   const fallbackAssets = await readFallbackResumeAssets();
-  const resumeAssets = link ? await getResumeAssets(link.id) : null;
-  const resumeImages = Array.isArray(resumeAssets?.pageImageUrls) && resumeAssets.pageImageUrls.length > 0
-    ? resumeAssets.pageImageUrls
-    : Array.isArray(fallbackAssets.pageImageUrls) ? fallbackAssets.pageImageUrls : [];
-  const resumeDocUrl = resumeAssets?.pdfUrl || fallbackAssets.pdfUrl || process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
+  const resumeImages = Array.isArray(fallbackAssets.pageImageUrls) ? fallbackAssets.pageImageUrls : [];
+  const resumeDocUrl = fallbackAssets.pdfUrl || process.env.RESUME_PDF_URL || DEFAULT_RESUME_DOC_URL;
 
   return {
     props: {

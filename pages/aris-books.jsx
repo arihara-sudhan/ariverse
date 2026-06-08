@@ -26,6 +26,8 @@ function prettyCategoryLabel(category) {
   return category;
 }
 
+const DEFAULT_ARIS_BOOKS_QUOTE = 'Every page reflects a lesson learned, a story told, or a vision shared';
+
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('My Books');
   const hero = link ? await getSectionHero(link.id, 'My Books') : { heading: 'Aris Books', description: '', imageUrl: '' };
@@ -39,6 +41,7 @@ export async function getStaticProps() {
 
 export default function ArisBooksPage({ hero, books, likesByEntry }) {
   const safeBooks = Array.isArray(books) ? books : [];
+  const heroQuote = String(hero?.quote || '').trim() || DEFAULT_ARIS_BOOKS_QUOTE;
   const categories = useMemo(() => {
     const unique = Array.from(new Set(safeBooks.map((book) => (book?.tag || '').trim()).filter(Boolean)));
     return ['all', ...unique];
@@ -53,7 +56,14 @@ export default function ArisBooksPage({ hero, books, likesByEntry }) {
       <Header subPage />
       <main className="content">
         <section aria-labelledby="aris-books-title">
-          <SectionHero heading={hero?.heading} description={hero?.description} imageUrl={hero?.imageUrl} fallbackHeading="Aris Books" />
+          <SectionHero
+            heading={hero?.heading}
+            description={hero?.description}
+            imageUrl={hero?.imageUrl}
+            fallbackHeading="Aris Books"
+          >
+            {heroQuote ? <p className="clay-play-quote">{`"${heroQuote}"`}</p> : null}
+          </SectionHero>
           <h1 id="aris-books-title" style={{ display: 'none' }}>Aris Books</h1>
         </section>
         <section className="aris-books-grid-wrap" aria-label="Aris books">

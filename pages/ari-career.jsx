@@ -107,7 +107,7 @@ export default function CareerPage({ hero, items, likesByEntry }) {
                   </div>
                 </article>
                 {index < safeItems.length - 1 ? (
-                  <div className="career-post-up-arrow" aria-hidden="true">â†‘</div>
+                  <div className="career-post-up-arrow" aria-hidden="true">{'\u2191'}</div>
                 ) : null}
               </div>
             ))}

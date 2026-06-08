@@ -1185,22 +1185,20 @@ footer {
 
 .binomial-layout {
   display: block;
-  background: var(--bg);
-  padding: 0.8rem;
-  border-radius: 10px;
 }
 
 .binomial-card {
-  background: #ffffff;
-  padding: 0.95rem;
-  border: 1px solid #d7d7d7;
+  background: #fcfcfc;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem;
   overflow: hidden;
 }
 
 .binomial-video-wrap {
   float: left;
   overflow: hidden;
-  background: #ffffff;
+  background: transparent;
   width: min(calc(70vh * 9 / 16), 100%);
   margin: 0 1rem 0.5rem 0;
   border-radius: 10px;
@@ -2212,13 +2210,8 @@ body.mini-project-open-body::-webkit-scrollbar {
 }
 
 .binomial-like .like-button {
-  background: #ffffff;
-  color: #111111;
-  border-color: #111111;
-}
-
-.binomial-like .like-button:hover {
-  background: #f3f3f3;
+  padding: 0.22rem 0.46rem;
+  font-size: 0.8rem;
 }
 
 .binomial-comments {

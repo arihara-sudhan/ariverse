@@ -440,7 +440,7 @@ export default function HomePage({ profileLinks }) {
           />
 
           <button type="submit" disabled={mailState === 'sending' || mailState === 'success'}>
-            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent âœ“' : 'Send Message'}
+            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent \u2713' : 'Send Message'}
           </button>
           {mailMessage ? (
             <p className={`contact-status ${mailState}`}>{mailMessage}</p>
@@ -464,7 +464,7 @@ export default function HomePage({ profileLinks }) {
           />
 
           <button type="submit" disabled={subscriptionState === 'sending' || subscriptionState === 'success'}>
-            {subscriptionState === 'sending' ? 'Subscribing...' : subscriptionState === 'success' ? 'Subscribed âœ“' : 'Subscribe'}
+            {subscriptionState === 'sending' ? 'Subscribing...' : subscriptionState === 'success' ? 'Subscribed \u2713' : 'Subscribe'}
           </button>
           {subscriptionMessage ? (
             <p className={`contact-status ${subscriptionState}`}>{subscriptionMessage}</p>
@@ -515,7 +515,7 @@ export default function HomePage({ profileLinks }) {
           />
 
           <button type="submit" disabled={testimonialState === 'sending' || testimonialState === 'success'}>
-            {testimonialState === 'sending' ? 'Sending...' : testimonialState === 'success' ? 'Sent âœ“' : 'Submit'}
+            {testimonialState === 'sending' ? 'Sending...' : testimonialState === 'success' ? 'Sent \u2713' : 'Submit'}
           </button>
           {testimonialMessage ? (
             <p className={`contact-status ${testimonialState}`}>{testimonialMessage}</p>
@@ -970,5 +970,6 @@ export default function HomePage({ profileLinks }) {
     </div>
   );
 }
+
 
 

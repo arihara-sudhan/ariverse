@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import LikeButton from '../src/components/LikeButton';
@@ -15,6 +15,8 @@ import {
   listKavithaiEntries,
   listKavithaiSummaries,
 } from '../lib/adminData';
+
+const DEFAULT_ARIYIN_QUOTE = 'என்னுள் உறங்கும் கவியே, இங்கே விழி!';
 
 export async function getServerSideProps({ query }) {
   const requestedId = Number(query?.id);
@@ -59,6 +61,7 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
   const panelRef = useRef(null);
   const [hideTopNav, setHideTopNav] = useState(false);
   const hasPoems = Array.isArray(poems) && poems.length > 0;
+  const heroQuote = String(hero?.quote || '').trim() || DEFAULT_ARIYIN_QUOTE;
   const headingText = String(hero?.heading || 'அரியின் கவிதைகள்').trim();
   const headingParts = headingText.split(/\s+/).filter(Boolean);
   const headingSmall = headingParts[0] || 'அரியின்';
@@ -201,7 +204,9 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
             imageUrl={hero?.imageUrl}
             fallbackHeading="அரியின் கவிதைகள்"
             descriptionAfterImageOnMobile
-          />
+          >
+            {heroQuote ? <p className="clay-play-quote tamil-text" lang="ta">{`"${heroQuote}"`}</p> : null}
+          </SectionHero>
           <h1 id="ariyin-kavithaigal-title" style={{ display: 'none' }}>அரியின் கவிதைகள்</h1>
 
           {!hasPoems ? (
@@ -236,3 +241,4 @@ export default function AriyinKavithaigalPage({ poems, hero, selectedPoem, selec
     </div>
   );
 }
+

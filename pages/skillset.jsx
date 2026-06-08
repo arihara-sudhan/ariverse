@@ -44,6 +44,7 @@ const SKILL_CATEGORIES = [
 ];
 const DEFAULT_SKILLSET_DESCRIPTION =
   'A focused map of my technical stack across AI, engineering foundations, web systems, data, DevOps, and creative tooling.';
+const DEFAULT_SKILLSET_QUOTE = 'The more I learn, the more I can create';
 
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Skillset');
@@ -54,6 +55,7 @@ export async function getStaticProps() {
 }
 
 export default function SkillsetPage({ hero }) {
+  const heroQuote = String(hero?.quote || '').trim() || DEFAULT_SKILLSET_QUOTE;
   const skillItems = useMemo(
     () =>
       SKILL_CATEGORIES.flatMap((category) =>
@@ -98,7 +100,9 @@ export default function SkillsetPage({ hero }) {
             description={hero?.description || DEFAULT_SKILLSET_DESCRIPTION}
             imageUrl={hero?.imageUrl}
             fallbackHeading="#AriSkills"
-          />
+          >
+            {heroQuote ? <p className="clay-play-quote">{`"${heroQuote}"`}</p> : null}
+          </SectionHero>
           <h1 id="skillset-title" style={{ display: 'none' }}>#AriSkills</h1>
         </section>
         <section className="skillset-left">

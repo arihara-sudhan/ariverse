@@ -27,6 +27,8 @@ function toEmbedUrl(value) {
   return text;
 }
 
+const DEFAULT_BINOMIAL_QUOTE = 'Names matter! They connect us to the incredible diversity of life';
+
 export async function getServerSideProps({ query }) {
   const binomialLink = await getProfileLinkByLabel('Binomial Names');
   if (!binomialLink) {
@@ -72,6 +74,7 @@ export async function getServerSideProps({ query }) {
 }
 
 export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry, initialCommentsByEntry }) {
+  const heroQuote = String(hero?.quote || '').trim() || DEFAULT_BINOMIAL_QUOTE;
   if (!selectedEntry) {
     return (
       <div className="site">
@@ -83,7 +86,9 @@ export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry, i
               description={hero?.description}
               imageUrl={hero?.imageUrl}
               fallbackHeading="Binomial Names"
-            />
+            >
+              {heroQuote ? <p className="clay-play-quote">{`"${heroQuote}"`}</p> : null}
+            </SectionHero>
             <h1 id="binomial-page-title" style={{ display: 'none' }}>Binomial Names</h1>
           </section>
           <section className="binomial-layout">
@@ -123,7 +128,9 @@ export default function BinomialNamesPage({ selectedEntry, hero, likesByEntry, i
             description={hero?.description}
             imageUrl={hero?.imageUrl}
             fallbackHeading="Binomial Names"
-          />
+          >
+            {heroQuote ? <p className="clay-play-quote">{`"${heroQuote}"`}</p> : null}
+          </SectionHero>
           <h1 id="binomial-page-title" style={{ display: 'none' }}>Binomial Names</h1>
         </section>
         <section className="binomial-layout" aria-labelledby="binomial-title">

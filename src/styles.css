@@ -326,8 +326,8 @@ footer {
 
 .quote-panel-text {
   margin: 0;
-  font-size: clamp(0.95rem, 2.1vw, 1.35rem);
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.65;
   font-weight: 600;
   letter-spacing: -0.02em;
   text-align: center;
@@ -347,7 +347,7 @@ footer {
 .quote-panel-author {
   margin: 0.7rem 0 0;
   font-family: "Manrope", "Segoe UI", sans-serif;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -356,11 +356,25 @@ footer {
 }
 
 .quote-panel-role {
-  font-size: 0.82rem;
+  font-size: inherit;
   line-height: 1.35;
   color: rgba(85, 85, 85, 0.8);
   font-weight: 600;
   font-style: normal;
+}
+
+.quote-panel-copy-featured .quote-panel-text {
+  font-size: clamp(0.95rem, 2.1vw, 1.35rem);
+  line-height: 1.6;
+}
+
+.quote-panel-copy-featured .quote-panel-author {
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+}
+
+.quote-panel-copy-featured .quote-panel-role {
+  font-size: 0.82rem;
 }
 
 .quote-panel-copy {
@@ -453,13 +467,13 @@ footer {
   }
 
   .quote-panel-text {
-    font-size: clamp(0.84rem, 3.6vw, 1rem);
-    line-height: 1.45;
+    font-size: 0.84rem;
+    line-height: 1.5;
   }
 
   .quote-panel-author {
     margin-top: 0.45rem;
-    font-size: 0.74rem;
+    font-size: 0.84rem;
     letter-spacing: 0.05em;
     transform: none;
     max-width: 100%;
@@ -483,6 +497,23 @@ footer {
   }
 
   .quote-panel-role {
+    font-size: inherit;
+    line-height: 1.25;
+    color: rgba(85, 85, 85, 0.78);
+    font-weight: 500;
+  }
+
+  .quote-panel-copy-featured .quote-panel-text {
+    font-size: clamp(0.84rem, 3.6vw, 1rem);
+    line-height: 1.45;
+  }
+
+  .quote-panel-copy-featured .quote-panel-author {
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+  }
+
+  .quote-panel-copy-featured .quote-panel-role {
     font-size: 0.66rem;
     line-height: 1.25;
     color: rgba(85, 85, 85, 0.78);

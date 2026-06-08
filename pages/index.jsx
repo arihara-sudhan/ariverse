@@ -741,7 +741,10 @@ export default function HomePage({ profileLinks }) {
           style={quotePanelHeight ? { minHeight: `${quotePanelHeight}px` } : undefined}
         >
           {quoteOutgoingIndex !== null ? (
-            <div className="quote-panel-copy quote-panel-copy-outgoing" aria-hidden="true">
+            <div
+              className={`quote-panel-copy quote-panel-copy-outgoing${quoteOutgoingIndex === 0 ? ' quote-panel-copy-featured' : ''}`}
+              aria-hidden="true"
+            >
               <p className="quote-panel-text">
                 {quoteOutgoingIndex === 0 ? renderFixedTestimonialText() : quoteSlides[quoteOutgoingIndex]?.testimonial}
               </p>
@@ -753,7 +756,9 @@ export default function HomePage({ profileLinks }) {
               </p>
             </div>
           ) : null}
-          <div className={`quote-panel-copy ${isQuoteTextVisible ? 'is-visible' : ''}`}>
+          <div
+            className={`quote-panel-copy ${isQuoteTextVisible ? 'is-visible' : ''}${quoteIndex === 0 ? ' quote-panel-copy-featured' : ''}`}
+          >
             <p className="quote-panel-text">
               {quoteIndex === 0 ? renderFixedTestimonialText() : quoteSlides[quoteIndex]?.testimonial}
             </p>
@@ -781,7 +786,7 @@ export default function HomePage({ profileLinks }) {
                 ref={(element) => {
                   quoteMeasureRefs.current[index] = element;
                 }}
-                className="quote-panel-measure-item"
+                className={`quote-panel-measure-item${index === 0 ? ' quote-panel-copy-featured' : ''}`}
               >
                 <p className="quote-panel-text">{index === 0 ? renderFixedTestimonialText() : slide.testimonial}</p>
                 <p className="quote-panel-author">

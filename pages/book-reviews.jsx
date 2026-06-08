@@ -4,6 +4,7 @@ import LikeButton from '../src/components/LikeButton';
 import { useMemo, useState } from 'react';
 import { getProfileLinkByLabel, getSectionHero, listBookReviewEntryReactions, listLinkItems } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
+import { isInstagramUrl } from '../lib/security';
 
 const DEFAULT_BOOK_REVIEW_QUOTE = 'A good book stays with you long after the final page.';
 
@@ -38,6 +39,33 @@ function toParagraphs(text) {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function getBookReviewLinkLabel(url) {
+  return isInstagramUrl(url) ? 'Open Instagram post for' : 'Open YouTube video for';
+}
+
+function renderBookReviewLinkIcon(url) {
+  if (isInstagramUrl(url)) {
+    return (
+      <svg className="book-review-youtube-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5a3.95 3.95 0 0 0 3.95 3.95h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8zm5.35-2.15a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="book-review-youtube-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M21.6 7.4c-.2-.8-.8-1.4-1.6-1.6C18.6 5.5 12 5.5 12 5.5s-6.6 0-8 .3c-.8.2-1.4.8-1.6 1.6C2 8.8 2 12 2 12s0 3.2.4 4.6c.2.8.8 1.4 1.6 1.6 1.4.3 8 .3 8 .3s6.6 0 8-.3c.8-.2 1.4-.8 1.6-1.6.4-1.4.4-4.6.4-4.6s0-3.2-.4-4.6Z"
+        fill="#ff0000"
+      />
+      <path d="M10 15.3V8.7L15.8 12 10 15.3Z" fill="#fff" />
+    </svg>
+  );
 }
 
 export default function BookReviewsPage({ entries, hero, likesByEntry }) {
@@ -137,24 +165,14 @@ export default function BookReviewsPage({ entries, hero, likesByEntry }) {
 
                       {youtubeUrl ? (
                         <a
-                          className="book-review-youtube-link"
+                          className={`book-review-youtube-link${isInstagramUrl(youtubeUrl) ? ' is-instagram' : ''}`}
                           href={youtubeUrl}
                           target="_blank"
                           rel="noreferrer"
-                          aria-label={`Open YouTube video for ${entry.kavithaiFrom || 'this book review'}`}
+                          style={isInstagramUrl(youtubeUrl) ? { color: '#e1306c', borderColor: '#f1b4c9' } : undefined}
+                          aria-label={`${getBookReviewLinkLabel(youtubeUrl)} ${entry.kavithaiFrom || 'this book review'}`}
                         >
-                          <svg
-                            className="book-review-youtube-icon"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            focusable="false"
-                          >
-                            <path
-                              d="M21.6 7.4c-.2-.8-.8-1.4-1.6-1.6C18.6 5.5 12 5.5 12 5.5s-6.6 0-8 .3c-.8.2-1.4.8-1.6 1.6C2 8.8 2 12 2 12s0 3.2.4 4.6c.2.8.8 1.4 1.6 1.6 1.4.3 8 .3 8 .3s6.6 0 8-.3c.8-.2 1.4-.8 1.6-1.6.4-1.4.4-4.6.4-4.6s0-3.2-.4-4.6Z"
-                              fill="#ff0000"
-                            />
-                            <path d="M10 15.3V8.7L15.8 12 10 15.3Z" fill="#fff" />
-                          </svg>
+                          {renderBookReviewLinkIcon(youtubeUrl)}
                           <span>காணவும்</span>
                         </a>
                       ) : null}

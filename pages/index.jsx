@@ -875,6 +875,7 @@ export default function HomePage({ profileLinks }) {
                     return (
                       <a
                         key={link.id}
+                        className="category-link-shimmer"
                         href={safeHref}
                         target={isExternal ? '_blank' : undefined}
                         rel={isExternal ? 'noreferrer' : undefined}

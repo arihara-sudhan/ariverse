@@ -663,6 +663,8 @@ footer {
 .category-links a {
   display: inline-flex;
   align-items: center;
+  position: relative;
+  overflow: hidden;
   padding: 0.42rem 0.72rem;
   border-radius: 6px;
   border: 1px solid currentColor;
@@ -682,6 +684,26 @@ footer {
 .category-links a:hover {
   transform: translateY(-1px);
   opacity: 0.9;
+}
+
+.category-link-shimmer::after {
+  content: "";
+  position: absolute;
+  top: -120%;
+  left: -35%;
+  width: 38%;
+  height: 320%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 200, 64, 0) 0%,
+    rgba(255, 215, 64, 0.92) 45%,
+    rgba(255, 235, 140, 1) 50%,
+    rgba(255, 215, 64, 0.92) 55%,
+    rgba(255, 200, 64, 0) 100%
+  );
+  transform: rotate(18deg);
+  animation: goldSweep 10s linear infinite;
+  pointer-events: none;
 }
 
 .ai-with-ari {
@@ -3501,8 +3523,12 @@ body.mini-project-open-body::-webkit-scrollbar {
     left: -42%;
     opacity: 0;
   }
-  20% {
+  4% {
     opacity: 1;
+  }
+  18% {
+    left: 118%;
+    opacity: 0;
   }
   100% {
     left: 118%;

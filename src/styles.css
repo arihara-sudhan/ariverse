@@ -702,7 +702,7 @@ footer {
     rgba(255, 200, 64, 0) 100%
   );
   transform: rotate(18deg);
-  animation: goldSweep 10s linear infinite;
+  animation: goldSweep 5s linear infinite;
   pointer-events: none;
 }
 

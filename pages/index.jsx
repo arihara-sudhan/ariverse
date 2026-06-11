@@ -1,4 +1,4 @@
-﻿import { listVisibleProfileLinks } from '../lib/adminData';
+import { listFeatureImages, listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
@@ -6,7 +6,7 @@ const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/as
 const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
 const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.webp';
 const CYNODON_BLOB_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/cynodon.webp';
-const FEATURE_IMAGES = [
+const DEFAULT_FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
 ];
@@ -63,33 +63,34 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-my-books', label: 'My Books', href: '/aris-books', category: 'PASSIONAL' },
   { id: 'f-shelf', label: 'Shelf', href: '/aris-shelf', category: 'PASSIONAL' },
   { id: 'f-blog', label: 'AriZone (Blog)', href: 'https://arihara-sudhan.github.io/blog/', category: 'HOBBYAL' },
-  { id: 'f-thirukkural', label: 'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯', href: 'https://arihara-sudhan.github.io/uyir-kural/', category: 'PASSIONAL' },
+  { id: 'f-thirukkural', label: 'திருக்குறள்', href: 'https://arihara-sudhan.github.io/uyir-kural/', category: 'PASSIONAL' },
+  { id: 'f-arichuvadu', label: 'Arichuvadu', href: '/arichuvadu', category: 'PASSIONAL' },
   { id: 'f-guest', label: 'Guest Lectures', href: '/guest-lectures', category: 'PASSIONAL' },
   { id: 'f-clay', label: 'Clay Play', href: '/clay-play', category: 'HOBBYAL' },
-  { id: 'f-kavithaigal', label: 'à®…à®°à®¿à®¯à®¿à®©à¯ à®•à®µà®¿à®¤à¯ˆà®•à®³à¯', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
+  { id: 'f-kavithaigal', label: 'அரியின் கவிதைகள்', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
   { id: 'f-books-read', label: 'Books Read', href: '/ari-read-books', category: 'HOBBYAL' },
   { id: 'f-reviews', label: 'Book Reviews', href: '/book-reviews', category: 'HOBBYAL' },
   { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },
 ];
 
 export async function getStaticProps() {
-  let profileLinks = [];
-
-  try {
-    profileLinks = await listVisibleProfileLinks();
-  } catch (_error) {
-    profileLinks = [];
-  }
+  const [profileLinksResult, featureImagesResult] = await Promise.allSettled([
+    listVisibleProfileLinks(),
+    listFeatureImages(),
+  ]);
+  const profileLinks = profileLinksResult.status === 'fulfilled' ? profileLinksResult.value : [];
+  const featureImages = featureImagesResult.status === 'fulfilled' ? featureImagesResult.value : [];
 
   return {
     props: {
       profileLinks,
+      featureImages,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function HomePage({ profileLinks }) {
+export default function HomePage({ profileLinks, featureImages }) {
   const [welcomeIndex, setWelcomeIndex] = useState(0);
   const [typedText, setTypedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -108,7 +109,13 @@ export default function HomePage({ profileLinks }) {
   const [subscriptionMessage, setSubscriptionMessage] = useState('');
   const [testimonialState, setTestimonialState] = useState('idle');
   const [testimonialMessage, setTestimonialMessage] = useState('');
-  const [featureImage, setFeatureImage] = useState(FEATURE_IMAGES[0]);
+  const featureImagePool = Array.isArray(featureImages) && featureImages.length > 0
+    ? featureImages.map((image) => ({
+        src: String(image?.imageUrl || '').trim(),
+        alt: 'Feature image',
+      })).filter((image) => image.src)
+    : DEFAULT_FEATURE_IMAGES;
+  const [featureImage, setFeatureImage] = useState(featureImagePool[0]);
   const quotePanelRef = useRef(null);
   const quoteBlobRef = useRef(null);
   const quoteMeasureRefs = useRef([]);
@@ -122,6 +129,7 @@ export default function HomePage({ profileLinks }) {
   const CAROUSEL_RESUME_DELAY_MS = 5000;
   const QUOTE_PANEL_GAP_PX = 16;
   const TESTIMONIAL_SLIDE_INDEX = 2;
+  const hasPublicTestimonials = publicTestimonials.length > 0;
 
   function clearCarouselResumeTimer(timerRef) {
     if (timerRef.current) {
@@ -244,7 +252,7 @@ export default function HomePage({ profileLinks }) {
   }
 
   useEffect(() => {
-    setFeatureImage(FEATURE_IMAGES[Math.floor(Math.random() * FEATURE_IMAGES.length)]);
+    setFeatureImage(featureImagePool[Math.floor(Math.random() * featureImagePool.length)]);
   }, []);
 
   useEffect(() => {
@@ -654,15 +662,16 @@ export default function HomePage({ profileLinks }) {
     'Mini-Projects',
     'Resume',
     'Experiments',
+    'Arichuvadu',
     'Guest Lectures',
     'AI with ARI (YouTube)',
     'My Books',
     'Shelf',
     'AriZone (Blog)',
-    'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯',
+    'திருக்குறள்',
     'Thirukkural',
     'Clay Play',
-    'à®…à®°à®¿à®¯à®¿à®©à¯ à®•à®µà®¿à®¤à¯ˆà®•à®³à¯',
+    'அரியின் கவிதைகள்',
     'Books Read',
     'Book Reviews',
     'Binomial Names',
@@ -813,9 +822,11 @@ export default function HomePage({ profileLinks }) {
                 <span aria-hidden="true">←</span>
               </button>
             ) : null}
-            <span className="contact-carousel-count" aria-live="polite">
-              {quoteIndex + 1}/{quoteSlides.length}
-            </span>
+            {hasPublicTestimonials ? (
+              <span className="contact-carousel-count" aria-live="polite">
+                {quoteIndex + 1}/{quoteSlides.length}
+              </span>
+            ) : null}
             {quoteIndex < quoteSlides.length - 1 ? (
               <button
                 type="button"

@@ -17,7 +17,6 @@ const STATIC_ROUTES = [
   '/clay-play',
   '/for-ai',
   '/guest-lectures',
-  '/arichuvadu',
   '/mini-projects',
   '/projects',
   '/skillset',

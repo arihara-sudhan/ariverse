@@ -166,28 +166,23 @@ export default function AdminPage({ isAuthed, initialLinks, awaitingApprovalsCou
                 <button type="submit" disabled={saving}>{saving ? 'Adding...' : 'Add Link'}</button>
               </form>
 
+              <article className="playlist-card">
+                <Link href="/admin/feature-images">
+                  <h3>Feature Images</h3>
+                </Link>
+                <p>Upload images to feature</p>
+                <p>Shown on the homepage.</p>
+                <Link className="ai-channel-subscribe" href="/admin/feature-images">
+                  Open Feature Images
+                </Link>
+              </article>
+
               <div className="playlist-grid">
                 {isLoadingLinks && <p className="contact-note">Loading section links...</p>}
                 {links.map((link) => {
                   const hidden = Number(link.isHidden) === 1;
                   const isLockedSection =
                     link.label === 'AI with ARI (YouTube)' && link.href === '/ai-with-ari';
-                  const isFeatureImagesSlot = link.label === 'Arichuvadu';
-
-                  if (isFeatureImagesSlot) {
-                    return (
-                      <article key={link.id} className="playlist-card">
-                        <Link href="/admin/feature-images">
-                          <h3>Feature Images</h3>
-                        </Link>
-                        <p>Upload images to feature</p>
-                        <p>Shown on the homepage.</p>
-                        <Link className="ai-channel-subscribe" href="/admin/feature-images">
-                          Open Feature Images
-                        </Link>
-                      </article>
-                    );
-                  }
 
                   return (
                     <article key={link.id} className="playlist-card">

@@ -5,10 +5,29 @@ import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
+import { ariTrials as fallbackAriTrials } from '../data/ariTrials';
 import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listExperimentsEntries } from '../lib/adminData';
 import { toPublicStorageUrl } from '../lib/storage';
 
-const COLLAGE_HELP_DETAIL_HERO_URL = toPublicStorageUrl('ari-xperiments/collage-helps-hero.webp');
+const COLLAGE_HELP_DETAIL_HERO_URL = toPublicStorageUrl('ari-xperiments/collage-helps/collage-helps-hero.webp');
+const FALLBACK_HERO = {
+  heading: '#AriThinks',
+  description: 'Not chasing glamour or fame, just being in it for the love of the game! No benchmarks to beat, no deadlines to meet! Just genuine curiosity about how things work, fail, and sometimes do something unexpectedly brilliant. That\'s what keeps Ari\'s experiments coming.',
+  quote: 'Nobody asked for these experiments. Just build them!',
+  imageUrl: toPublicStorageUrl('assets/hero-images-of-modules/ari-experiments.webp'),
+};
+const SSR_DB_TIMEOUT_MS = 1200;
+
+function normalizeFallbackExperiments() {
+  return fallbackAriTrials.map((item, index) => ({
+    id: index + 1,
+    title: item.title || '',
+    description: item.description || '',
+    fullDescription: item.detailText || item.description || '',
+    imageUrl: item.imageUrl || '',
+    readMoreUrl: item.readMoreUrl || `/aris-xperiments?id=${index + 1}`,
+  }));
+}
 
 function parseExperimentReadme(rawText) {
   const lines = String(rawText || '').split('\n');
@@ -101,18 +120,30 @@ function normalizeExperimentImageUrl(url) {
 }
 
 export async function getServerSideProps({ query }) {
-  const link = await getProfileLinkByLabel('Experiments');
-  const hero = link ? await getSectionHero(link.id, 'Experiments') : { heading: 'Experiments', description: '', imageUrl: '' };
-  const experiments = await listExperimentsEntries();
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'xperiments',
-    entryIds: experiments.map((item) => item.id),
-  });
+  const fallbackExperiments = normalizeFallbackExperiments();
+  const loadFromDb = (async () => {
+    const link = await getProfileLinkByLabel('Experiments');
+    const hero = link ? await getSectionHero(link.id, 'Experiments') : FALLBACK_HERO;
+    const experiments = await listExperimentsEntries();
+    return { hero, experiments };
+  })().catch(() => null);
+  const dbData = await Promise.race([
+    loadFromDb,
+    new Promise((resolve) => setTimeout(() => resolve(null), SSR_DB_TIMEOUT_MS)),
+  ]);
+  const hero = dbData?.hero || FALLBACK_HERO;
+  const experiments = Array.isArray(dbData?.experiments) && dbData.experiments.length > 0 ? dbData.experiments : fallbackExperiments;
   const requestedId = Number(query?.id);
   const selectedTrial = Number.isInteger(requestedId) ? experiments.find((item) => item.id === requestedId) || null : null;
   const selectedIndex = selectedTrial ? experiments.findIndex((item) => item.id === selectedTrial.id) : -1;
-  const initialComments = selectedTrial
-    ? await listContentComments({ sectionKey: 'xperiments', entryId: selectedTrial.id })
+  const likesByEntry = dbData
+    ? await listContentEntryReactions({
+        sectionKey: 'xperiments',
+        entryIds: experiments.map((item) => item.id),
+      }).catch(() => ({}))
+    : {};
+  const initialComments = selectedTrial && dbData
+    ? await listContentComments({ sectionKey: 'xperiments', entryId: selectedTrial.id }).catch(() => [])
     : [];
   const showAll = query?.view === 'all';
   return { props: { hero, selectedTrial, selectedIndex, showAll, experiments, initialComments, likesByEntry } };
@@ -134,6 +165,10 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
     selectedTrial && /collages instead of single images|fed collages/i.test(String(selectedTrial.title || ''))
       ? COLLAGE_HELP_DETAIL_HERO_URL
       : String(selectedTrial?.imageUrl || '').trim();
+  const resolvedHeroHeading = String(hero?.heading || FALLBACK_HERO.heading).trim();
+  const resolvedHeroDescription = String(hero?.description || FALLBACK_HERO.description).trim();
+  const resolvedHeroQuote = String(hero?.quote || FALLBACK_HERO.quote).trim();
+  const resolvedHeroImageUrl = String(hero?.imageUrl || FALLBACK_HERO.imageUrl).trim();
 
   useEffect(() => {
     if (!selectedTrial) return;
@@ -287,10 +322,10 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
       <Header subPage />
       <main className="content">
         <section aria-labelledby="aris-trials-title">
-          <SectionHero heading={hero?.heading} description={hero?.description} imageUrl={hero?.imageUrl} fallbackHeading="Experiments">
-            {hero?.quote ? <p className="clay-play-quote">"{hero.quote}"</p> : null}
+          <SectionHero heading={resolvedHeroHeading} description={resolvedHeroDescription} imageUrl={resolvedHeroImageUrl} fallbackHeading={resolvedHeroHeading}>
+            {resolvedHeroQuote ? <p className="clay-play-quote">"{resolvedHeroQuote}"</p> : null}
           </SectionHero>
-          <h1 id="aris-trials-title" style={{ display: 'none' }}>Experiments</h1>
+          <h1 id="aris-trials-title" style={{ display: 'none' }}>{resolvedHeroHeading}</h1>
         </section>
 
         <section className="trials-list" aria-label="Experiments list">

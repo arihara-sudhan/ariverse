@@ -3,10 +3,10 @@ import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { toPublicStorageUrl } from '../lib/storage';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
-const HERO_ARI_URL = toPublicStorageUrl('assets/hero.png');
+const HERO_ARI_URL = 'https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/assets/hero.webp';
 const HERO_FLOWER_URL = toPublicStorageUrl('assets/glory-lily.jpg');
 const AALKAATTI_URL = toPublicStorageUrl('assets/aalkaatti.png');
-const CYNODON_BLOB_URL = toPublicStorageUrl('assets/cynodon-testimonial-image.webp');
+const CYNODON_BLOB_URL = 'https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/assets/cynodon-testimonial-image.webp';
 const DEFAULT_FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },

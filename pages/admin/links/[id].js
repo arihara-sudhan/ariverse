@@ -1695,18 +1695,24 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                             if (files.length === 0) return;
                             setError('');
                             try {
-                              if (isGallerySection && !isBookReviewsSection) {
-                                const uploadedUrls = await uploadMultipleImages(files, item.kavithaiFrom);
-                                const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
-                                const nextUrls = [...currentUrls, ...uploadedUrls];
-                                updateLocalItem(item.id, {
-                                  imageUrl: nextUrls[0] || '',
-                                  imageUrls: nextUrls,
-                                });
-                              } else {
-                                const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom, {
-                                  currentUrl: item.imageUrl || '',
-                                });
+                      if (isGallerySection && !isBookReviewsSection) {
+                        const uploadedUrls = await uploadMultipleImages(files, item.kavithaiFrom);
+                        const currentUrls = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+                        const nextUrls = [...currentUrls, ...uploadedUrls];
+                        const nextItem = {
+                          ...item,
+                          imageUrl: nextUrls[0] || '',
+                          imageUrls: nextUrls,
+                        };
+                        updateLocalItem(item.id, {
+                          imageUrl: nextItem.imageUrl,
+                          imageUrls: nextItem.imageUrls,
+                        });
+                        await saveItem(nextItem);
+                      } else {
+                        const uploadedUrl = await uploadImage(files[0], item.kavithaiFrom, {
+                          currentUrl: item.imageUrl || '',
+                        });
                                 const nextItem = { ...item, imageUrl: uploadedUrl };
                                 updateLocalItem(item.id, { imageUrl: uploadedUrl });
                                 await saveItem(nextItem);

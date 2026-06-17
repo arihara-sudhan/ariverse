@@ -29,9 +29,9 @@ function getOrCreateCommenterToken() {
   return token;
 }
 
-function buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken }) {
+function buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken, extraPayload }) {
   const params = new URLSearchParams({ includePending: 'true', commenterToken });
-  for (const [key, value] of Object.entries({ [itemIdField]: itemId, ...(queryParams || {}) })) {
+  for (const [key, value] of Object.entries({ [itemIdField]: itemId, ...(queryParams || {}), ...(extraPayload || {}) })) {
     if (value !== undefined && value !== null && value !== '') {
       params.set(key, String(value));
     }
@@ -70,13 +70,13 @@ export default function DiscussionThread({
 
   useEffect(() => {
     if (!commenterToken || !endpoint) return;
-    fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken }))
+    fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken, extraPayload }))
       .then((res) => res.json())
       .then((data) => {
         setComments(Array.isArray(data.comments) ? data.comments : []);
       })
       .catch(() => null);
-  }, [commenterToken, endpoint, itemIdField, itemId, queryParamsKey]);
+  }, [commenterToken, endpoint, itemIdField, itemId, queryParamsKey, extraPayload]);
 
   const commentTree = useMemo(() => {
     const roots = comments.filter((item) => !item.parentCommentId);
@@ -131,7 +131,7 @@ export default function DiscussionThread({
         setCommentText('');
       }
       setNotice(data.message || 'Comment submitted for approval.');
-      const refresh = await fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken }));
+      const refresh = await fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken, extraPayload }));
       const refreshData = await refresh.json().catch(() => ({}));
       if (refresh.ok && Array.isArray(refreshData.comments)) setComments(refreshData.comments);
     }

@@ -16,6 +16,31 @@ function prioritizePosterImages(imageUrls) {
   return [...posterUrls, ...otherUrls];
 }
 
+function getGuestLectureImages(entry) {
+  const primaryImage = String(entry?.imageUrl || '').trim();
+  const galleryImages = Array.isArray(entry?.imageUrls) ? entry.imageUrls.map((url) => String(url || '').trim()).filter(Boolean) : [];
+  return prioritizePosterImages(Array.from(new Set(primaryImage ? [primaryImage, ...galleryImages] : galleryImages)));
+}
+
+function chunkImages(imageUrls, chunkSize = 3) {
+  const urls = Array.isArray(imageUrls) ? imageUrls : [];
+  const chunks = [];
+
+  for (let index = 0; index < urls.length; index += chunkSize) {
+    chunks.push(urls.slice(index, index + chunkSize));
+  }
+
+  return chunks;
+}
+
+function normalizeCommentRow(row) {
+  if (!row || typeof row !== 'object') return row;
+  return {
+    ...row,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt || ''),
+  };
+}
+
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Guest Lectures');
   if (!link) {
@@ -40,7 +65,7 @@ export async function getStaticProps() {
     })),
   );
   const initialCommentsByEntry = commentsRows.reduce((acc, row) => {
-    acc[row.entryId] = Array.isArray(row.comments) ? row.comments : [];
+    acc[row.entryId] = Array.isArray(row.comments) ? row.comments.map(normalizeCommentRow) : [];
     return acc;
   }, {});
 
@@ -103,31 +128,39 @@ export default function GuestLecturesPage({ entries, hero, initialCommentsByEntr
                   .map((line, idx) => (
                     <p key={`${entry.id}-${idx}`}>{line}</p>
                   ))}
-                {prioritizePosterImages(entry.imageUrls).length > 0 ? (
-                  <div className="clay-play-gallery">
-                    {prioritizePosterImages(entry.imageUrls).map((url, index) => (
-                      <a
-                        key={`${entry.id}-${url}-${index}`}
-                        className="clay-play-image-link"
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`Open ${entry.kavithaiFrom || 'Guest lecture'} image ${index + 1}`}
-                        style={
-                          galleryHeightByEntry[entry.id]
-                            ? { height: `${galleryHeightByEntry[entry.id]}px` }
-                            : undefined
-                        }
-                      >
-                        <img
-                          className="clay-play-image"
-                          src={url}
-                          alt={`${entry.kavithaiFrom || 'Guest lecture image'} ${index + 1}`}
-                          loading="lazy"
-                          decoding="async"
-                          onLoad={(event) => handleImageLoad(entry.id, index, event)}
-                        />
-                      </a>
+                {getGuestLectureImages(entry).length > 0 ? (
+                  <div className="guest-lectures-gallery">
+                    {chunkImages(getGuestLectureImages(entry), 3).map((row, rowIndex) => (
+                      <div key={`${entry.id}-row-${rowIndex}`} className="clay-play-gallery guest-lectures-gallery-row">
+                        {row.map((url, index) => {
+                          const imageIndex = rowIndex * 3 + index;
+
+                          return (
+                            <a
+                              key={`${entry.id}-${url}-${imageIndex}`}
+                              className="clay-play-image-link"
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`Open ${entry.kavithaiFrom || 'Guest lecture'} image ${imageIndex + 1}`}
+                              style={
+                                galleryHeightByEntry[entry.id]
+                                  ? { height: `${galleryHeightByEntry[entry.id]}px` }
+                                  : undefined
+                              }
+                            >
+                              <img
+                                className="clay-play-image"
+                                src={url}
+                                alt={`${entry.kavithaiFrom || 'Guest lecture image'} ${imageIndex + 1}`}
+                                loading="lazy"
+                                decoding="async"
+                                onLoad={(event) => handleImageLoad(entry.id, imageIndex, event)}
+                              />
+                            </a>
+                          );
+                        })}
+                      </div>
                     ))}
                   </div>
                 ) : null}

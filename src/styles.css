@@ -2664,6 +2664,16 @@ body.mini-project-open-body::-webkit-scrollbar {
   gap: 0.55rem;
 }
 
+.guest-lectures-gallery {
+  margin-top: 0.95rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.guest-lectures-gallery-row {
+  margin-top: 0;
+}
+
 .clay-play-image-link {
   display: block;
   border-radius: 8px;

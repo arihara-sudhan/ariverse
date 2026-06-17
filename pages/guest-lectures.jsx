@@ -9,6 +9,13 @@ import { useRef, useState } from 'react';
 const DEFAULT_GUEST_LECTURES_QUOTE =
   'Learning grows when ideas are shared with curiosity and care.';
 
+function prioritizePosterImages(imageUrls) {
+  const urls = Array.isArray(imageUrls) ? imageUrls.map((url) => String(url || '').trim()).filter(Boolean) : [];
+  const posterUrls = urls.filter((url) => /poster/i.test(url));
+  const otherUrls = urls.filter((url) => !/poster/i.test(url));
+  return [...posterUrls, ...otherUrls];
+}
+
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Guest Lectures');
   if (!link) {
@@ -96,9 +103,9 @@ export default function GuestLecturesPage({ entries, hero, initialCommentsByEntr
                   .map((line, idx) => (
                     <p key={`${entry.id}-${idx}`}>{line}</p>
                   ))}
-                {(Array.isArray(entry.imageUrls) ? entry.imageUrls : []).length > 0 ? (
+                {prioritizePosterImages(entry.imageUrls).length > 0 ? (
                   <div className="clay-play-gallery">
-                    {(Array.isArray(entry.imageUrls) ? entry.imageUrls : []).map((url, index) => (
+                    {prioritizePosterImages(entry.imageUrls).map((url, index) => (
                       <a
                         key={`${entry.id}-${url}-${index}`}
                         className="clay-play-image-link"

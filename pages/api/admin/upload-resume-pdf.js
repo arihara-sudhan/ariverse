@@ -4,7 +4,8 @@ import formidable from 'formidable';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
 
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+const RESUME_BLOB_PATH = 'ari-resume/resume.pdf';
 
 export const config = {
   api: {
@@ -17,7 +18,9 @@ function parseForm(req) {
     multiples: false,
     maxFiles: 1,
     maxFileSize: MAX_UPLOAD_BYTES,
+    filter: ({ mimetype }) => mimetype === 'application/pdf' || mimetype === 'application/octet-stream',
   });
+
   return new Promise((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
       if (err) reject(err);
@@ -55,6 +58,7 @@ export default async function handler(req, res) {
     return;
   }
   if (!enforceSameOriginWrite(req, res)) return;
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -62,41 +66,33 @@ export default async function handler(req, res) {
 
   try {
     const { files, fields } = await parseForm(req);
-    const file = files?.pdf?.[0] || files?.file?.[0] || files?.pdf || files?.file;
+    const file = files?.pdf?.[0] || files?.pdf;
+
     if (!file) {
       res.status(400).json({ error: 'No PDF provided.' });
       return;
     }
 
-    const mimeType = String(file.mimetype || '').toLowerCase();
-    if (mimeType !== 'application/pdf' && !String(file.originalFilename || '').toLowerCase().endsWith('.pdf')) {
-      res.status(400).json({ error: 'Only PDF files are allowed.' });
-      return;
-    }
-
     const currentUrl = Array.isArray(fields?.currentUrl) ? fields.currentUrl[0] : fields?.currentUrl;
-    const fileName = 'ari-resume/resume.pdf';
     const fileBuffer = await readFile(file.filepath);
-    const existingUrl = normalizeBlobUrl(currentUrl);
-    if (existingUrl && normalizeBlobPath(existingUrl) !== fileName) {
+    const blob = await put(RESUME_BLOB_PATH, fileBuffer, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      contentType: 'application/pdf',
+    });
+
+    const normalizedCurrent = normalizeBlobUrl(currentUrl);
+    if (normalizedCurrent && normalizeBlobPath(normalizedCurrent) !== RESUME_BLOB_PATH) {
       try {
-        await del(existingUrl, {
+        await del(normalizedCurrent, {
           token: process.env.BLOB_READ_WRITE_TOKEN,
         });
       } catch (_deleteError) {
       }
     }
 
-    const blob = await put(fileName, fileBuffer, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: 'application/pdf',
-    });
-
-    res.status(200).json({ pdfUrl: `${blob.url}?v=${Date.now()}`, storageUrl: blob.url });
-  } catch (_error) {
-    res.status(500).json({ error: 'Upload failed.' });
+    res.status(200).json({ pdfUrl: blob.url });
+  } catch (error) {
+    res.status(500).json({ error: error?.message || 'Could not upload resume PDF.' });
   }
 }

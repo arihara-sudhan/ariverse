@@ -23,11 +23,22 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     try {
-      const { pdfUrl, pageImageUrls } = req.body || {};
+      const body = req.body || {};
+      const currentAsset = await getResumeAssets(link.id);
+      const hasResumeText = Object.prototype.hasOwnProperty.call(body, 'resumeText');
+      const hasPdfUrl = Object.prototype.hasOwnProperty.call(body, 'pdfUrl');
+      const hasPageImageUrls = Object.prototype.hasOwnProperty.call(body, 'pageImageUrls');
       const asset = await upsertResumeAssets({
         linkId: link.id,
-        pdfUrl: String(pdfUrl || '').trim(),
-        pageImageUrls: Array.isArray(pageImageUrls) ? pageImageUrls : [],
+        resumeText: hasResumeText ? String(body.resumeText || '') : String(currentAsset?.resumeText || ''),
+        pdfUrl: hasPdfUrl ? String(body.pdfUrl || '').trim() : String(currentAsset?.pdfUrl || '').trim(),
+        pageImageUrls: hasPageImageUrls
+          ? Array.isArray(body.pageImageUrls)
+            ? body.pageImageUrls
+            : []
+          : Array.isArray(currentAsset?.pageImageUrls)
+            ? currentAsset.pageImageUrls
+            : [],
       });
       res.status(200).json({ asset });
     } catch (_error) {

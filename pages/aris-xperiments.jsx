@@ -6,6 +6,9 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listExperimentsEntries } from '../lib/adminData';
+import { toPublicStorageUrl } from '../lib/storage';
+
+const COLLAGE_HELP_DETAIL_HERO_URL = toPublicStorageUrl('ari-xperiments/collage-helps-hero.webp');
 
 function parseExperimentReadme(rawText) {
   const lines = String(rawText || '').split('\n');
@@ -127,6 +130,10 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
     () => (selectedTrial ? parseExperimentReadme(selectedTrial.fullDescription || selectedTrial.description || '') : []),
     [selectedTrial],
   );
+  const selectedTrialHeroUrl =
+    selectedTrial && /collages instead of single images|fed collages/i.test(String(selectedTrial.title || ''))
+      ? COLLAGE_HELP_DETAIL_HERO_URL
+      : String(selectedTrial?.imageUrl || '').trim();
 
   useEffect(() => {
     if (!selectedTrial) return;
@@ -162,8 +169,8 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
       <>
       <main className="kavithai-stage xperiment-detail-stage">
         <section className="kavithai-media">
-          {selectedTrial.imageUrl ? (
-            <img loading="lazy" decoding="async" className="kavithai-hero" src={selectedTrial.imageUrl} alt={selectedTrial.title} />
+          {selectedTrialHeroUrl ? (
+            <img loading="lazy" decoding="async" className="kavithai-hero" src={selectedTrialHeroUrl} alt={selectedTrial.title} />
           ) : (
             <div className="kavithai-media-empty" />
           )}
@@ -301,7 +308,7 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
                   storageNamespace="xperiments"
                   className="trial-row-like"
                 />
-                <a className="trial-read-more-btn" href={item.readMoreUrl || '#'}>READ MORE</a>
+                <a className="trial-read-more-btn" href={item.readMoreUrl || `/aris-xperiments?id=${item.id}`}>READ MORE</a>
               </div>
             </div>
           </article>

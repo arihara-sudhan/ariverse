@@ -2,22 +2,13 @@ import Link from 'next/link';
 import { useState } from 'react';
 import Header from '../src/components/Header';
 import { isAdminRequest } from '../lib/adminAuth';
-import { listAllCommentApprovals, listProfileLinks, listTestimonialsForAdmin } from '../lib/adminData';
+import { getAdminPendingModerationCount, listProfileLinks } from '../lib/adminData';
 
 export async function getServerSideProps({ req }) {
   const isAuthed = isAdminRequest(req);
-  const [initialLinks, initialPendingApprovals] = isAuthed
-    ? await Promise.all([
-        listProfileLinks(),
-        Promise.all([listAllCommentApprovals(), listTestimonialsForAdmin({ includePending: true })]),
-      ])
-    : [[], [[], []]];
-
-  const [initialApprovals, initialTestimonials] = initialPendingApprovals;
-  const awaitingApprovalsCount = [
-    ...(Array.isArray(initialApprovals) ? initialApprovals : []),
-    ...(Array.isArray(initialTestimonials) ? initialTestimonials : []),
-  ].filter((item) => String(item?.status || '').toLowerCase() === 'pending').length;
+  const [initialLinks, awaitingApprovalsCount] = isAuthed
+    ? await Promise.all([listProfileLinks(), getAdminPendingModerationCount()])
+    : [[], 0];
 
   return {
     props: {

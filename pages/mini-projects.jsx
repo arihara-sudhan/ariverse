@@ -4,6 +4,9 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listMiniProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
+import { toPublicStorageUrl } from '../lib/storage';
+
+const MINI_PROJECTS_HERO_URL = toPublicStorageUrl('assets/hero-images-of-modules/ari-projects.webp');
 
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Mini-Projects');
@@ -13,7 +16,17 @@ export async function getStaticProps() {
     sectionKey: 'mini-projects',
     entryIds: (Array.isArray(miniProjects) ? miniProjects : []).map((project) => project.id),
   });
-  return { props: { hero, miniProjects, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  return {
+    props: {
+      hero: {
+        ...hero,
+        imageUrl: MINI_PROJECTS_HERO_URL,
+      },
+      miniProjects,
+      likesByEntry,
+    },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
+  };
 }
 
 export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {

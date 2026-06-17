@@ -2,9 +2,10 @@ import '../src/styles.css';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
+import { toPublicStorageUrl } from '../lib/storage';
 
 const SITE_TITLE = 'AriVerse';
-const SITE_IMAGE = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
+const SITE_IMAGE = toPublicStorageUrl('assets/hero.png');
 const IS_INSPECTABLE = String(process.env.NEXT_PUBLIC_INSPECTABLE ?? '0').trim() !== '0';
 
 export default function App({ Component, pageProps }) {

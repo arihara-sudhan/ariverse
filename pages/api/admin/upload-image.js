@@ -155,7 +155,7 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   }
 
   if (sectionFolder === 'clay-play') {
-    return joinBlobPath('clay-play', titleBase, `${baseName}${ext}`);
+    return joinBlobPath('ari-clay', titleBase, `${baseName}${ext}`);
   }
 
   return joinBlobPath(sectionFolder, titleFolder || titleBase, `${baseName}${ext}`);

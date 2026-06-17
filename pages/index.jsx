@@ -1,11 +1,12 @@
 import { listFeatureImages, listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
+import { toPublicStorageUrl } from '../lib/storage';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
-const HERO_ARI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/ari.webp';
-const HERO_FLOWER_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/glory-lily.webp';
-const AALKAATTI_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/aalkaatti.webp';
-const CYNODON_BLOB_URL = 'https://nbmpfojwah4n8nms.public.blob.vercel-storage.com/assets/cynodon.webp';
+const HERO_ARI_URL = toPublicStorageUrl('assets/hero.png');
+const HERO_FLOWER_URL = toPublicStorageUrl('assets/glory-lily.jpg');
+const AALKAATTI_URL = toPublicStorageUrl('assets/aalkaatti.png');
+const CYNODON_BLOB_URL = toPublicStorageUrl('assets/cynodon-testimonial-image.webp');
 const DEFAULT_FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
@@ -108,6 +109,7 @@ export default function HomePage({ profileLinks, featureImages }) {
   const [subscriptionMessage, setSubscriptionMessage] = useState('');
   const [testimonialState, setTestimonialState] = useState('idle');
   const [testimonialMessage, setTestimonialMessage] = useState('');
+  const [isTypingPaused, setIsTypingPaused] = useState(false);
   const featureImagePool = Array.isArray(featureImages) && featureImages.length > 0
     ? featureImages.map((image) => ({
         src: String(image?.imageUrl || '').trim(),
@@ -418,7 +420,7 @@ export default function HomePage({ profileLinks, featureImages }) {
       title: 'Drop ARI a message',
       note: "Drop ARI a message and He'll get back to you!",
       body: (
-        <form onSubmit={handleMailSubmit}>
+        <form onSubmit={handleMailSubmit} onFocusCapture={handleTypingFocus} onBlurCapture={handleTypingBlur}>
           <label htmlFor="contact-name">Your Name</label>
           <input
             id="contact-name"
@@ -460,7 +462,7 @@ export default function HomePage({ profileLinks, featureImages }) {
       title: 'Subscribe to Ariverse',
       note: 'Get updates when new career posts, projects, experiments, lectures, books, clay play, and books read entries are added.',
       body: (
-        <form onSubmit={handleSubscribeSubmit}>
+        <form onSubmit={handleSubscribeSubmit} onFocusCapture={handleTypingFocus} onBlurCapture={handleTypingBlur}>
           <label htmlFor="subscribe-email">Your Email</label>
           <input
             id="subscribe-email"
@@ -484,7 +486,7 @@ export default function HomePage({ profileLinks, featureImages }) {
       title: 'Share a testimonial for ARI',
       note: 'Tell ARI how you know him and what you feel about working, learning, or being with him.',
       body: (
-        <form id="testimonial-form" onSubmit={handleTestimonialSubmit}>
+        <form id="testimonial-form" onSubmit={handleTestimonialSubmit} onFocusCapture={handleTypingFocus} onBlurCapture={handleTypingBlur}>
           <label htmlFor="testimonial-name">Name</label>
           <input
             id="testimonial-name"
@@ -533,6 +535,8 @@ export default function HomePage({ profileLinks, featureImages }) {
   ];
 
   useEffect(() => {
+    if (isTypingPaused) return undefined;
+
     const currentMessage = WELCOME_MESSAGES[welcomeIndex].text;
     const isFullyTyped = typedText === currentMessage;
     const isFullyDeleted = typedText.length === 0;
@@ -564,27 +568,27 @@ export default function HomePage({ profileLinks, featureImages }) {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [isDeleting, typedText, welcomeIndex]);
+  }, [isDeleting, isTypingPaused, typedText, welcomeIndex]);
 
   useEffect(() => {
-    if (isContactPaused || contactSlides.length <= 1) return undefined;
+    if (isContactPaused || isTypingPaused || contactSlides.length <= 1) return undefined;
 
     const timer = setInterval(() => {
       setContactIndex((prev) => (prev + 1) % contactSlides.length);
     }, 3000);
 
     return () => clearInterval(timer);
-  }, [contactSlides.length, isContactPaused]);
+  }, [contactSlides.length, isContactPaused, isTypingPaused]);
 
   useEffect(() => {
-    if (isQuotePaused || quoteSlides.length <= 1) return undefined;
+    if (isQuotePaused || isTypingPaused || quoteSlides.length <= 1) return undefined;
 
     const timer = setInterval(() => {
       transitionToQuoteSlide((quoteIndex + 1) % quoteSlides.length);
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [isQuotePaused, quoteIndex, quoteSlides.length]);
+  }, [isQuotePaused, isTypingPaused, quoteIndex, quoteSlides.length]);
 
   function handleQuoteCardClick() {
     setIsQuotePaused(true);
@@ -621,6 +625,21 @@ export default function HomePage({ profileLinks, featureImages }) {
     );
   }
 
+  function isTypingField(target) {
+    return Boolean(target && target.closest && target.closest('input, textarea, select'));
+  }
+
+  function handleTypingFocus(event) {
+    if (isTypingField(event.target)) {
+      setIsTypingPaused(true);
+    }
+  }
+
+  function handleTypingBlur(event) {
+    if (isTypingField(event.relatedTarget)) return;
+    setIsTypingPaused(false);
+  }
+
   function handleContactMouseEnter() {
     setIsContactPaused(true);
     clearCarouselResumeTimer(contactResumeTimerRef);
@@ -652,6 +671,7 @@ export default function HomePage({ profileLinks, featureImages }) {
           isHidden: 0,
         },
       ];
+  const visibleLinks = normalizedLinks.filter((link) => String(link.label || '').trim() !== 'Arichuvadu');
   const preferredOrder = [
     'Career',
     'Works',
@@ -677,7 +697,7 @@ export default function HomePage({ profileLinks, featureImages }) {
   const orderIndex = new Map(preferredOrder.map((label, idx) => [label, idx]));
 
   const groupedLinks = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'].map((category) => {
-    const items = normalizedLinks
+    const items = visibleLinks
       .filter((link) => {
         const normalizedCategory = (link.category || 'PASSIONAL').toUpperCase();
         return normalizedCategory === category;
@@ -709,10 +729,8 @@ export default function HomePage({ profileLinks, featureImages }) {
             <h1>
               <span className="intro-title-main">I am ARI</span>
               <span className="intro-title-sub">
-                A boy hails from the South, aiming beyond The Sky. Each day, I try
-                reaching the buds of knowledge in this vast universe, waiting for my touch.
-                With insatiable curiosity, I learn, love, live, and teach. This is my world, which I shape
-                meticulously.
+                An ever young boy hails from the South, aiming beyond The Sky! Each day, I
+                reach the buds of knowledge in this vast universe, waiting for my touch and I widen Ariverse with the things I learn, love, and build. I take from the Universe and I make it in Ariverse.
               </span>
             </h1>
             <p className="intro-title-note" aria-live="polite">

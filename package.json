@@ -7,6 +7,8 @@
         "build": "next build",
         "start": "next start",
         "resume:images": "node scripts/generate-resume-images.mjs",
+        "audit:media-urls": "node scripts/audit-media-urls.mjs",
+        "dump:neon": "node scripts/dump-neon-all-tables.mjs",
         "migrate:kavithai-images": "node scripts/migrate-kavithai-images-to-blob.mjs",
         "migrate:assets": "node scripts/migrate-assets-to-blob.mjs",
         "migrate:mini-project-pngs": "node scripts/migrate-mini-project-pngs-to-blob.mjs",

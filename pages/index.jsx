@@ -1,9 +1,8 @@
 import { listFeatureImages, listVisibleProfileLinks } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
-import { toPublicStorageUrl } from '../lib/storage';
+import { HOME_HERO_IMAGE_URL, toPublicStorageUrl } from '../lib/storage';
 import Header from '../src/components/Header';
 import { useEffect, useRef, useState } from 'react';
-const HERO_ARI_URL = 'https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/assets/hero.webp';
 const HERO_FLOWER_URL = toPublicStorageUrl('assets/glory-lily.jpg');
 const AALKAATTI_URL = toPublicStorageUrl('assets/aalkaatti.png');
 const CYNODON_BLOB_URL = 'https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/assets/cynodon-testimonial-image.webp';
@@ -742,7 +741,7 @@ export default function HomePage({ profileLinks, featureImages }) {
           </section>
 
           <figure className="photo-block">
-            <img loading="eager" fetchPriority="high" decoding="async" draggable={false} src={HERO_ARI_URL} alt="Portrait of Ari" />
+            <img loading="eager" fetchPriority="high" decoding="async" draggable={false} src={HOME_HERO_IMAGE_URL} alt="Portrait of Ari" />
           </figure>
         </section>
 

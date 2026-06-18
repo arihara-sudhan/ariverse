@@ -8,6 +8,14 @@ import { useRef, useState } from 'react';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 
+function normalizeCommentRow(row) {
+  if (!row || typeof row !== 'object') return row;
+  return {
+    ...row,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt || ''),
+  };
+}
+
 export async function getStaticProps() {
   const clayLink = await getProfileLinkByLabel('Clay Play');
   if (!clayLink) {
@@ -30,7 +38,7 @@ export async function getStaticProps() {
     })),
   );
   const initialCommentsByEntry = commentsRows.reduce((acc, row) => {
-    acc[row.entryId] = Array.isArray(row.comments) ? row.comments : [];
+    acc[row.entryId] = Array.isArray(row.comments) ? row.comments.map(normalizeCommentRow) : [];
     return acc;
   }, {});
 

@@ -55,6 +55,8 @@ export default function AdminApprovalsPage({ initialApprovals, initialTestimonia
   const [error, setError] = useState('');
   const [approvals, setApprovals] = useState(initialApprovals || []);
   const [testimonials, setTestimonials] = useState(initialTestimonials || []);
+  const [replyDraftByKey, setReplyDraftByKey] = useState({});
+  const [replyOpenByKey, setReplyOpenByKey] = useState({});
 
   const moderationItems = useMemo(() => {
     const commentItems = (approvals || []).map((item) => ({
@@ -157,6 +159,37 @@ export default function AdminApprovalsPage({ initialApprovals, initialTestimonia
     await loadTestimonials();
   }
 
+  async function replyToComment(item) {
+    const key = `${item.kind}-${item.source}-${item.id}`;
+    const replyText = String(replyDraftByKey[key] || '').trim();
+    if (!replyText) {
+      setError('Reply text is required.');
+      return;
+    }
+
+    const res = await fetch('/api/admin/comment-approvals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: item.source,
+        sectionKey: item.sectionKey,
+        entryId: item.entryId,
+        commentId: item.id,
+        comment: replyText,
+        makeParentGreen: true,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || 'Could not post reply.');
+      return;
+    }
+
+    setReplyDraftByKey((prev) => ({ ...prev, [key]: '' }));
+    setReplyOpenByKey((prev) => ({ ...prev, [key]: false }));
+    await loadApprovals();
+  }
+
   async function deleteTestimonial(testimonial) {
     const res = await fetch('/api/admin/testimonials', {
       method: 'DELETE',
@@ -250,6 +283,43 @@ export default function AdminApprovalsPage({ initialApprovals, initialTestimonia
                     Delete
                   </button>
                 </div>
+                {item.kind === 'comment' ? (
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <button
+                      type="button"
+                      className="playlist-watch-btn admin-item-action-btn"
+                      onClick={() =>
+                        setReplyOpenByKey((prev) => ({
+                          ...prev,
+                          [`${item.kind}-${item.source}-${item.id}`]: !prev[`${item.kind}-${item.source}-${item.id}`],
+                        }))
+                      }
+                    >
+                      Reply as ARIVERSE
+                    </button>
+                    {replyOpenByKey[`${item.kind}-${item.source}-${item.id}`] ? (
+                      <div className="project-comment-reply-box" style={{ marginTop: '0.45rem' }}>
+                        <textarea
+                          rows="2"
+                          value={replyDraftByKey[`${item.kind}-${item.source}-${item.id}`] || ''}
+                          onChange={(event) =>
+                            setReplyDraftByKey((prev) => ({
+                              ...prev,
+                              [`${item.kind}-${item.source}-${item.id}`]: event.target.value,
+                            }))
+                          }
+                          placeholder="Reply as ARIVERSE"
+                        />
+                        <button type="button" onClick={() => replyToComment(item)}>
+                          Send Reply
+                        </button>
+                        <p className="contact-note" style={{ margin: '0.15rem 0 0' }}>
+                          Replies use the homepage hero image and the name ARIVERSE.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ))}
           </section>
@@ -320,6 +390,43 @@ export default function AdminApprovalsPage({ initialApprovals, initialTestimonia
                     Delete
                   </button>
                 </div>
+                {item.kind === 'comment' ? (
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <button
+                      type="button"
+                      className="playlist-watch-btn admin-item-action-btn"
+                      onClick={() =>
+                        setReplyOpenByKey((prev) => ({
+                          ...prev,
+                          [`${item.kind}-${item.source}-${item.id}`]: !prev[`${item.kind}-${item.source}-${item.id}`],
+                        }))
+                      }
+                    >
+                      Reply as ARIVERSE
+                    </button>
+                    {replyOpenByKey[`${item.kind}-${item.source}-${item.id}`] ? (
+                      <div className="project-comment-reply-box" style={{ marginTop: '0.45rem' }}>
+                        <textarea
+                          rows="2"
+                          value={replyDraftByKey[`${item.kind}-${item.source}-${item.id}`] || ''}
+                          onChange={(event) =>
+                            setReplyDraftByKey((prev) => ({
+                              ...prev,
+                              [`${item.kind}-${item.source}-${item.id}`]: event.target.value,
+                            }))
+                          }
+                          placeholder="Reply as ARIVERSE"
+                        />
+                        <button type="button" onClick={() => replyToComment(item)}>
+                          Send Reply
+                        </button>
+                        <p className="contact-note" style={{ margin: '0.15rem 0 0' }}>
+                          Replies use the homepage hero image and the name ARIVERSE.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ))}
           </section>

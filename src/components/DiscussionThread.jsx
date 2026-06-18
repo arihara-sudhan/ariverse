@@ -19,6 +19,11 @@ function getDiceBearAvatarUrl(name) {
   return `https://api.dicebear.com/10.x/initials/svg?seed=${seed}&backgroundType=solid,gradientLinear`;
 }
 
+function getCommentAvatarUrl(item) {
+  const avatarUrl = String(item?.avatarUrl || '').trim();
+  return avatarUrl || getDiceBearAvatarUrl(item?.name);
+}
+
 function getOrCreateCommenterToken() {
   if (typeof window === 'undefined') return '';
   let token = window.localStorage.getItem(COMMENTER_TOKEN_STORAGE_KEY);
@@ -208,15 +213,15 @@ export default function DiscussionThread({
             <div className="project-comment-head">
               <img
                 className="project-comment-avatar"
-                src={getDiceBearAvatarUrl(item.name)}
+                src={getCommentAvatarUrl(item)}
                 alt={`${item.name || 'anonymous'} avatar`}
                 loading="lazy"
                 decoding="async"
               />
-              <p className="project-comment-meta">
-                <strong>{item.name || 'anonymous'}</strong>
-                {formatRelativeTime(item.createdAt) ? <span> | {formatRelativeTime(item.createdAt)}</span> : null}
-              </p>
+              <strong className="project-comment-name">{item.name || 'anonymous'}</strong>
+              {formatRelativeTime(item.createdAt) ? (
+                <span className="project-comment-time">{formatRelativeTime(item.createdAt)}</span>
+              ) : null}
             </div>
             {editingCommentId === item.id ? (
               <div className="project-comment-reply-box">
@@ -283,15 +288,15 @@ export default function DiscussionThread({
                 <div className="project-comment-head">
                   <img
                     className="project-comment-avatar"
-                    src={getDiceBearAvatarUrl(reply.name)}
+                    src={getCommentAvatarUrl(reply)}
                     alt={`${reply.name || 'anonymous'} avatar`}
                     loading="lazy"
                     decoding="async"
                   />
-                  <p className="project-comment-meta">
-                    <strong>{reply.name || 'anonymous'}</strong>
-                    {formatRelativeTime(reply.createdAt) ? <span> | {formatRelativeTime(reply.createdAt)}</span> : null}
-                  </p>
+                  <strong className="project-comment-name">{reply.name || 'anonymous'}</strong>
+                  {formatRelativeTime(reply.createdAt) ? (
+                    <span className="project-comment-time">{formatRelativeTime(reply.createdAt)}</span>
+                  ) : null}
                 </div>
                 {editingCommentId === reply.id ? (
                   <div className="project-comment-reply-box">

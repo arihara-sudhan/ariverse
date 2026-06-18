@@ -57,6 +57,11 @@ Throughout the experiment, comparisons were also drawn with K-Means clustering a
 
 The experiment was designed around a visually intuitive dataset consisting of images representing various shades of red, green, and blue, which are three broad color categories that the classifier was trained to distinguish. Once trained, the model was expected to have developed internal representations, or embeddings, that captured the underlying visual structure of these color families in a well-organized feature space.
 
+| Asset | URL |
+| --- | --- |
+| Hero | https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/ari-xperiments/classifier-as-fewshot/classifier-as-fewshot.webp |
+| Readme | https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/ari-xperiments/classifier-as-fewshot/color-shades.webp |
+
 ![Classifier as FewShot](https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/ari-xperiments/classifier-as-fewshot/color-shades.webp)
 
 The remarkable finding came during the testing phase, when entirely new and unseen color classes, specifically shades of orange, pink, and violet, were introduced to the model. Rather than producing random or chaotic outputs, the classifier demonstrated a surprisingly structured response, grouping these unseen color shades into distinct and coherent clusters within its learned embedding space.
@@ -78,6 +83,11 @@ Nevertheless, this research serves as a compelling reminder that the boundary be
     detailText: `This research introduces a creative and practically motivated idea aimed at addressing one of the most pressing challenges in few-shot learning at scale, which is the significant computational and memory overhead associated with storing and retrieving embeddings for large numbers of individual samples.
 
 In a typical few-shot learning pipeline, once the model is trained to produce a well-structured embedding space, a database of embeddings is constructed by passing each sample through the model individually and storing the resulting vector representations.
+
+| Asset | URL |
+| --- | --- |
+| Hero | https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/ari-xperiments/collage-helps/collage-helps-hero.webp |
+| Readme | https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/ari-xperiments/collage-helps/collage-helps.webp |
 
 ![Collage helps hero](https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/ari-xperiments/collage-helps/collage-helps.webp)
 

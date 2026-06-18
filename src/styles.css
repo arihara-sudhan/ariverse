@@ -2356,13 +2356,14 @@ body.mini-project-open-body::-webkit-scrollbar {
 .project-comment-head {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.36rem;
   margin-bottom: 0.3rem;
+  flex-wrap: wrap;
 }
 
 .project-comment-avatar {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #c8d4ea;
   color: #2f3f59;
@@ -2372,9 +2373,22 @@ body.mini-project-open-body::-webkit-scrollbar {
   font-weight: 700;
 }
 
-.project-comment-meta {
+.project-comment-name,
+.project-comment-time {
+  white-space: nowrap;
+}
+
+.project-comment-name {
   font-size: 0.88rem;
+  line-height: 1.15;
   color: #22324b;
+}
+
+.project-comment-time {
+  margin-left: 0.08rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #5b6b82;
 }
 
 .project-detail-overview,

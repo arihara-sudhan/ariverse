@@ -1,4 +1,6 @@
 import {
+  addContentCommentReplyForAdmin,
+  addProjectCommentReplyForAdmin,
   deleteContentComment,
   deleteProjectComment,
   listAllCommentApprovals,
@@ -40,6 +42,28 @@ export default async function handler(req, res) {
         ? await updateProjectCommentForAdmin({ commentId, projectEntryId: entryId, comment, status })
         : await updateContentCommentForAdmin({ sectionKey, entryId, commentId, comment, status });
       res.status(200).json({ ok: true, comment: updated });
+      return;
+    }
+
+    if (req.method === 'POST') {
+      if (!enforceSameOriginWrite(req, res)) return;
+      const source = toCleanText(req.body?.source, 20).toLowerCase();
+      const commentId = toPositiveInt(req.body?.commentId);
+      const entryId = toPositiveInt(req.body?.entryId);
+      const sectionKey = toCleanText(req.body?.sectionKey, 80).toLowerCase();
+      const comment = typeof req.body?.comment === 'string' ? toCleanText(req.body.comment, 800) : '';
+      const makeParentGreen = req.body?.makeParentGreen === true || req.body?.makeParentGreen === 'true';
+
+      if (!commentId || !entryId || !comment || (source !== 'project' && source !== 'content')) {
+        res.status(400).json({ error: 'Invalid reply payload.' });
+        return;
+      }
+
+      const reply = source === 'project'
+        ? await addProjectCommentReplyForAdmin({ projectEntryId: entryId, parentCommentId: commentId, comment, makeParentGreen })
+        : await addContentCommentReplyForAdmin({ sectionKey, entryId, parentCommentId: commentId, comment, makeParentGreen });
+
+      res.status(200).json({ ok: true, comment: reply });
       return;
     }
 

@@ -264,17 +264,15 @@ export default function HomePage({ profileLinks, featureImages }) {
       const panel = quotePanelRef.current;
       if (!panel) return;
 
-      const blob = quoteBlobRef.current;
       const panelStyles = window.getComputedStyle(panel);
       const paddingTop = Number.parseFloat(panelStyles.paddingTop) || 0;
       const textHeights = quoteMeasureRefs.current.reduce((maxHeight, element) => {
         if (!element) return maxHeight;
         return Math.max(maxHeight, element.getBoundingClientRect().height);
       }, 0);
-      const blobHeight = blob ? blob.getBoundingClientRect().height : 0;
 
-      if (textHeights > 0 && blobHeight > 0) {
-        setQuotePanelHeight(Math.ceil(paddingTop + textHeights + blobHeight + QUOTE_PANEL_GAP_PX));
+      if (textHeights > 0) {
+        setQuotePanelHeight(Math.ceil(paddingTop + textHeights + QUOTE_PANEL_GAP_PX));
       }
     }
 
@@ -762,7 +760,7 @@ export default function HomePage({ profileLinks, featureImages }) {
               handleQuoteCardClick();
             }
           }}
-          style={quotePanelHeight ? { minHeight: `${quotePanelHeight}px` } : undefined}
+          style={quotePanelHeight ? { height: `${quotePanelHeight}px` } : undefined}
         >
           {quoteOutgoingIndex !== null ? (
             <div

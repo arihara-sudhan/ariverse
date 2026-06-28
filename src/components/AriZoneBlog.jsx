@@ -194,6 +194,12 @@ function AriZoneThemeStyles() {
         gap: 2vw;
       }
 
+      .arizone-shell .posts-grid.is-empty {
+        grid-template-columns: 1fr;
+        min-height: 32vh;
+        align-items: center;
+      }
+
       .arizone-shell .post-card {
         background: white;
         border-radius: 1vw;
@@ -311,6 +317,21 @@ function AriZoneThemeStyles() {
       .arizone-shell .footer p {
         font-family: 'Google Sans', 'Pandora Sans', sans-serif;
         font-size: 1.1vw;
+      }
+
+      .arizone-shell .empty-state {
+        display: grid;
+        place-items: center;
+        min-height: 28vh;
+        border: 1px dashed rgba(0, 0, 0, 0.14);
+        border-radius: 1.25rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+        color: #444444;
+        text-align: center;
+        font-family: 'Google Sans', 'Pandora Sans', sans-serif;
+        font-size: 1.05vw;
+        font-weight: 500;
+        letter-spacing: 0.01em;
       }
 
       @media (max-width: 768px) {
@@ -471,7 +492,7 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
               </div>
             </div>
 
-            <div className="posts-grid" id="posts-grid">
+            <div className={`posts-grid${visiblePosts.length > 0 ? '' : ' is-empty'}`} id="posts-grid">
                 {visiblePosts.length > 0 ? (
                   visiblePosts.map((post) => {
                   const imageSource = post.coverImageUrl || post.categoryLogoUrl || TOPIC_LOGO_URLS[post.categorySlug] || DEFAULT_LOGO_URL;

@@ -1,5 +1,4 @@
 import '../src/styles.css';
-import '../src/arizone.css';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';

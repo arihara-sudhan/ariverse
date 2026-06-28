@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
-import { del, put } from '@vercel/blob';
 import formidable from 'formidable';
 import sharp from 'sharp';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
+import { toPublicStorageUrl } from '../../../lib/storage';
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const ALLOWED_MIME_TO_EXT = {
@@ -58,12 +58,40 @@ function toFileBaseFromOriginalName(fileName) {
   return toFileNameBase(base);
 }
 
+function getSupabaseBaseUrl() {
+  return String(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://qbghhenrxoupaykgnxyj.supabase.co').trim().replace(/\/+$/, '');
+}
+
+function getSupabaseBucket() {
+  return String(
+    process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ||
+      process.env.SUPABASE_STORAGE_BUCKET ||
+      'ariverse',
+  ).trim() || 'ariverse';
+}
+
+function getSupabaseUploadKey() {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.SUPABASE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_SECRET_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    ''
+  ).trim();
+}
+
 function resolveSectionFolder(section, sectionHref = '') {
   const rawSection = String(section || '').trim();
   const rawHref = String(sectionHref || '').trim().toLowerCase();
   if (rawHref === '/ariyin-kavithaigal' || rawSection === 'அரியின் கவிதைகள்' || rawSection === 'Ariyin Kavithaigal' || rawSection === 'Kavithaigal') {
     return 'ariyin-kavithaigal';
   }
+  if (rawHref === '/arizone' || rawSection === 'AriZone' || rawSection === 'AriZone (Blog)') return 'arizone-posts';
   if (rawHref === '/ari-read-books' || rawSection === 'Books Read') return 'books-read';
   if (rawHref === '/guest-lectures' || rawSection === 'Guest Lectures') return 'guest-lectures';
   if (rawHref === '/book-reviews' || rawSection === 'Book Reviews') return 'book-reviews';
@@ -161,27 +189,34 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   return joinBlobPath(sectionFolder, titleFolder || titleBase, `${baseName}${ext}`);
 }
 
-function normalizeBlobUrl(url) {
-  const input = String(url || '').trim();
+function toCleanRelativePath(value) {
+  const input = String(value || '').trim();
+  if (!input) return '';
+  const stripped = input.split('?')[0].split('#')[0].replace(/^\/+/, '');
+  if (!stripped) return '';
+  return stripped
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => {
+      try {
+        return encodeURIComponent(decodeURIComponent(segment));
+      } catch (_error) {
+        return encodeURIComponent(segment);
+      }
+    })
+    .join('/');
+}
+
+function normalizeStorageUrl(value) {
+  const input = String(value || '').trim();
   if (!input) return '';
   try {
     const parsed = new URL(input);
     parsed.search = '';
     parsed.hash = '';
     return parsed.toString();
-  } catch {
-    return '';
-  }
-}
-
-function normalizeBlobPath(url) {
-  const normalizedUrl = normalizeBlobUrl(url);
-  if (!normalizedUrl) return '';
-  try {
-    const pathname = new URL(normalizedUrl).pathname.replace(/^\/+/, '');
-    return decodeURIComponent(pathname);
-  } catch {
-    return '';
+  } catch (_error) {
+    return toPublicStorageUrl(input);
   }
 }
 
@@ -189,6 +224,14 @@ function replaceBlobExt(pathname, ext = '.webp') {
   const clean = String(pathname || '').trim();
   if (!clean) return '';
   return clean.replace(/\.[^/.]+$/, ext);
+}
+
+function resolveExplicitUploadPath(fields) {
+  const rawTarget = Array.isArray(fields?.targetPath) ? fields.targetPath[0] : fields?.targetPath;
+  const rawPath = Array.isArray(fields?.path) ? fields.path[0] : fields?.path;
+  const target = toCleanRelativePath(rawTarget || rawPath || '');
+  if (!target) return '';
+  return replaceBlobExt(target, '.webp');
 }
 
 function isCleanSectionPath(pathname, sectionFolder) {
@@ -230,11 +273,12 @@ export default async function handler(req, res) {
     const currentUrl = Array.isArray(fields?.currentUrl) ? fields.currentUrl[0] : fields?.currentUrl;
     const baseName = toFileBaseFromOriginalName(file.originalFilename || '');
     const sectionFolder = resolveSectionFolder(section, sectionHref);
-    const currentPath = normalizeBlobPath(currentUrl);
+    const explicitPath = resolveExplicitUploadPath(fields);
+    const currentPath = toCleanRelativePath(currentUrl);
     const outputExt = '.webp';
-    const fileName = isCleanSectionPath(currentPath, sectionFolder)
+    const fileName = explicitPath || (isCleanSectionPath(currentPath, sectionFolder)
       ? replaceBlobExt(currentPath, outputExt)
-      : buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext: outputExt });
+      : buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext: outputExt }));
 
     if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
       res.status(413).json({ error: 'File too large.' });
@@ -245,25 +289,35 @@ export default async function handler(req, res) {
     const webpBuffer = await sharp(fileBuffer, { animated: true })
       .webp({ quality: 100, effort: 3 })
       .toBuffer();
-    const existingUrl = normalizeBlobUrl(currentUrl);
-    if (existingUrl && normalizeBlobPath(existingUrl) !== fileName) {
-      try {
-        await del(existingUrl, {
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-        });
-      } catch (_deleteError) {
-      }
+    const uploadKey = getSupabaseUploadKey();
+    if (!uploadKey) {
+      res.status(500).json({ error: 'Supabase upload key is missing. Set SUPABASE_SERVICE_ROLE_KEY (recommended).' });
+      return;
     }
 
-    const blob = await put(fileName, webpBuffer, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: 'image/webp',
+    const supabaseUrl = getSupabaseBaseUrl();
+    const bucket = getSupabaseBucket();
+    const objectPath = String(fileName || '').replace(/^\/+/, '');
+    const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${objectPath}`;
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${uploadKey}`,
+        apikey: uploadKey,
+        'x-upsert': 'true',
+        'content-type': 'image/webp',
+      },
+      body: webpBuffer,
     });
 
-    res.status(200).json({ imageUrl: `${blob.url}?v=${Date.now()}`, storageUrl: blob.url });
+    if (!response.ok) {
+      const details = await response.text().catch(() => '');
+      res.status(response.status).json({ error: details || 'Upload failed.' });
+      return;
+    }
+
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${objectPath}`;
+    res.status(200).json({ imageUrl: `${publicUrl}?v=${Date.now()}`, storageUrl: publicUrl });
   } catch (_error) {
     res.status(500).json({ error: 'Upload failed.' });
   }

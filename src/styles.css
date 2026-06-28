@@ -2970,6 +2970,177 @@ body.mini-project-open-body::-webkit-scrollbar {
   cursor: not-allowed;
 }
 
+.arizone-inline-category-panel {
+  margin-top: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #ffffff;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.arizone-inline-category-panel label {
+  margin: 0.35rem 0 0.2rem;
+  font-size: 0.76rem;
+}
+
+.arizone-inline-category-panel input {
+  min-height: 36px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.88rem;
+}
+
+.arizone-inline-category-title {
+  margin: 0 0 0.2rem;
+  color: #2e2e2e;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.arizone-inline-actions {
+  margin: 0.1rem 0 0;
+}
+
+.arizone-inline-actions button {
+  margin-top: 0.35rem;
+  padding: 0.42rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.md-creator {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.md-creator label {
+  display: block;
+  margin: 0;
+  color: #2e2e2e;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.md-creator-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.md-creator-toolbar button.md-tool {
+  margin-top: 0;
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.38rem 0.7rem;
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: transform 140ms ease, background-color 180ms ease, opacity 180ms ease;
+}
+
+.md-creator-toolbar button.md-tool:hover {
+  background: #2a2a2a;
+  transform: translateY(-1px);
+}
+
+.md-creator-toolbar button.md-tool:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.md-creator-toolbar button.md-tool svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.md-creator-toolbar button.md-tool span {
+  display: inline-block;
+}
+
+.md-creator textarea {
+  resize: vertical;
+  min-height: 160px;
+}
+
+.md-creator-preview {
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.md-creator-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid #ededed;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  color: #3d3d3d;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.md-creator-preview-body {
+  padding: 0.9rem 1rem;
+  color: #111111;
+  line-height: 1.7;
+}
+
+.md-creator-preview-body h1,
+.md-creator-preview-body h2,
+.md-creator-preview-body h3 {
+  margin: 0 0 0.65rem;
+  line-height: 1.2;
+}
+
+.md-creator-preview-body p {
+  margin: 0 0 0.75rem;
+}
+
+.md-creator-preview-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.md-creator-preview-body blockquote {
+  margin: 0.85rem 0;
+  padding-left: 0.9rem;
+  border-left: 3px solid #d7d7d7;
+  color: #4a4a4a;
+}
+
+.md-creator-preview-body code {
+  padding: 0.12rem 0.32rem;
+  border-radius: 6px;
+  background: #f2f2f2;
+}
+
+.md-creator-preview-empty {
+  margin: 0;
+  color: #666666;
+  font-style: italic;
+}
+
 .contact-testimonial-panel {
   padding: 0;
   overflow: hidden;

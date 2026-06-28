@@ -9,6 +9,7 @@ function buildCommentLocation(comment) {
     return '/projects';
   }
   const sectionMap = {
+    arizone: '/arizone',
     xperiments: '/aris-xperiments',
     kavithaigal: '/ariyin-kavithaigal',
     'guest-lectures': '/guest-lectures',

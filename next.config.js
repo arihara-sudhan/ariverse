@@ -19,6 +19,11 @@ const nextConfig = {
         permanent: false,
       },
       {
+        source: '/blog',
+        destination: '/arizone',
+        permanent: false,
+      },
+      {
         source: '/thirukkural',
         destination: 'https://arihara-sudhan.github.io/uyir-kural/',
         permanent: false,

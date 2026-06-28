@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import Header from '../../../src/components/Header';
+import MDCreatorComponent from '../../../src/components/MDCreatorComponent';
 import SectionHero from '../../../src/components/SectionHero';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getProfileLinkById, getResumeAssets, getSectionHero, listLinkItems } from '../../../lib/adminData';
+import { listArizoneAdminPosts, listArizoneCategories } from '../../../lib/arizoneAdmin';
+import { getArizoneCategoryLogoPath } from '../../../lib/arizoneAssets';
 import { isInstagramUrl } from '../../../lib/security';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
@@ -84,6 +87,8 @@ export async function getServerSideProps({ req, params }) {
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : item?.createdAt || '',
   }));
   const initialResumeAssets = link.label === 'Resume' ? await getResumeAssets(linkId) : null;
+  const initialArizonePosts = link.label === 'AriZone (Blog)' ? await listArizoneAdminPosts() : [];
+  const initialArizoneCategories = link.label === 'AriZone (Blog)' ? await listArizoneCategories() : [];
 
   return {
     props: {
@@ -91,12 +96,52 @@ export async function getServerSideProps({ req, params }) {
       initialHero: await getSectionHero(linkId, link.label),
       initialItems,
       initialResumeAssets,
+      initialArizonePosts,
+      initialArizoneCategories,
     },
   };
 }
 
-export default function LinkAdminPage({ link, initialItems, initialHero, initialResumeAssets }) {
+function slugifyArizoneTitle(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function normalizeArizoneDraft(post = {}) {
+  const slug = String(post?.slug || '').trim();
+  const title = String(post?.title || '').trim();
+  const safeSlug = slug || slugifyArizoneTitle(title);
+  return {
+    id: post?.id ?? null,
+    title,
+    slug: safeSlug,
+    categoryLabel: String(post?.categoryLabel || post?.category_label || 'Deep Learning').trim() || 'Deep Learning',
+    categorySlug: String(post?.categorySlug || post?.category_slug || 'deep-learning').trim() || 'deep-learning',
+    coverImagePath: String(post?.coverImagePath || post?.cover_image_path || `arizone-posts/${safeSlug}/images/cover.img`).trim(),
+    contentMarkdown: String(post?.contentMarkdown || post?.content_markdown || ''),
+    publishedAt: String(post?.publishedAt || post?.published_at || new Date().toISOString().slice(0, 10)).slice(0, 10),
+    isPublished: Boolean(post?.isPublished ?? post?.is_published ?? true),
+    storageFolder: String(post?.storageFolder || post?.storage_folder || `arizone-posts/${safeSlug}`).trim(),
+  };
+}
+
+function normalizeArizoneCategoryDraft(category = {}) {
+  const label = String(category?.label || category?.categoryLabel || '').trim();
+  const slug = String(category?.slug || category?.categorySlug || '').trim() || slugifyArizoneTitle(label) || 'untitled';
+  return {
+    id: category?.id ?? null,
+    label,
+    slug,
+    logoPath: String(category?.logoPath || category?.logo_path || getArizoneCategoryLogoPath(slug)).trim(),
+  };
+}
+
+export default function LinkAdminPage({ link, initialItems, initialHero, initialResumeAssets, initialArizonePosts, initialArizoneCategories }) {
   const sectionLabel = String(link?.label || '').trim();
+  const isArizoneSection = sectionLabel === 'AriZone (Blog)' || sectionLabel === 'AriZone';
   const isBinomialSection = sectionLabel === 'Binomial Names';
   const isClayPlaySection = sectionLabel === 'Clay Play';
   const isGuestLecturesSection = sectionLabel === 'Guest Lectures';
@@ -231,12 +276,411 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const [heroDraftImageUrl, setHeroDraftImageUrl] = useState(initialHero?.imageUrl || '');
   const [editingHero, setEditingHero] = useState(false);
   const [savingHero, setSavingHero] = useState(false);
+  const [arizonePosts, setArizonePosts] = useState((initialArizonePosts || []).map((post) => normalizeArizoneDraft(post)));
+  const [arizoneCategories, setArizoneCategories] = useState((initialArizoneCategories || []).map((category) => normalizeArizoneCategoryDraft(category)));
+  const [arizoneDraft, setArizoneDraft] = useState(normalizeArizoneDraft());
+  const [arizoneCategoryDraft, setArizoneCategoryDraft] = useState(normalizeArizoneCategoryDraft());
+  const [arizoneSelectedId, setArizoneSelectedId] = useState(null);
+  const [arizoneSelectedCategoryId, setArizoneSelectedCategoryId] = useState(null);
+  const [arizoneCategoryCreateOpen, setArizoneCategoryCreateOpen] = useState((initialArizoneCategories || []).length === 0);
+  const [arizoneSaving, setArizoneSaving] = useState(false);
+  const [arizoneCategorySaving, setArizoneCategorySaving] = useState(false);
+  const [arizoneError, setArizoneError] = useState('');
+  const [arizoneCategoryError, setArizoneCategoryError] = useState('');
 
   const [dragState, setDragState] = useState({ scope: '', itemId: null, fromIndex: -1 });
   const inlineImageInputRef = useRef(null);
+  const arizoneCoverInputRef = useRef(null);
+  const arizoneCategoryLogoInputRef = useRef(null);
   const createBigDescriptionRef = useRef(null);
   const editBigDescriptionRefs = useRef({});
   const inlineImageTargetRef = useRef({ mode: 'create', itemId: null, selectionStart: null, selectionEnd: null });
+
+  function syncArizoneDraft(post = null) {
+    setArizoneSelectedId(post?.id ?? null);
+    setArizoneDraft(normalizeArizoneDraft(post || {}));
+    setArizoneError('');
+  }
+
+  function syncArizoneCategoryDraft(category = null) {
+    setArizoneSelectedCategoryId(category?.id ?? null);
+    setArizoneCategoryDraft(normalizeArizoneCategoryDraft(category || {}));
+    setArizoneCategoryCreateOpen(!category);
+    setArizoneCategoryError('');
+  }
+
+  async function saveArizonePost(event) {
+    event.preventDefault();
+    setArizoneSaving(true);
+    setArizoneError('');
+
+    const slug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title);
+    const payload = {
+      title: arizoneDraft.title,
+      slug,
+      categoryLabel: arizoneDraft.categoryLabel || 'Deep Learning',
+      categorySlug: arizoneDraft.categorySlug || 'deep-learning',
+      storageFolder: `arizone-posts/${slug}`,
+      contentPath: `arizone-posts/${slug}/content.md`,
+      coverImagePath: arizoneDraft.coverImagePath || `arizone-posts/${slug}/images/cover.img`,
+      contentMarkdown: arizoneDraft.contentMarkdown,
+      publishedAt: arizoneDraft.publishedAt,
+      isPublished: Boolean(arizoneDraft.isPublished),
+    };
+
+    const method = arizoneSelectedId ? 'PATCH' : 'POST';
+    const endpoint = arizoneSelectedId ? `/api/admin/arizone/${arizoneSelectedId}` : '/api/admin/arizone';
+    const res = await fetch(endpoint, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setArizoneSaving(false);
+      setArizoneError(data.error || 'Could not save AriZone post.');
+      return;
+    }
+
+    const nextPost = normalizeArizoneDraft(data.post || payload);
+    setArizonePosts((prev) => {
+      const withoutCurrent = prev.filter((post) => Number(post.id) !== Number(nextPost.id));
+      return [nextPost, ...withoutCurrent].sort((a, b) => String(a.publishedAt || '').localeCompare(String(b.publishedAt || '')) * -1);
+    });
+    syncArizoneDraft(nextPost);
+    setArizoneSaving(false);
+  }
+
+  async function deleteArizonePost() {
+    if (!arizoneSelectedId) return;
+    if (!window.confirm('Delete this AriZone post?')) return;
+    setArizoneSaving(true);
+    setArizoneError('');
+    const res = await fetch(`/api/admin/arizone/${arizoneSelectedId}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setArizoneSaving(false);
+      setArizoneError(data.error || 'Could not delete AriZone post.');
+      return;
+    }
+    setArizonePosts((prev) => prev.filter((post) => Number(post.id) !== Number(arizoneSelectedId)));
+    syncArizoneDraft();
+    setArizoneSaving(false);
+  }
+
+  async function saveArizoneCategory(event) {
+    event.preventDefault();
+    setArizoneCategorySaving(true);
+    setArizoneCategoryError('');
+
+    const payload = {
+      ...arizoneCategoryDraft,
+      slug: String(arizoneCategoryDraft.slug || slugifyArizoneTitle(arizoneCategoryDraft.label) || 'untitled').trim(),
+      logoPath: arizoneCategoryDraft.logoPath || getArizoneCategoryLogoPath(arizoneCategoryDraft.slug || slugifyArizoneTitle(arizoneCategoryDraft.label) || 'untitled'),
+    };
+
+    const hasExisting = Boolean(arizoneSelectedCategoryId);
+    const res = await fetch(hasExisting ? `/api/admin/arizone-categories/${arizoneSelectedCategoryId}` : '/api/admin/arizone-categories', {
+      method: hasExisting ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setArizoneCategorySaving(false);
+      setArizoneCategoryError(data.error || 'Could not save category.');
+      return;
+    }
+
+    const nextCategory = data.category;
+    const refreshedRes = await fetch('/api/admin/arizone-categories');
+    const refreshedData = await refreshedRes.json().catch(() => ({}));
+    setArizoneCategories(Array.isArray(refreshedData.categories) ? refreshedData.categories.map((category) => normalizeArizoneCategoryDraft(category)) : []);
+    if (nextCategory?.id) {
+      syncArizoneCategoryDraft(nextCategory);
+      setArizoneDraft((prev) => ({
+        ...prev,
+        categoryLabel: nextCategory.label || prev.categoryLabel,
+        categorySlug: nextCategory.slug || prev.categorySlug,
+      }));
+    }
+    setArizoneCategorySaving(false);
+  }
+
+  async function deleteArizoneCategory() {
+    if (!arizoneSelectedCategoryId) return;
+    if (!window.confirm('Delete this category?')) return;
+    setArizoneCategorySaving(true);
+    setArizoneCategoryError('');
+    const res = await fetch(`/api/admin/arizone-categories/${arizoneSelectedCategoryId}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setArizoneCategorySaving(false);
+      setArizoneCategoryError(data.error || 'Could not delete category.');
+      return;
+    }
+    setArizoneCategories((prev) => prev.filter((category) => Number(category.id) !== Number(arizoneSelectedCategoryId)));
+    syncArizoneCategoryDraft();
+    setArizoneCategorySaving(false);
+  }
+
+  async function uploadArizoneCategoryLogo(file) {
+    const nextSlug = arizoneCategoryDraft.slug || slugifyArizoneTitle(arizoneCategoryDraft.label) || 'untitled';
+    return uploadArizoneAsset(file, 'category-logo', {
+      targetPath: getArizoneCategoryLogoPath(nextSlug),
+    });
+  }
+
+  async function uploadArizoneAsset(file, title, meta = {}) {
+    return uploadImage(file, title, meta);
+  }
+
+  async function uploadArizoneCover(file) {
+    const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title) || 'untitled';
+    return uploadArizoneAsset(file, 'cover', {
+      targetPath: `arizone-posts/${nextSlug}/images/cover.img`,
+    });
+  }
+
+  if (isArizoneSection) {
+    return (
+      <div className="site">
+        <Header subPage />
+        <main className="content">
+          <section className="for-ai" aria-labelledby="link-admin-title">
+            <p className="eyebrow">Section Admin</p>
+            <h2 id="link-admin-title">{link.label}</h2>
+            <p className="contact-note"><Link href="/admin">Back to Admin</Link></p>
+
+            <form className="contact-card" onSubmit={saveArizonePost}>
+              <p className="contact-note" style={{ marginTop: 0 }}>
+                Add or edit a post. Keep the fields simple: name, cover image, and the markdown article.
+              </p>
+              <label htmlFor="arizone-title">Name</label>
+              <input
+                id="arizone-title"
+                type="text"
+                value={arizoneDraft.title}
+                onChange={(event) => setArizoneDraft((prev) => {
+                  const nextTitle = event.target.value;
+                  const nextSlug = prev.id ? prev.slug : (slugifyArizoneTitle(nextTitle) || 'untitled');
+                  return {
+                    ...prev,
+                    title: nextTitle,
+                    slug: nextSlug,
+                    storageFolder: `arizone-posts/${nextSlug}`,
+                    coverImagePath: prev.coverImagePath || `arizone-posts/${nextSlug}/images/cover.img`,
+                  };
+                })}
+                placeholder="Post title"
+                required
+              />
+
+              <label htmlFor="arizone-category-select">Category</label>
+              <select
+                id="arizone-category-select"
+                value={arizoneDraft.categorySlug || '__new__'}
+                onChange={(event) => {
+                  const nextSlug = String(event.target.value || '').trim();
+                  if (nextSlug === '__new__') {
+                    setArizoneCategoryCreateOpen(true);
+                    setArizoneCategoryDraft(normalizeArizoneCategoryDraft());
+                    setArizoneSelectedCategoryId(null);
+                    setArizoneDraft((prev) => ({ ...prev, categorySlug: '', categoryLabel: '' }));
+                    return;
+                  }
+                  const selectedCategory = arizoneCategories.find((category) => category.slug === nextSlug) || null;
+                  if (selectedCategory) {
+                    syncArizoneCategoryDraft(selectedCategory);
+                  }
+                  setArizoneDraft((prev) => ({
+                    ...prev,
+                    categorySlug: nextSlug,
+                    categoryLabel: selectedCategory?.label || nextSlug || prev.categoryLabel || 'AriZone',
+                  }));
+                }}
+              >
+                <option value="__new__">Add category</option>
+                {(arizoneCategories || []).map((category) => (
+                  <option key={category.id} value={category.slug}>
+                    {category.label || category.slug}
+                  </option>
+                ))}
+              </select>
+
+              {arizoneCategoryCreateOpen || (arizoneCategories || []).length === 0 ? (
+                <div className="arizone-inline-category-panel">
+                  <p className="arizone-inline-category-title">New category</p>
+                  <label htmlFor="arizone-category-label">Category name</label>
+                  <input
+                    id="arizone-category-label"
+                    type="text"
+                    value={arizoneCategoryDraft.label}
+                    onChange={(event) => setArizoneCategoryDraft((prev) => {
+                      const nextLabel = event.target.value;
+                      const nextSlug = prev.id ? prev.slug : (slugifyArizoneTitle(nextLabel) || 'untitled');
+                      return {
+                        ...prev,
+                        label: nextLabel,
+                        slug: nextSlug,
+                        logoPath: prev.logoPath || `arizone-categories/${nextSlug}/logo.img`,
+                      };
+                    })}
+                    placeholder="Deep Learning"
+                    required
+                  />
+
+                  <label htmlFor="arizone-category-slug">Slug</label>
+                  <input
+                    id="arizone-category-slug"
+                    type="text"
+                    value={arizoneCategoryDraft.slug}
+                    onChange={(event) => setArizoneCategoryDraft((prev) => ({
+                      ...prev,
+                      slug: slugifyArizoneTitle(event.target.value) || 'untitled',
+                    }))}
+                    placeholder="deep-learning"
+                    required
+                  />
+
+                  <label htmlFor="arizone-category-logo">Category logo</label>
+                  <input
+                    id="arizone-category-logo"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    ref={arizoneCategoryLogoInputRef}
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0] || null;
+                      if (!file) return;
+                      try {
+                        const uploadedUrl = await uploadArizoneCategoryLogo(file);
+                        setArizoneCategoryDraft((prev) => ({ ...prev, logoPath: uploadedUrl }));
+                      } catch (uploadError) {
+                        setArizoneCategoryError(uploadError.message || 'Could not upload category logo.');
+                      } finally {
+                        if (arizoneCategoryLogoInputRef.current) arizoneCategoryLogoInputRef.current.value = '';
+                      }
+                    }}
+                  />
+                  <div className="admin-item-actions arizone-inline-actions">
+                    <button type="button" onClick={() => arizoneCategoryLogoInputRef.current?.click()}>
+                      Upload Logo
+                    </button>
+                  </div>
+                  {arizoneCategoryDraft.logoPath ? (
+                    <p className="contact-note" style={{ marginTop: 0, wordBreak: 'break-all' }}>
+                      {arizoneCategoryDraft.logoPath}
+                    </p>
+                  ) : null}
+
+                  <div className="admin-item-actions arizone-inline-actions">
+                    <button type="button" onClick={saveArizoneCategory} disabled={arizoneCategorySaving}>
+                      {arizoneCategorySaving ? 'Saving...' : arizoneSelectedCategoryId ? 'Update Category' : 'Create Category'}
+                    </button>
+                    {arizoneSelectedCategoryId ? (
+                      <button type="button" onClick={deleteArizoneCategory} disabled={arizoneCategorySaving}>
+                        Delete Category
+                      </button>
+                    ) : null}
+                  </div>
+                  {arizoneCategoryError ? <p className="contact-note">{arizoneCategoryError}</p> : null}
+                </div>
+              ) : null}
+
+              <label htmlFor="arizone-cover">Cover image</label>
+              <input
+                ref={arizoneCoverInputRef}
+                id="arizone-cover"
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={async (event) => {
+                  const file = event.target.files?.[0] || null;
+                  if (!file) return;
+                  try {
+                    const uploadedUrl = await uploadArizoneCover(file);
+                    setArizoneDraft((prev) => ({ ...prev, coverImagePath: uploadedUrl }));
+                  } catch (uploadError) {
+                    setArizoneError(uploadError.message || 'Could not upload cover image.');
+                  } finally {
+                    if (arizoneCoverInputRef.current) arizoneCoverInputRef.current.value = '';
+                  }
+                }}
+              />
+              <div className="admin-item-actions" style={{ marginBottom: '0.75rem' }}>
+                <button type="button" onClick={() => arizoneCoverInputRef.current?.click()}>
+                  Upload Cover
+                </button>
+              </div>
+              {arizoneDraft.coverImagePath ? (
+                <p className="contact-note" style={{ marginTop: 0, wordBreak: 'break-all' }}>
+                  {arizoneDraft.coverImagePath}
+                </p>
+              ) : null}
+
+              <MDCreatorComponent
+                label="Article section"
+                value={arizoneDraft.contentMarkdown}
+                onChange={(nextValue) => setArizoneDraft((prev) => ({ ...prev, contentMarkdown: nextValue }))}
+                onUploadImage={async (file) => {
+                  const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title) || 'untitled';
+                  const safeName = String(file?.name || 'image')
+                    .replace(/\.[^.]+$/, '')
+                    .normalize('NFKD')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '') || 'image';
+                  return uploadArizoneAsset(file, arizoneDraft.title || 'article-image', {
+                    targetPath: `arizone-posts/${nextSlug}/images/${safeName}.img`,
+                  });
+                }}
+              />
+
+              <div className="admin-item-actions">
+                <button type="submit" disabled={arizoneSaving}>
+                  {arizoneSaving ? 'Saving...' : arizoneSelectedId ? 'Update Post' : 'Create Post'}
+                </button>
+                {arizoneSelectedId ? (
+                  <button type="button" onClick={deleteArizonePost} disabled={arizoneSaving}>
+                    Delete Post
+                  </button>
+                ) : null}
+              </div>
+            </form>
+
+            <section className="contact-card">
+              <p className="contact-note" style={{ marginTop: 0 }}>
+                Existing posts
+              </p>
+              <div className="playlist-grid">
+                {(arizonePosts || []).length > 0 ? (
+                  arizonePosts.map((post) => (
+                    <button
+                      key={post.id}
+                      type="button"
+                      className="playlist-card"
+                      onClick={() => syncArizoneDraft(post)}
+                      style={{ textAlign: 'left', width: '100%' }}
+                    >
+                      <h3 style={{ marginTop: 0 }}>{post.title || post.slug}</h3>
+                      <p>{post.isPublished ? 'Published' : 'Draft'}</p>
+                    </button>
+                  ))
+                ) : (
+                  <p className="contact-note">No AriZone posts yet.</p>
+                )}
+              </div>
+            </section>
+
+            {arizoneError ? <p className="contact-note">{arizoneError}</p> : null}
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   function reorderList(list, fromIndex, toIndex) {
     if (!Array.isArray(list)) return [];
@@ -255,6 +699,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     formData.append('sectionHref', link.href || '');
     formData.append('title', title || '');
     if (meta.currentUrl) formData.append('currentUrl', meta.currentUrl);
+    if (meta.targetPath) formData.append('targetPath', meta.targetPath);
     if (isBooksReadSection) {
       formData.append('category', meta.category || bookCategory || 'ENGLISH');
       formData.append('subcategory', meta.subcategory || bookSubcategory || 'FICTION');

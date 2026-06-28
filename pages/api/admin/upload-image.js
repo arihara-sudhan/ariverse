@@ -91,7 +91,7 @@ function resolveSectionFolder(section, sectionHref = '') {
   if (rawHref === '/ariyin-kavithaigal' || rawSection === 'அரியின் கவிதைகள்' || rawSection === 'Ariyin Kavithaigal' || rawSection === 'Kavithaigal') {
     return 'ariyin-kavithaigal';
   }
-  if (rawHref === '/arizone' || rawSection === 'AriZone' || rawSection === 'AriZone (Blog)') return 'arizone-posts';
+  if (rawHref === '/arizone' || rawSection === 'AriZone' || rawSection === 'AriZone (Blog)') return 'arizone';
   if (rawHref === '/ari-read-books' || rawSection === 'Books Read') return 'books-read';
   if (rawHref === '/guest-lectures' || rawSection === 'Guest Lectures') return 'guest-lectures';
   if (rawHref === '/book-reviews' || rawSection === 'Book Reviews') return 'book-reviews';
@@ -129,6 +129,16 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
 
   if (sectionFolder === 'ariyin-kavithaigal') {
     return `ariyin-kavithaigal/${titleBase}${ext}`;
+  }
+
+  if (sectionFolder === 'arizone') {
+    if (looksLikeLogo) {
+      return `arizone/categories/${titleBase}/logo${ext}`;
+    }
+    if (titleFolder === 'hero') {
+      return `arizone/assets/hero${ext}`;
+    }
+    return joinBlobPath('arizone', 'posts', titleBase, `${baseName}${ext}`);
   }
 
   if (sectionFolder === 'careers') {

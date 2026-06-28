@@ -8,7 +8,7 @@ function toPositiveCount(value) {
 function readPendingMap(storageKey) {
   if (typeof window === 'undefined') return {};
   try {
-    const raw = window.sessionStorage.getItem(storageKey);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
@@ -22,14 +22,14 @@ function writePendingMap(storageKey, map) {
   if (typeof window === 'undefined') return;
   const keys = Object.keys(map).filter((key) => toPositiveCount(map[key]) > 0);
   if (keys.length === 0) {
-    window.sessionStorage.removeItem(storageKey);
+    window.localStorage.removeItem(storageKey);
     return;
   }
   const next = {};
   for (const key of keys) {
     next[key] = toPositiveCount(map[key]);
   }
-  window.sessionStorage.setItem(storageKey, JSON.stringify(next));
+  window.localStorage.setItem(storageKey, JSON.stringify(next));
 }
 
 function buildLikeQuery(endpoint, entryId, section) {
@@ -79,6 +79,7 @@ export default function LikeButton({
     return toPositiveCount(initialCount) + pendingDelta;
   });
   const [isFlushing, setIsFlushing] = useState(false);
+  const autoFlushDoneRef = useRef(false);
 
   useEffect(() => {
     const pendingMap = readPendingMap(storageKey);
@@ -114,6 +115,13 @@ export default function LikeButton({
       cancelled = true;
     };
   }, [endpoint, entryId, section]);
+
+  useEffect(() => {
+    if (autoFlushDoneRef.current) return;
+    if (pendingDeltaRef.current <= 0) return;
+    autoFlushDoneRef.current = true;
+    flushPending(false);
+  }, [entryKey, endpoint, section, storageKey]);
 
   async function flushPending(useBeacon = false) {
     const delta = pendingDeltaRef.current;

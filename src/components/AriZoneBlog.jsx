@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import LikeButton from './LikeButton';
 import DiscussionThread from './DiscussionThread';
 import { ARIZONE_SITE_LOGO_URL, ARIZONE_TOPIC_LOGO_URLS } from '../../lib/arizoneAssets';
 
@@ -546,7 +547,7 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
   );
 }
 
-export function AriZonePostView({ post, initialComments = [] }) {
+export function AriZonePostView({ post, initialComments = [], initialLikesCount = 0 }) {
   const normalizedPost = normalizePostInput(post);
 
   return (
@@ -559,6 +560,18 @@ export function AriZonePostView({ post, initialComments = [] }) {
             <div className="post-header">
               <h1 id="post-title">{normalizedPost.title}</h1>
               <hr />
+            </div>
+
+            <div className="post-actions" aria-label="AriZone reactions">
+              <LikeButton
+                endpoint="/api/content/reactions"
+                entryId={normalizedPost.id}
+                initialCount={initialLikesCount}
+                storageNamespace="arizone"
+                section="arizone"
+                className="arizone-post-like"
+                showText
+              />
             </div>
 
             <article

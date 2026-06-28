@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { AriZonePostView } from '../../src/components/AriZoneBlog';
 import { getArizonePostBySlug } from '../../lib/arizoneData';
-import { listContentComments } from '../../lib/adminData';
+import { listContentComments, listContentEntryReactions } from '../../lib/adminData';
 import { ARIZONE_SITE_LOGO_URL } from '../../lib/arizoneAssets';
 
 export async function getServerSideProps(context) {
@@ -18,11 +18,12 @@ export async function getServerSideProps(context) {
     props: {
       post,
       initialComments: await listContentComments({ sectionKey: 'arizone', entryId: post.id }),
+      initialLikesCount: (await listContentEntryReactions({ sectionKey: 'arizone', entryIds: [post.id] }))?.[post.id]?.likesCount || 0,
     },
   };
 }
 
-export default function AriZonePostPage({ post, initialComments }) {
+export default function AriZonePostPage({ post, initialComments, initialLikesCount }) {
   return (
     <>
       <Head>
@@ -34,7 +35,7 @@ export default function AriZonePostPage({ post, initialComments }) {
         <link rel="icon" href={ARIZONE_SITE_LOGO_URL} />
         <link rel="apple-touch-icon" href={ARIZONE_SITE_LOGO_URL} />
       </Head>
-      <AriZonePostView post={post} initialComments={initialComments} />
+      <AriZonePostView post={post} initialComments={initialComments} initialLikesCount={initialLikesCount} />
     </>
   );
 }

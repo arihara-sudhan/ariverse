@@ -151,9 +151,9 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
     const payload = {
       ...draft,
       slug: draft.slug || slugifyText(draft.title),
-      storageFolder: `arizone-posts/${draft.slug || slugifyText(draft.title)}`,
-      contentPath: `arizone-posts/${draft.slug || slugifyText(draft.title)}/content.md`,
-      coverImagePath: draft.coverImagePath || `arizone-posts/${draft.slug || slugifyText(draft.title)}/images/cover.img`,
+      storageFolder: `arizone/posts/${draft.slug || slugifyText(draft.title)}`,
+      contentPath: `arizone/posts/${draft.slug || slugifyText(draft.title)}/content.md`,
+      coverImagePath: draft.coverImagePath || `arizone/posts/${draft.slug || slugifyText(draft.title)}/images/cover.webp`,
       isPublished: Boolean(draft.isPublished),
     };
 
@@ -215,7 +215,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
           ...prev,
           title: value,
           slug: nextSlug,
-          coverImagePath: prev.coverImagePath || `arizone-posts/${nextSlug}/images/cover.img`,
+          coverImagePath: prev.coverImagePath || `arizone/posts/${nextSlug}/images/cover.webp`,
         };
       }
       if (name === 'slug') {
@@ -223,7 +223,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
         return {
           ...prev,
           slug: nextSlug,
-          coverImagePath: prev.coverImagePath || `arizone-posts/${nextSlug}/images/cover.img`,
+          coverImagePath: prev.coverImagePath || `arizone/posts/${nextSlug}/images/cover.webp`,
         };
       }
       return { ...prev, [name]: value };
@@ -251,7 +251,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
 
   async function uploadCover(file) {
     const nextSlug = draft.slug || slugifyText(draft.title) || 'untitled';
-    return uploadArizoneAsset(file, 'cover', `arizone-posts/${nextSlug}/images/cover.img`);
+    return uploadArizoneAsset(file, 'cover', `arizone/posts/${nextSlug}/images/cover.webp`);
   }
 
   return (
@@ -262,7 +262,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
           <p className="eyebrow">Admin</p>
           <h2 id="arizone-admin-title">AriZone Posts</h2>
           <p className="contact-note">
-            Manage AriZone metadata here. The markdown and images still live in Supabase under your `arizone-posts/...` folder layout.
+            Manage AriZone metadata here. The markdown and images live in Supabase under `arizone/...`.
           </p>
           <p className="contact-note">
             <Link href="/admin/arizone">Start a fresh draft</Link>
@@ -344,7 +344,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/g, '-')
                       .replace(/^-+|-+$/g, '') || 'image';
-                    return uploadArizoneAsset(file, safeName, `arizone-posts/${nextSlug}/images/${safeName}.img`);
+                    return uploadArizoneAsset(file, safeName, `arizone/posts/${nextSlug}/images/${safeName}.webp`);
                   }}
                 />
 
@@ -420,11 +420,11 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
                 <p className="contact-note">
                   Suggested folder layout:
                   <br />
-                  <code>{draft.slug ? `arizone-posts/${draft.slug}` : 'arizone-posts/post-slug'}</code>
+                  <code>{draft.slug ? `arizone/posts/${draft.slug}` : 'arizone/posts/post-slug'}</code>
                   <br />
-                  <code>{draft.slug ? `arizone-posts/${draft.slug}/content.md` : '.../content.md'}</code>
+                  <code>{draft.slug ? `arizone/posts/${draft.slug}/content.md` : 'arizone/posts/post-slug/content.md'}</code>
                   <br />
-                  <code>{draft.slug ? `arizone-posts/${draft.slug}/images/cover.img` : '.../images/cover.img'}</code>
+                  <code>{draft.slug ? `arizone/posts/${draft.slug}/images/cover.webp` : 'arizone/posts/post-slug/images/cover.webp'}</code>
                 </p>
               </div>
             </>

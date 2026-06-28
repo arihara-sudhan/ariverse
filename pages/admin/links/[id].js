@@ -120,11 +120,11 @@ function normalizeArizoneDraft(post = {}) {
     slug: safeSlug,
     categoryLabel: String(post?.categoryLabel || post?.category_label || 'Deep Learning').trim() || 'Deep Learning',
     categorySlug: String(post?.categorySlug || post?.category_slug || 'deep-learning').trim() || 'deep-learning',
-    coverImagePath: String(post?.coverImagePath || post?.cover_image_path || `arizone-posts/${safeSlug}/images/cover.img`).trim(),
+    coverImagePath: String(post?.coverImagePath || post?.cover_image_path || `arizone/posts/${safeSlug}/images/cover.webp`).trim(),
     contentMarkdown: String(post?.contentMarkdown || post?.content_markdown || ''),
     publishedAt: String(post?.publishedAt || post?.published_at || new Date().toISOString().slice(0, 10)).slice(0, 10),
     isPublished: Boolean(post?.isPublished ?? post?.is_published ?? true),
-    storageFolder: String(post?.storageFolder || post?.storage_folder || `arizone-posts/${safeSlug}`).trim(),
+    storageFolder: String(post?.storageFolder || post?.storage_folder || `arizone/posts/${safeSlug}`).trim(),
   };
 }
 
@@ -320,9 +320,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
       slug,
       categoryLabel: arizoneDraft.categoryLabel || 'Deep Learning',
       categorySlug: arizoneDraft.categorySlug || 'deep-learning',
-      storageFolder: `arizone-posts/${slug}`,
-      contentPath: `arizone-posts/${slug}/content.md`,
-      coverImagePath: arizoneDraft.coverImagePath || `arizone-posts/${slug}/images/cover.img`,
+      storageFolder: `arizone/posts/${slug}`,
+      contentPath: `arizone/posts/${slug}/content.md`,
+      coverImagePath: arizoneDraft.coverImagePath || `arizone/posts/${slug}/images/cover.webp`,
       contentMarkdown: arizoneDraft.contentMarkdown,
       publishedAt: arizoneDraft.publishedAt,
       isPublished: Boolean(arizoneDraft.isPublished),
@@ -440,7 +440,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   async function uploadArizoneCover(file) {
     const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title) || 'untitled';
     return uploadArizoneAsset(file, 'cover', {
-      targetPath: `arizone-posts/${nextSlug}/images/cover.img`,
+      targetPath: `arizone/posts/${nextSlug}/images/cover.webp`,
     });
   }
 
@@ -470,8 +470,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     ...prev,
                     title: nextTitle,
                     slug: nextSlug,
-                    storageFolder: `arizone-posts/${nextSlug}`,
-                    coverImagePath: prev.coverImagePath || `arizone-posts/${nextSlug}/images/cover.img`,
+                    storageFolder: `arizone/posts/${nextSlug}`,
+                    coverImagePath: prev.coverImagePath || `arizone/posts/${nextSlug}/images/cover.webp`,
                   };
                 })}
                 placeholder="Post title"
@@ -525,7 +525,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                         ...prev,
                         label: nextLabel,
                         slug: nextSlug,
-                        logoPath: prev.logoPath || `arizone-categories/${nextSlug}/logo.img`,
+                        logoPath: prev.logoPath || `arizone/categories/${nextSlug}/logo.webp`,
                       };
                     })}
                     placeholder="Deep Learning"
@@ -634,7 +634,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-+|-+$/g, '') || 'image';
                   return uploadArizoneAsset(file, arizoneDraft.title || 'article-image', {
-                    targetPath: `arizone-posts/${nextSlug}/images/${safeName}.img`,
+                    targetPath: `arizone/posts/${nextSlug}/images/${safeName}.webp`,
                   });
                 }}
               />

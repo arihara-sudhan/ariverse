@@ -1,6 +1,8 @@
+import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
@@ -34,11 +36,15 @@ function parseExperimentReadme(rawText) {
   const imageUrlByName = new Map();
   const tokenRegex = /^\[ARIVERSE_IMAGE\]\s+(.+?)\s*$/;
   const mapRegex = /^\[ARIVERSE_IMAGE_URL\]\s+(.+?)\s*::\s*(.+?)\s*$/;
+  const assetTableHeaderRegex = /^\|\s*Asset\s*\|\s*URL\s*\|$/i;
+  const assetTableSeparatorRegex = /^\|\s*[-:]+\s*\|\s*[-:]+\s*\|$/;
+  const assetTableRowRegex = /^\|\s*(Hero|Readme)\s*\|\s*(https?:\/\/\S+)\s*\|$/i;
   const markdownImageRegex = /^!\[(.*?)\]\((.+?)\)\s*$/;
   const plainImageUrlRegex = /^https?:\/\/\S+\.(?:png|jpe?g|webp|gif)(?:\?\S*)?$/i;
   const blocks = [];
   let paragraphLines = [];
   let anchorIndex = 0;
+  let skippingAssetTable = false;
 
   function flushParagraph() {
     if (paragraphLines.length === 0) return;
@@ -47,6 +53,21 @@ function parseExperimentReadme(rawText) {
   }
 
   for (const line of lines) {
+    const trimmedLine = String(line || '').trim();
+
+    if (skippingAssetTable) {
+      if (!trimmedLine) {
+        skippingAssetTable = false;
+      }
+      continue;
+    }
+
+    if (assetTableHeaderRegex.test(trimmedLine) || assetTableSeparatorRegex.test(trimmedLine) || assetTableRowRegex.test(trimmedLine)) {
+      flushParagraph();
+      skippingAssetTable = true;
+      continue;
+    }
+
     const mapMatch = line.match(mapRegex);
     if (mapMatch) {
       imageUrlByName.set(String(mapMatch[1] || '').trim(), String(mapMatch[2] || '').trim());
@@ -202,6 +223,9 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
   if (selectedTrial) {
     return (
       <>
+      <Head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+      </Head>
       <main className="kavithai-stage xperiment-detail-stage">
         <section className="kavithai-media">
           {selectedTrialHeroUrl ? (
@@ -234,7 +258,7 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
             {readmeBlocks.map((block, index) => {
               if (block.type === 'markdown') {
                 return (
-                  <ReactMarkdown key={`md-${index}`}>
+                  <ReactMarkdown key={`md-${index}`} remarkPlugins={[remarkGfm]}>
                     {String(block.text || '').replace(/\n/g, '  \n')}
                   </ReactMarkdown>
                 );
@@ -296,6 +320,9 @@ export default function ArisTrialsPage({ hero, selectedTrial, selectedIndex, sho
   if (showAll) {
     return (
       <>
+      <Head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+      </Head>
       <main className="kavithai-stage">
         <nav className="kavithai-top-nav" aria-label="Experiment navigation">
           <Link href="/aris-xperiments" aria-label="Home">

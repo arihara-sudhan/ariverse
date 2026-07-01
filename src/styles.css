@@ -3327,6 +3327,10 @@ body.mini-project-open-body::-webkit-scrollbar {
   height: 28px;
 }
 
+.kavithai-top-nav .material-symbols-outlined {
+  font-size: 20px;
+}
+
 .kavithai-top-nav a:hover {
   text-decoration: underline;
 }
@@ -3405,6 +3409,28 @@ body.mini-project-open-body::-webkit-scrollbar {
 
 .kavithai-panel .kavithai-markdown p {
   margin: 0 0 0.95rem;
+}
+
+.kavithai-panel .kavithai-markdown table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0.85rem 0 1.05rem;
+}
+
+.kavithai-panel .kavithai-markdown th,
+.kavithai-panel .kavithai-markdown td {
+  border: 1px solid #d8d8d8;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.kavithai-panel .kavithai-markdown th {
+  background: #f3f3f3;
 }
 
 .ariverse-image-anchor {
@@ -3724,6 +3750,10 @@ body.mini-project-open-body::-webkit-scrollbar {
     padding: 0.2rem 0.3rem;
   }
 
+  .kavithai-top-nav .material-symbols-outlined {
+    font-size: 18px;
+  }
+
   .kavithai-media {
     min-height: auto;
     height: auto;
@@ -3744,6 +3774,10 @@ body.mini-project-open-body::-webkit-scrollbar {
     height: auto;
     padding: 1.25rem 1rem 2rem;
     overflow: visible;
+  }
+
+  .kavithai-panel .kavithai-markdown table {
+    font-size: 0.92rem;
   }
 
   .kavithai-markdown hr,

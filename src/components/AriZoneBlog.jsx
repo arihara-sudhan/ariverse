@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import Header from './Header';
 import LikeButton from './LikeButton';
 import DiscussionThread from './DiscussionThread';
 import { ARIZONE_SITE_LOGO_URL, ARIZONE_TOPIC_LOGO_URLS } from '../../lib/arizoneAssets';
+import { toPublicStorageUrl } from '../../lib/storage';
 
 const POSTS_PER_PAGE = 10;
 const DEFAULT_LOGO_URL = ARIZONE_SITE_LOGO_URL;
@@ -21,13 +23,14 @@ function formatDate(value) {
 }
 
 function normalizePostInput(post) {
+  const coverImagePath = String(post?.coverImagePath || post?.cover_image_path || '').trim();
   return {
     ...post,
     slug: String(post?.slug || '').trim(),
     title: String(post?.title || '').trim(),
     categorySlug: String(post?.categorySlug || post?.category_slug || '').trim(),
     categoryLabel: String(post?.categoryLabel || post?.category_label || post?.category || '').trim(),
-    coverImageUrl: String(post?.coverImageUrl || '').trim(),
+    coverImageUrl: String(post?.coverImageUrl || post?.cover_image_url || '').trim() || toPublicStorageUrl(coverImagePath),
     categoryLogoUrl: String(post?.categoryLogoUrl || post?.category_logo_url || '').trim(),
     publishedAt: String(post?.publishedAt || post?.published_at || ''),
     html: String(post?.html || ''),
@@ -63,6 +66,9 @@ function AriZoneThemeStyles() {
   return (
     <style jsx global>{`
       .arizone-shell {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 4rem;
         background: #ffffff;
       }
 
@@ -90,7 +96,7 @@ function AriZoneThemeStyles() {
 
       .arizone-shell .main {
         min-height: calc(100vh - 8vw);
-        padding: 3vw 0;
+        padding: 2rem 0 0;
       }
 
       .arizone-shell .page {
@@ -168,6 +174,12 @@ function AriZoneThemeStyles() {
         white-space: nowrap;
       }
 
+      .arizone-shell .topics span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
       .arizone-shell .topic-separator {
         color: #000000;
       }
@@ -210,34 +222,27 @@ function AriZoneThemeStyles() {
 
       .arizone-shell .post-card-image {
         width: 100%;
-        height: 20vw;
-        object-fit: cover;
+        aspect-ratio: 1 / 1;
+        height: auto;
+        object-fit: contain;
+        background: #ffffff;
         user-select: none;
         -webkit-user-drag: none;
         user-drag: none;
       }
 
       .arizone-shell .post-card-content {
-        padding: 2vw;
+        padding: 0.75rem 0.9rem 0.95rem;
+        background: #000000;
       }
 
       .arizone-shell .post-card h3 {
         font-family: 'Playfair Display', serif;
-        font-size: 1.8vw;
-        margin-bottom: 1vw;
-        color: #000000;
+        font-size: 1.35rem;
+        margin: 0.1rem 0 0.2rem;
+        color: #ffffff;
         line-height: 1.4;
         text-align: center;
-      }
-
-      .arizone-shell .post-card-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-family: 'Google Sans', 'Pandora Sans', sans-serif;
-        font-size: 1vw;
-        color: #999;
-        gap: 1vw;
       }
 
       .arizone-shell .posts-pagination {
@@ -276,6 +281,41 @@ function AriZoneThemeStyles() {
         line-height: 1.8;
       }
 
+      .arizone-shell .post-content p {
+        margin: 0 0 1rem;
+      }
+
+      .arizone-shell .post-content img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 1.2rem auto;
+        border-radius: 0.9rem;
+      }
+
+      .arizone-shell .post-content figure {
+        margin: 1.35rem 0;
+      }
+
+      .arizone-shell .post-content .arizone-image-with-caption {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .arizone-shell .post-content .arizone-image-with-caption figcaption {
+        text-align: center;
+        font-family: 'Google Sans', 'Pandora Sans', sans-serif;
+        font-size: 0.92em;
+        line-height: 1.5;
+        color: #4d4d4d;
+      }
+
+      .arizone-shell .post-content .arizone-post-image {
+        width: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: none;
+      }
+
       .arizone-shell .post-header {
         position: relative;
         padding-top: 1vw;
@@ -302,7 +342,26 @@ function AriZoneThemeStyles() {
         background: white;
         padding: 3vw;
         border-radius: 1vw;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: none;
+      }
+
+      .arizone-shell .post-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0.25rem 0 1rem;
+      }
+
+      .arizone-shell .comments-section .project-comments {
+        padding-bottom: 0;
+      }
+
+      .arizone-shell .comments-section .project-comment-list {
+        margin-bottom: 0;
+      }
+
+      .arizone-shell .comments-section .project-comment-item:last-child {
+        border-bottom: 0;
       }
 
       .arizone-shell .footer {
@@ -335,6 +394,10 @@ function AriZoneThemeStyles() {
       }
 
       @media (max-width: 768px) {
+        .arizone-shell {
+          padding: 1.25rem 0.9rem 3rem;
+        }
+
         .arizone-shell .container-wide,
         .arizone-shell .container-narrow {
           max-width: 95vw;
@@ -378,16 +441,8 @@ function AriZoneThemeStyles() {
           gap: 3vw;
         }
 
-        .arizone-shell .post-card-image {
-          height: 50vw;
-        }
-
         .arizone-shell .post-card h3 {
-          font-size: 5vw;
-        }
-
-        .arizone-shell .post-card-meta {
-          font-size: 3.5vw;
+          font-size: 1.15rem;
         }
 
         .arizone-shell .pagination-btn,
@@ -403,6 +458,14 @@ function AriZoneThemeStyles() {
         .arizone-shell .post-content {
           font-size: 4.5vw;
           padding: 4vw;
+        }
+
+        .arizone-shell .post-content img {
+          margin: 1rem auto;
+        }
+
+        .arizone-shell .post-content figure {
+          margin: 1rem 0;
         }
 
         .arizone-shell #post-title {
@@ -438,14 +501,6 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
         logoUrl: String(category?.logoUrl || category?.logo_path || '').trim(),
       }))
     : getCategoryMeta(normalizedPosts);
-  const categoryLogoMap = useMemo(
-    () => new Map([
-      ...normalizedPosts.map((post) => [post.categorySlug, post.categoryLogoUrl || TOPIC_LOGO_URLS[post.categorySlug] || DEFAULT_LOGO_URL]),
-      ...categoryList.map((category) => [category.slug, category.logoUrl || TOPIC_LOGO_URLS[category.slug] || DEFAULT_LOGO_URL]),
-    ]),
-    [normalizedPosts, categoryList],
-  );
-  const heroLogoUrl = currentTopic === 'all' ? DEFAULT_LOGO_URL : categoryLogoMap.get(currentTopic) || TOPIC_LOGO_URLS[currentTopic] || DEFAULT_LOGO_URL;
   const filteredPosts = currentTopic === 'all'
     ? normalizedPosts
     : normalizedPosts.filter((post) => post.categorySlug === currentTopic);
@@ -461,12 +516,11 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
   return (
     <div className="arizone-shell">
       <AriZoneThemeStyles />
-      <header className="header" />
+      <Header />
       <main className="main">
         <div id="home-page" className="page active">
           <div className="container container-wide">
             <div className="hero">
-              <img src={heroLogoUrl} alt="Blog Logo" className="hero-logo" draggable="false" />
               <h2>{renderHeroTitle()}</h2>
               <p>What if Ari&apos;s eyes are your receptive fields...</p>
               <div className="topics" id="topics">
@@ -515,9 +569,6 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
                       />
                       <div className="post-card-content">
                         <h3>{post.title}</h3>
-                        <div className="post-card-meta">
-                          <span className="post-card-date">{formatDate(post.publishedAt)}</span>
-                        </div>
                       </div>
                     </Link>
                   );
@@ -574,7 +625,6 @@ export function AriZonePostView({ post, initialComments = [], initialLikesCount 
   return (
     <div className="arizone-shell">
       <AriZoneThemeStyles />
-      <header className="header" />
       <main className="main">
         <div id="post-page" className="page active">
           <div className="container container-narrow">
@@ -582,6 +632,14 @@ export function AriZonePostView({ post, initialComments = [], initialLikesCount 
               <h1 id="post-title">{normalizedPost.title}</h1>
               <hr />
             </div>
+
+            <article
+              id="post-content"
+              className="post-content"
+              dangerouslySetInnerHTML={{
+                __html: normalizedPost.html || '<p class="empty-state">This post has not been published yet.</p>',
+              }}
+            />
 
             <div className="post-actions" aria-label="AriZone reactions">
               <LikeButton
@@ -594,14 +652,6 @@ export function AriZonePostView({ post, initialComments = [], initialLikesCount 
                 showText
               />
             </div>
-
-            <article
-              id="post-content"
-              className="post-content"
-              dangerouslySetInnerHTML={{
-                __html: normalizedPost.html || '<p class="empty-state">This post has not been published yet.</p>',
-              }}
-            />
 
             <div className="comments-section">
               <DiscussionThread
@@ -636,7 +686,7 @@ export function AriZoneAboutView() {
   return (
     <div className="arizone-shell">
       <AriZoneThemeStyles />
-      <header className="header" />
+      <Header />
       <main className="main">
         <div id="about-page" className="page active">
           <div className="container container-narrow">

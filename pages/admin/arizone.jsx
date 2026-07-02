@@ -18,9 +18,10 @@ function formatDate(value) {
 
 function slugifyText(value) {
   return String(value || '')
-    .normalize('NFKD')
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
 
@@ -210,7 +211,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
   function updateField(name, value) {
     setDraft((prev) => {
       if (name === 'title') {
-        const nextSlug = selectedId ? prev.slug : (slugifyText(value) || 'untitled');
+        const nextSlug = selectedId ? prev.slug : (slugifyText(value) || String(value || '').trim() || 'untitled');
         return {
           ...prev,
           title: value,
@@ -219,7 +220,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
         };
       }
       if (name === 'slug') {
-        const nextSlug = slugifyText(value) || value || 'untitled';
+        const nextSlug = slugifyText(value) || String(value || '').trim() || 'untitled';
         return {
           ...prev,
           slug: nextSlug,

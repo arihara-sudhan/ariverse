@@ -66,7 +66,7 @@ function ArichuvadiThemeStyles() {
         margin: 0 auto;
         padding: 2rem 1.25rem 4rem;
         background: #ffffff;
-        font-family: 'Arichuvadi Tamil', 'Google Sans', 'Pandora Sans', sans-serif;
+        font-family: 'Arichuvadi Tamil', 'TamilFont', 'Noto Sans Tamil', 'Latha', sans-serif;
       }
 
       .arizone-shell *,
@@ -392,6 +392,11 @@ function ArichuvadiThemeStyles() {
       }
 
       @media (max-width: 768px) {
+        .arizone-shell,
+        .arizone-shell * {
+          font-family: 'Arichuvadi Tamil', 'TamilFont', 'Noto Sans Tamil', 'Latha', sans-serif !important;
+        }
+
         .arizone-shell {
           padding: 1.25rem 0.9rem 3rem;
         }

@@ -114,16 +114,17 @@ export async function getServerSideProps({ req, params }) {
 
 function slugifyArizoneTitle(value) {
   return String(value || '')
-    .normalize('NFKD')
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
 
 function normalizeArizoneDraft(post = {}) {
   const slug = String(post?.slug || '').trim();
   const title = String(post?.title || '').trim();
-  const safeSlug = slug || slugifyArizoneTitle(title);
+  const safeSlug = slug || slugifyArizoneTitle(title) || title || 'untitled';
   return {
     id: post?.id ?? null,
     title,
@@ -140,7 +141,7 @@ function normalizeArizoneDraft(post = {}) {
 
 function normalizeArizoneCategoryDraft(category = {}) {
   const label = String(category?.label || category?.categoryLabel || '').trim();
-  const slug = String(category?.slug || category?.categorySlug || '').trim() || slugifyArizoneTitle(label) || 'untitled';
+  const slug = String(category?.slug || category?.categorySlug || '').trim() || slugifyArizoneTitle(label) || label || 'untitled';
   return {
     id: category?.id ?? null,
     label,

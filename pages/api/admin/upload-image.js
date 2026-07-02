@@ -92,6 +92,7 @@ function resolveSectionFolder(section, sectionHref = '') {
     return 'ariyin-kavithaigal';
   }
   if (rawHref === '/arizone' || rawSection === 'AriZone' || rawSection === 'AriZone (Blog)') return 'arizone';
+  if (rawHref === '/arichuvadi' || rawSection === 'Arichuvadi' || rawSection === 'Arichuvadi (Blog)' || rawSection === 'Arichuvadu') return 'arichuvadi';
   if (rawHref === '/ari-read-books' || rawSection === 'Books Read') return 'books-read';
   if (rawHref === '/guest-lectures' || rawSection === 'Guest Lectures') return 'guest-lectures';
   if (rawHref === '/book-reviews' || rawSection === 'Book Reviews') return 'book-reviews';

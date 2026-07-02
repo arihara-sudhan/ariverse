@@ -20,7 +20,7 @@ const nextConfig = {
       },
       {
         source: '/blog',
-        destination: '/arizone',
+        destination: '/arichuvadi',
         permanent: false,
       },
       {

@@ -6,7 +6,7 @@ import SectionHero from '../../../src/components/SectionHero';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getProfileLinkById, getResumeAssets, getSectionHero, listLinkItems } from '../../../lib/adminData';
 import { listArizoneAdminPosts, listArizoneCategories } from '../../../lib/arizoneAdmin';
-import { getArizoneCategoryLogoPath } from '../../../lib/arizoneAssets';
+import { listArichuvadiAdminPosts, listArichuvadiCategories } from '../../../lib/arichuvadiAdmin';
 import { isInstagramUrl } from '../../../lib/security';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
@@ -87,8 +87,18 @@ export async function getServerSideProps({ req, params }) {
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : item?.createdAt || '',
   }));
   const initialResumeAssets = link.label === 'Resume' ? await getResumeAssets(linkId) : null;
-  const initialArizonePosts = link.label === 'AriZone (Blog)' ? await listArizoneAdminPosts() : [];
-  const initialArizoneCategories = link.label === 'AriZone (Blog)' ? await listArizoneCategories() : [];
+  const isArichuvadiSection = link.label === 'Arichuvadi (Blog)' || link.label === 'Arichuvadi' || link.label === 'Arichuvadu';
+  const isArizoneSection = link.label === 'AriZone (Blog)' || link.label === 'AriZone';
+  const initialArizonePosts = isArichuvadiSection
+    ? await listArichuvadiAdminPosts()
+    : isArizoneSection
+      ? await listArizoneAdminPosts()
+      : [];
+  const initialArizoneCategories = isArichuvadiSection
+    ? await listArichuvadiCategories()
+    : isArizoneSection
+      ? await listArizoneCategories()
+      : [];
 
   return {
     props: {
@@ -135,13 +145,15 @@ function normalizeArizoneCategoryDraft(category = {}) {
     id: category?.id ?? null,
     label,
     slug,
-    logoPath: String(category?.logoPath || category?.logo_path || getArizoneCategoryLogoPath(slug)).trim(),
   };
 }
 
 export default function LinkAdminPage({ link, initialItems, initialHero, initialResumeAssets, initialArizonePosts, initialArizoneCategories }) {
   const sectionLabel = String(link?.label || '').trim();
-  const isArizoneSection = sectionLabel === 'AriZone (Blog)' || sectionLabel === 'AriZone';
+  const normalizedSectionLabel = sectionLabel === 'Arichuvadu' ? 'Arichuvadi' : sectionLabel;
+  const isArizoneSection = normalizedSectionLabel === 'AriZone (Blog)' || normalizedSectionLabel === 'AriZone';
+  const isArichuvadiSection = normalizedSectionLabel === 'Arichuvadi (Blog)' || normalizedSectionLabel === 'Arichuvadi';
+  const blogSection = isArichuvadiSection ? 'arichuvadi' : isArizoneSection ? 'arizone' : '';
   const isBinomialSection = sectionLabel === 'Binomial Names';
   const isClayPlaySection = sectionLabel === 'Clay Play';
   const isGuestLecturesSection = sectionLabel === 'Guest Lectures';
@@ -291,7 +303,6 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const [dragState, setDragState] = useState({ scope: '', itemId: null, fromIndex: -1 });
   const inlineImageInputRef = useRef(null);
   const arizoneCoverInputRef = useRef(null);
-  const arizoneCategoryLogoInputRef = useRef(null);
   const createBigDescriptionRef = useRef(null);
   const editBigDescriptionRefs = useRef({});
   const inlineImageTargetRef = useRef({ mode: 'create', itemId: null, selectionStart: null, selectionEnd: null });
@@ -315,21 +326,22 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     setArizoneError('');
 
     const slug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title);
+    const storagePrefix = blogSection || 'arizone';
     const payload = {
       title: arizoneDraft.title,
       slug,
       categoryLabel: arizoneDraft.categoryLabel || 'Deep Learning',
       categorySlug: arizoneDraft.categorySlug || 'deep-learning',
-      storageFolder: `arizone/posts/${slug}`,
-      contentPath: `arizone/posts/${slug}/content.md`,
-      coverImagePath: arizoneDraft.coverImagePath || `arizone/posts/${slug}/images/cover.webp`,
+      storageFolder: `${storagePrefix}/posts/${slug}`,
+      contentPath: `${storagePrefix}/posts/${slug}/content.md`,
+      coverImagePath: arizoneDraft.coverImagePath || `${storagePrefix}/posts/${slug}/images/cover.webp`,
       contentMarkdown: arizoneDraft.contentMarkdown,
       publishedAt: arizoneDraft.publishedAt,
       isPublished: Boolean(arizoneDraft.isPublished),
     };
 
     const method = arizoneSelectedId ? 'PATCH' : 'POST';
-    const endpoint = arizoneSelectedId ? `/api/admin/arizone/${arizoneSelectedId}` : '/api/admin/arizone';
+    const endpoint = arizoneSelectedId ? `/api/admin/${storagePrefix}/${arizoneSelectedId}` : `/api/admin/${storagePrefix}`;
     const res = await fetch(endpoint, {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -339,7 +351,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
 
     if (!res.ok) {
       setArizoneSaving(false);
-      setArizoneError(data.error || 'Could not save AriZone post.');
+      setArizoneError(data.error || `Could not save ${isArichuvadiSection ? 'Arichuvadi' : 'AriZone'} post.`);
       return;
     }
 
@@ -354,14 +366,14 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
 
   async function deleteArizonePost() {
     if (!arizoneSelectedId) return;
-    if (!window.confirm('Delete this AriZone post?')) return;
+    if (!window.confirm(`Delete this ${isArichuvadiSection ? 'Arichuvadi' : 'AriZone'} post?`)) return;
     setArizoneSaving(true);
     setArizoneError('');
-    const res = await fetch(`/api/admin/arizone/${arizoneSelectedId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/${blogSection || 'arizone'}/${arizoneSelectedId}`, { method: 'DELETE' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setArizoneSaving(false);
-      setArizoneError(data.error || 'Could not delete AriZone post.');
+      setArizoneError(data.error || `Could not delete ${isArichuvadiSection ? 'Arichuvadi' : 'AriZone'} post.`);
       return;
     }
     setArizonePosts((prev) => prev.filter((post) => Number(post.id) !== Number(arizoneSelectedId)));
@@ -377,11 +389,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     const payload = {
       ...arizoneCategoryDraft,
       slug: String(arizoneCategoryDraft.slug || slugifyArizoneTitle(arizoneCategoryDraft.label) || 'untitled').trim(),
-      logoPath: arizoneCategoryDraft.logoPath || getArizoneCategoryLogoPath(arizoneCategoryDraft.slug || slugifyArizoneTitle(arizoneCategoryDraft.label) || 'untitled'),
     };
 
     const hasExisting = Boolean(arizoneSelectedCategoryId);
-    const res = await fetch(hasExisting ? `/api/admin/arizone-categories/${arizoneSelectedCategoryId}` : '/api/admin/arizone-categories', {
+    const categoryPrefix = blogSection === 'arichuvadi' ? 'arichuvadi-categories' : 'arizone-categories';
+    const res = await fetch(hasExisting ? `/api/admin/${categoryPrefix}/${arizoneSelectedCategoryId}` : `/api/admin/${categoryPrefix}`, {
       method: hasExisting ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -395,7 +407,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     }
 
     const nextCategory = data.category;
-    const refreshedRes = await fetch('/api/admin/arizone-categories');
+    const refreshedRes = await fetch(`/api/admin/${categoryPrefix}`);
     const refreshedData = await refreshedRes.json().catch(() => ({}));
     setArizoneCategories(Array.isArray(refreshedData.categories) ? refreshedData.categories.map((category) => normalizeArizoneCategoryDraft(category)) : []);
     if (nextCategory?.id) {
@@ -414,7 +426,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     if (!window.confirm('Delete this category?')) return;
     setArizoneCategorySaving(true);
     setArizoneCategoryError('');
-    const res = await fetch(`/api/admin/arizone-categories/${arizoneSelectedCategoryId}`, { method: 'DELETE' });
+    const categoryPrefix = blogSection === 'arichuvadi' ? 'arichuvadi-categories' : 'arizone-categories';
+    const res = await fetch(`/api/admin/${categoryPrefix}/${arizoneSelectedCategoryId}`, { method: 'DELETE' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setArizoneCategorySaving(false);
@@ -424,13 +437,6 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     setArizoneCategories((prev) => prev.filter((category) => Number(category.id) !== Number(arizoneSelectedCategoryId)));
     syncArizoneCategoryDraft();
     setArizoneCategorySaving(false);
-  }
-
-  async function uploadArizoneCategoryLogo(file) {
-    const nextSlug = arizoneCategoryDraft.slug || slugifyArizoneTitle(arizoneCategoryDraft.label) || 'untitled';
-    return uploadArizoneAsset(file, 'category-logo', {
-      targetPath: getArizoneCategoryLogoPath(nextSlug),
-    });
   }
 
   async function uploadArizoneAsset(file, title, meta = {}) {
@@ -444,14 +450,14 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     });
   }
 
-  if (isArizoneSection) {
+  if (isArizoneSection || isArichuvadiSection) {
     return (
       <div className="site">
         <Header subPage />
         <main className="content">
           <section className="for-ai" aria-labelledby="link-admin-title">
             <p className="eyebrow">Section Admin</p>
-            <h2 id="link-admin-title">{link.label}</h2>
+            <h2 id="link-admin-title">{isArichuvadiSection ? 'Arichuvadi' : link.label}</h2>
             <p className="contact-note"><Link href="/admin">Back to Admin</Link></p>
 
             <form className="contact-card" onSubmit={saveArizonePost}>
@@ -498,7 +504,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                   setArizoneDraft((prev) => ({
                     ...prev,
                     categorySlug: nextSlug,
-                    categoryLabel: selectedCategory?.label || nextSlug || prev.categoryLabel || 'AriZone',
+                    categoryLabel: selectedCategory?.label || nextSlug || prev.categoryLabel || (isArichuvadiSection ? 'Arichuvadi' : 'AriZone'),
                   }));
                 }}
               >
@@ -525,7 +531,6 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                         ...prev,
                         label: nextLabel,
                         slug: nextSlug,
-                        logoPath: prev.logoPath || `arizone/categories/${nextSlug}/logo.webp`,
                       };
                     })}
                     placeholder="Deep Learning"
@@ -544,37 +549,6 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     placeholder="deep-learning"
                     required
                   />
-
-                  <label htmlFor="arizone-category-logo">Category logo</label>
-                  <input
-                    id="arizone-category-logo"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    ref={arizoneCategoryLogoInputRef}
-                    onChange={async (event) => {
-                      const file = event.target.files?.[0] || null;
-                      if (!file) return;
-                      try {
-                        const uploadedUrl = await uploadArizoneCategoryLogo(file);
-                        setArizoneCategoryDraft((prev) => ({ ...prev, logoPath: uploadedUrl }));
-                      } catch (uploadError) {
-                        setArizoneCategoryError(uploadError.message || 'Could not upload category logo.');
-                      } finally {
-                        if (arizoneCategoryLogoInputRef.current) arizoneCategoryLogoInputRef.current.value = '';
-                      }
-                    }}
-                  />
-                  <div className="admin-item-actions arizone-inline-actions">
-                    <button type="button" onClick={() => arizoneCategoryLogoInputRef.current?.click()}>
-                      Upload Logo
-                    </button>
-                  </div>
-                  {arizoneCategoryDraft.logoPath ? (
-                    <p className="contact-note" style={{ marginTop: 0, wordBreak: 'break-all' }}>
-                      {arizoneCategoryDraft.logoPath}
-                    </p>
-                  ) : null}
 
                   <div className="admin-item-actions arizone-inline-actions">
                     <button type="button" onClick={saveArizoneCategory} disabled={arizoneCategorySaving}>
@@ -667,10 +641,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     >
                       <h3 style={{ marginTop: 0 }}>{post.title || post.slug}</h3>
                       <p>{post.isPublished ? 'Published' : 'Draft'}</p>
-                    </button>
+                      </button>
                   ))
                 ) : (
-                  <p className="contact-note">No AriZone posts yet.</p>
+                  <p className="contact-note">{isArichuvadiSection ? 'No Arichuvadi posts yet.' : 'No AriZone posts yet.'}</p>
                 )}
               </div>
             </section>

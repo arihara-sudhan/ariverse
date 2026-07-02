@@ -9,6 +9,11 @@ import { toPublicStorageUrl } from '../../lib/storage';
 const POSTS_PER_PAGE = 10;
 const DEFAULT_LOGO_URL = ARIZONE_SITE_LOGO_URL;
 const TOPIC_LOGO_URLS = ARIZONE_TOPIC_LOGO_URLS;
+const ALLOWED_CATEGORY_SLUGS = new Set(['deep-learning', 'quantum-computing']);
+const CANONICAL_CATEGORY_LABELS = {
+  'deep-learning': 'Deep Learning',
+  'quantum-computing': 'Quantum Computing',
+};
 
 function formatDate(value) {
   if (!value) return '';
@@ -495,12 +500,18 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const categoryList = Array.isArray(categories) && categories.length > 0
-    ? categories.map((category) => ({
-        slug: String(category?.slug || '').trim(),
-        label: String(category?.label || '').trim() || String(category?.slug || '').trim(),
-        logoUrl: String(category?.logoUrl || category?.logo_path || '').trim(),
-      }))
-    : getCategoryMeta(normalizedPosts);
+    ? categories
+        .map((category) => ({
+          slug: String(category?.slug || '').trim(),
+          label: String(category?.label || '').trim() || String(category?.slug || '').trim(),
+          logoUrl: String(category?.logoUrl || category?.logo_path || '').trim(),
+        }))
+        .filter((category) => ALLOWED_CATEGORY_SLUGS.has(category.slug))
+        .map((category) => ({
+          ...category,
+          label: CANONICAL_CATEGORY_LABELS[category.slug] || category.label,
+        }))
+    : getCategoryMeta(normalizedPosts).filter((category) => ALLOWED_CATEGORY_SLUGS.has(category.slug));
   const filteredPosts = currentTopic === 'all'
     ? normalizedPosts
     : normalizedPosts.filter((post) => post.categorySlug === currentTopic);

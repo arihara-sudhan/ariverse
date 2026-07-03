@@ -115,7 +115,10 @@ export default function HomePage({ profileLinks, featureImages }) {
         alt: 'Feature image',
       })).filter((image) => image.src)
     : DEFAULT_FEATURE_IMAGES;
-  const [featureImage, setFeatureImage] = useState(featureImagePool[0]);
+  const [featureImage] = useState(() => (
+    featureImagePool[Math.floor(Math.random() * featureImagePool.length)] || DEFAULT_FEATURE_IMAGES[0]
+  ));
+  const [isHomeReady, setIsHomeReady] = useState(false);
   const quotePanelRef = useRef(null);
   const quoteBlobRef = useRef(null);
   const quoteMeasureRefs = useRef([]);
@@ -252,12 +255,48 @@ export default function HomePage({ profileLinks, featureImages }) {
   }
 
   useEffect(() => {
-    setFeatureImage(featureImagePool[Math.floor(Math.random() * featureImagePool.length)]);
+    loadPublicTestimonials();
   }, []);
 
   useEffect(() => {
-    loadPublicTestimonials();
-  }, []);
+    let cancelled = false;
+
+    async function preloadImage(src) {
+      if (!src || typeof window === 'undefined') return;
+
+      await new Promise((resolve) => {
+        const image = new window.Image();
+        image.decoding = 'async';
+        image.onload = () => resolve();
+        image.onerror = () => resolve();
+        image.src = src;
+      });
+    }
+
+    async function preloadHomepageAssets() {
+      const sources = [
+        HOME_HERO_IMAGE_URL,
+        featureImage?.src,
+        CYNODON_BLOB_URL,
+      ].filter(Boolean);
+
+      await Promise.allSettled(sources.map((src) => preloadImage(src)));
+
+      if (!cancelled) {
+        requestAnimationFrame(() => {
+          if (!cancelled) {
+            setIsHomeReady(true);
+          }
+        });
+      }
+    }
+
+    preloadHomepageAssets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [featureImage?.src]);
 
   useEffect(() => {
     function updateQuotePanelHeight() {
@@ -718,9 +757,14 @@ export default function HomePage({ profileLinks, featureImages }) {
 
   return (
     <div className="site" id="home">
+      {!isHomeReady ? (
+        <div className="home-loading-screen" aria-label="Loading ARIVERSE">
+          <div className="home-loading-screen__title">ARIVERSE</div>
+        </div>
+      ) : null}
       <Header />
 
-      <main className="content">
+      <main className={`content${isHomeReady ? '' : ' is-hidden-until-ready'}`}>
         <section className="hero" id="about">
           <section className="intro">
             <h1>

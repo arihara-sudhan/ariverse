@@ -160,11 +160,7 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   }
 
   if (sectionFolder === 'books-read') {
-    const languageFolder = rawCategory === 'tamil' ? 'tamil' : 'english';
-    const typeFolder = languageFolder === 'tamil'
-      ? (rawSubcategory.includes('புனைவிலி') ? 'non-fiction' : 'fiction')
-      : (subcategoryFolder === 'non-fiction' ? 'non-fiction' : 'fiction');
-    return joinBlobPath('books-read', languageFolder, typeFolder, `${titleBase}${ext}`);
+    return joinBlobPath('ari-reads', `${titleBase}${ext}`);
   }
 
   if (sectionFolder === 'aris-books') {
@@ -179,7 +175,7 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   }
 
   if (sectionFolder === 'book-reviews') {
-    return joinBlobPath('book-reviews', titleBase, `${baseName}${ext}`);
+    return joinBlobPath('ari-reviews', titleBase, `${baseName}${ext}`);
   }
 
   if (sectionFolder === 'ari-resume') {

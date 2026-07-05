@@ -66,7 +66,7 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-thirukkural', label: 'திருக்குறள்', href: 'https://arihara-sudhan.github.io/uyir-kural/', category: 'PASSIONAL' },
   { id: 'f-guest', label: 'Guest Lectures', href: '/guest-lectures', category: 'PASSIONAL' },
   { id: 'f-clay', label: 'Clay Play', href: '/clay-play', category: 'HOBBYAL' },
-  { id: 'f-kavithaigal', label: 'அரியின் கவிதைகள்', href: '/ariyin-kavithaigal', category: 'HOBBYAL' },
+  { id: 'f-kavithaigal', label: 'அரியின் கவிதைகள்', href: '/arichuvadi?category=kavithaigal', category: 'HOBBYAL' },
   { id: 'f-books-read', label: 'Books Read', href: '/ari-read-books', category: 'HOBBYAL' },
   { id: 'f-reviews', label: 'Book Reviews', href: '/book-reviews', category: 'HOBBYAL' },
   { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },

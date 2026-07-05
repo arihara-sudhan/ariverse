@@ -11,7 +11,6 @@ const STATIC_ROUTES = [
   '/aris-books',
   '/aris-shelf',
   '/aris-xperiments',
-  '/ariyin-kavithaigal',
   '/binomial-names',
   '/book-reviews',
   '/clay-play',

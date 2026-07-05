@@ -1,7 +1,6 @@
 import Head from 'next/head';
 import { ArichuvadiPostView } from '../../src/components/ArichuvadiBlog';
 import { getArichuvadiPostBySlug } from '../../lib/arichuvadiData';
-import { listContentComments, listContentEntryReactions } from '../../lib/adminData';
 import { ARICHUVADI_SITE_LOGO_URL } from '../../lib/arichuvadiAssets';
 
 export async function getServerSideProps(context) {
@@ -17,8 +16,9 @@ export async function getServerSideProps(context) {
   return {
     props: {
       post,
-      initialComments: await listContentComments({ sectionKey: 'arichuvadi', entryId: post.id }),
-      initialLikesCount: (await listContentEntryReactions({ sectionKey: 'arichuvadi', entryIds: [post.id] }))?.[post.id]?.likesCount || 0,
+      // Let the client load comments and live like counts after the post is visible.
+      initialComments: [],
+      initialLikesCount: 0,
     },
   };
 }

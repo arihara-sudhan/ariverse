@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Header from './Header';
 import LikeButton from './LikeButton';
@@ -120,7 +121,7 @@ function ArichuvadiThemeStyles() {
       .arizone-shell .hero {
         text-align: center !important;
         padding: 3vw 0 2vw 0 !important;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fcf8 100%) !important;
+        background: #ffffff !important;
         color: #000000 !important;
         border-radius: 2vw !important;
         display: block !important;
@@ -218,6 +219,7 @@ function ArichuvadiThemeStyles() {
       }
 
       .arizone-shell .post-card-image {
+        display: block;
         width: 100%;
         aspect-ratio: 1 / 1;
         height: auto;
@@ -229,14 +231,15 @@ function ArichuvadiThemeStyles() {
       }
 
       .arizone-shell .post-card-content {
-        padding: 0.75rem 0.9rem 0.95rem;
+        padding: 0.45rem 0.9rem 0.95rem;
         background: #000000;
+        border-top-color: #000000;
       }
 
       .arizone-shell .post-card h3 {
         font-family: 'Arichuvadi Tamil', 'Playfair Display', serif;
         font-size: 1.35rem;
-        margin: 0.1rem 0 0.2rem;
+        margin: 0;
         color: #ffffff;
         line-height: 1.4;
         text-align: center;
@@ -252,8 +255,8 @@ function ArichuvadiThemeStyles() {
       }
 
       .arizone-shell .pagination-btn {
-        background: #000000;
-        color: #ffffff;
+        background: #ffffff;
+        color: #000000;
         border: 1px solid #000000;
         border-radius: 999px;
         padding: 0.8vw 1.6vw;
@@ -363,12 +366,12 @@ function ArichuvadiThemeStyles() {
       }
 
       .arizone-shell .footer {
-        background: #f8fcf8;
+        background: #ffffff;
         color: #000000;
         text-align: center;
         padding: 2vw 0;
         margin-top: 4vw;
-        border-top: 1px solid #e8f5e8;
+        border-top: 1px solid #e7e7e7;
       }
 
       .arizone-shell .footer p {
@@ -382,7 +385,7 @@ function ArichuvadiThemeStyles() {
         min-height: 28vh;
         border: 1px dashed rgba(0, 0, 0, 0.14);
         border-radius: 1.25rem;
-        background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+        background: #ffffff;
         color: #444444;
         text-align: center;
         font-family: 'Arichuvadi Tamil', 'Google Sans', 'Pandora Sans', sans-serif;
@@ -492,10 +495,11 @@ function ArichuvadiThemeStyles() {
   );
 }
 
-export function ArichuvadiIndexView({ posts = [], categories = [] }) {
+export function ArichuvadiIndexView({ posts = [], categories = [], initialTopic = 'all' }) {
+  const router = useRouter();
   const normalizedPosts = Array.isArray(posts) ? posts.map(normalizePostInput) : [];
-  const [currentTopic, setCurrentTopic] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const currentTopic = String(router.query?.category || initialTopic || '').trim().toLowerCase() || 'all';
 
   const categoryList = Array.isArray(categories) && categories.length > 0
     ? categories.map((category) => ({
@@ -516,6 +520,14 @@ export function ArichuvadiIndexView({ posts = [], categories = [] }) {
     setCurrentPage(1);
   }, [currentTopic]);
 
+  function selectTopic(nextTopic) {
+    const topic = String(nextTopic || '').trim().toLowerCase();
+    const destination = topic && topic !== 'all'
+      ? `/arichuvadi?category=${encodeURIComponent(topic)}`
+      : '/arichuvadi';
+    router.push(destination, undefined, { shallow: true, scroll: false });
+  }
+
   return (
     <div className="arizone-shell">
       <ArichuvadiThemeStyles />
@@ -530,7 +542,7 @@ export function ArichuvadiIndexView({ posts = [], categories = [] }) {
                 <button
                   type="button"
                   className={`topic-btn${currentTopic === 'all' ? ' active' : ''}`}
-                  onClick={() => setCurrentTopic('all')}
+                  onClick={() => selectTopic('all')}
                 >
                   அனைத்தும்
                 </button>
@@ -540,7 +552,7 @@ export function ArichuvadiIndexView({ posts = [], categories = [] }) {
                     <button
                       type="button"
                       className={`topic-btn${currentTopic === category.slug ? ' active' : ''}`}
-                      onClick={() => setCurrentTopic(category.slug)}
+                      onClick={() => selectTopic(category.slug)}
                     >
                       {category.label}
                     </button>
@@ -554,6 +566,8 @@ export function ArichuvadiIndexView({ posts = [], categories = [] }) {
                 visiblePosts.map((post) => {
                   const imageSource = post.coverImageUrl || post.categoryLogoUrl || TOPIC_LOGO_URLS[post.categorySlug] || DEFAULT_LOGO_URL;
                   const href = `/arichuvadi/${encodeURIComponent(post.slug)}`;
+                  const darkCardTitles = new Set(['நதி', 'அண்ணன் தங்கை']);
+                  const isDarkCard = darkCardTitles.has(String(post.title || '').trim());
 
                   return (
                     <Link

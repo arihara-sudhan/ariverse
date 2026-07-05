@@ -11,7 +11,7 @@ function buildCommentLocation(comment) {
   const sectionMap = {
     arizone: '/arizone',
     xperiments: '/aris-xperiments',
-    kavithaigal: '/ariyin-kavithaigal',
+    kavithaigal: '/arichuvadi?category=kavithaigal',
     'guest-lectures': '/guest-lectures',
     'book-reviews': '/book-reviews',
     'clay-play': '/clay-play',

@@ -3,18 +3,20 @@ import { ArichuvadiIndexView } from '../../src/components/ArichuvadiBlog';
 import { listArichuvadiCategories, listArichuvadiPosts } from '../../lib/arichuvadiData';
 import { ARICHUVADI_SITE_LOGO_URL } from '../../lib/arichuvadiAssets';
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ query }) {
   const [posts, categories] = await Promise.all([listArichuvadiPosts(), listArichuvadiCategories()]);
+  const initialTopic = String(query?.category || '').trim().toLowerCase() || 'all';
 
   return {
     props: {
       posts,
       categories,
+      initialTopic,
     },
   };
 }
 
-export default function ArichuvadiIndexPage({ posts, categories }) {
+export default function ArichuvadiIndexPage({ posts, categories, initialTopic }) {
   return (
     <>
       <Head>
@@ -26,7 +28,7 @@ export default function ArichuvadiIndexPage({ posts, categories }) {
         <link rel="icon" href={ARICHUVADI_SITE_LOGO_URL} />
         <link rel="apple-touch-icon" href={ARICHUVADI_SITE_LOGO_URL} />
       </Head>
-      <ArichuvadiIndexView posts={posts} categories={categories} />
+      <ArichuvadiIndexView posts={posts} categories={categories} initialTopic={initialTopic} />
     </>
   );
 }

@@ -4317,6 +4317,20 @@ body.mini-project-open-body::-webkit-scrollbar {
   align-self: flex-end;
 }
 
+.kavithai-like .like-button {
+  padding: 0.18rem 0.42rem;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+}
+
+.kavithai-like .like-button-count {
+  min-width: 0.9rem;
+}
+
+.kavithai-like .like-button-text {
+  letter-spacing: -0.01em;
+}
+
 .guest-lectures-like {
   margin-top: 0.85rem;
 }

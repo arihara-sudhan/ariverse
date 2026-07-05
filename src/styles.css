@@ -53,6 +53,7 @@ body {
   font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 ::-webkit-scrollbar {
@@ -3868,7 +3869,7 @@ body.mini-project-open-body::-webkit-scrollbar {
   .kavithai-stage {
     min-height: auto;
     height: auto;
-    grid-template-columns: 1fr;
+    display: block;
     background: var(--bg);
     overflow: visible;
   }
@@ -3894,7 +3895,8 @@ body.mini-project-open-body::-webkit-scrollbar {
   .kavithai-media {
     min-height: auto;
     height: auto;
-    background: var(--surface);
+    width: 100%;
+    background: transparent;
     overflow: visible;
     position: relative;
   }
@@ -3909,6 +3911,8 @@ body.mini-project-open-body::-webkit-scrollbar {
   .kavithai-panel {
     min-height: auto;
     height: auto;
+    width: 100%;
+    min-width: 0;
     padding: 1.25rem 1rem 2rem;
     overflow: visible;
   }

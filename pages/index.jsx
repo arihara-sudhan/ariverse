@@ -91,8 +91,8 @@ export async function getStaticProps() {
 
 export default function HomePage({ profileLinks, featureImages }) {
   const [welcomeIndex, setWelcomeIndex] = useState(0);
-  const [typedText, setTypedText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [welcomeOutgoingIndex, setWelcomeOutgoingIndex] = useState(null);
+  const [isWelcomeVisible, setIsWelcomeVisible] = useState(true);
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isQuotePaused, setIsQuotePaused] = useState(false);
   const [quoteOutgoingIndex, setQuoteOutgoingIndex] = useState(null);
@@ -125,11 +125,14 @@ export default function HomePage({ profileLinks, featureImages }) {
   const quoteResumeTimerRef = useRef(null);
   const quoteTextShowTimerRef = useRef(null);
   const quoteTextClearTimerRef = useRef(null);
+  const welcomeTransitionTimerRef = useRef(null);
   const contactResumeTimerRef = useRef(null);
   const mailResetTimerRef = useRef(null);
   const subscriptionResetTimerRef = useRef(null);
   const testimonialResetTimerRef = useRef(null);
   const CAROUSEL_RESUME_DELAY_MS = 5000;
+  const WELCOME_CROSSFADE_DELAY_MS = 5000;
+  const WELCOME_CROSSFADE_MS = 360;
   const QUOTE_PANEL_GAP_PX = 16;
   const TESTIMONIAL_SLIDE_INDEX = 2;
   const hasPublicTestimonials = publicTestimonials.length > 0;
@@ -150,6 +153,28 @@ export default function HomePage({ profileLinks, featureImages }) {
       clearTimeout(quoteTextClearTimerRef.current);
       quoteTextClearTimerRef.current = null;
     }
+  }
+
+  function clearWelcomeTransitionTimer() {
+    if (welcomeTransitionTimerRef.current) {
+      clearTimeout(welcomeTransitionTimerRef.current);
+      welcomeTransitionTimerRef.current = null;
+    }
+  }
+
+  function transitionToWelcomeMessage(nextIndex) {
+    if (nextIndex === welcomeIndex) return;
+
+    clearWelcomeTransitionTimer();
+    setWelcomeOutgoingIndex(welcomeIndex);
+    setIsWelcomeVisible(false);
+    setWelcomeIndex(nextIndex);
+
+    welcomeTransitionTimerRef.current = setTimeout(() => {
+      setIsWelcomeVisible(true);
+      setWelcomeOutgoingIndex(null);
+      welcomeTransitionTimerRef.current = null;
+    }, WELCOME_CROSSFADE_MS);
   }
 
   function transitionToQuoteSlide(nextIndex) {
@@ -336,6 +361,7 @@ export default function HomePage({ profileLinks, featureImages }) {
 
   useEffect(
     () => () => {
+      if (welcomeTransitionTimerRef.current) clearTimeout(welcomeTransitionTimerRef.current);
       if (quoteResumeTimerRef.current) clearTimeout(quoteResumeTimerRef.current);
       if (quoteTextShowTimerRef.current) clearTimeout(quoteTextShowTimerRef.current);
       if (quoteTextClearTimerRef.current) clearTimeout(quoteTextClearTimerRef.current);
@@ -346,6 +372,12 @@ export default function HomePage({ profileLinks, featureImages }) {
     },
     [],
   );
+
+  useEffect(() => {
+    setWelcomeIndex(0);
+    setWelcomeOutgoingIndex(null);
+    setIsWelcomeVisible(true);
+  }, []);
 
   async function handleSubscribeSubmit(event) {
     event.preventDefault();
@@ -571,40 +603,14 @@ export default function HomePage({ profileLinks, featureImages }) {
   ];
 
   useEffect(() => {
-    if (isTypingPaused) return undefined;
+    if (WELCOME_MESSAGES.length <= 1) return undefined;
 
-    const currentMessage = WELCOME_MESSAGES[welcomeIndex].text;
-    const isFullyTyped = typedText === currentMessage;
-    const isFullyDeleted = typedText.length === 0;
+    const timer = setInterval(() => {
+      transitionToWelcomeMessage((welcomeIndex + 1) % WELCOME_MESSAGES.length);
+    }, WELCOME_CROSSFADE_DELAY_MS);
 
-    let delay = isDeleting ? 38 : 72;
-
-    if (isFullyTyped && !isDeleting) {
-      delay = 1100;
-    }
-
-    const timer = setTimeout(() => {
-      if (!isDeleting) {
-        if (isFullyTyped) {
-          setIsDeleting(true);
-          return;
-        }
-
-        setTypedText(currentMessage.slice(0, typedText.length + 1));
-        return;
-      }
-
-      if (!isFullyDeleted) {
-        setTypedText(currentMessage.slice(0, typedText.length - 1));
-        return;
-      }
-
-      setIsDeleting(false);
-      setWelcomeIndex((prev) => (prev + 1) % WELCOME_MESSAGES.length);
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [isDeleting, isTypingPaused, typedText, welcomeIndex]);
+    return () => clearInterval(timer);
+  }, [welcomeIndex]);
 
   useEffect(() => {
     if (isContactPaused || isTypingPaused || contactSlides.length <= 1) return undefined;
@@ -774,10 +780,21 @@ export default function HomePage({ profileLinks, featureImages }) {
                 reach the buds of knowledge in this vast universe, waiting for my touch and I widen Ariverse with the things I learn, love, and build. I take from the Universe and I make it in Ariverse.
               </span>
             </h1>
-            <p className="intro-title-note" aria-live="polite">
-              <span lang={WELCOME_MESSAGES[welcomeIndex].lang}>{typedText}</span>
-              <span className="type-caret" aria-hidden="true">
-                |
+            <p className="intro-title-note intro-title-note--swap" aria-live="polite">
+              {welcomeOutgoingIndex !== null ? (
+                <span
+                  className={`intro-title-note__message is-outgoing${isWelcomeVisible ? '' : ' is-fading-out'}`}
+                  aria-hidden="true"
+                  lang={WELCOME_MESSAGES[welcomeOutgoingIndex].lang}
+                >
+                  {WELCOME_MESSAGES[welcomeOutgoingIndex].text}
+                </span>
+              ) : null}
+              <span
+                className={`intro-title-note__message${isWelcomeVisible ? ' is-visible' : ''}`}
+                lang={WELCOME_MESSAGES[welcomeIndex].lang}
+              >
+                {WELCOME_MESSAGES[welcomeIndex].text}
               </span>
             </p>
           </section>

@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+﻿import { readFile } from 'node:fs/promises';
 import formidable from 'formidable';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
@@ -94,7 +94,16 @@ function getSupabaseUploadKey() {
 function resolveSectionFolder(section, sectionHref = '') {
   const rawSection = String(section || '').trim();
   const rawHref = String(sectionHref || '').trim().toLowerCase();
-  if (rawHref === '/ariyin-kavithaigal' || rawSection === 'அரியின் கவிதைகள்' || rawSection === 'Ariyin Kavithaigal' || rawSection === 'Kavithaigal') {
+  if (
+    rawHref === '/arichuvadi' ||
+    rawHref === '/arichuvadi?category=kavithaigal' ||
+    rawSection === 'Ariyin Kavithaigal' ||
+    rawSection === 'Kavithaigal' ||
+    rawSection === 'Arichuvadi'
+  ) {
+    return 'arichuvadi';
+  }
+  if (rawHref === '/ariyin-kavithaigal' || rawSection === 'à®…à®°à®¿à®¯à®¿à®©à¯ à®•à®µà®¿à®¤à¯ˆà®•à®³à¯' || rawSection === 'Ariyin Kavithaigal' || rawSection === 'Kavithaigal') {
     return 'ariyin-kavithaigal';
   }
   if (rawHref === '/arizone' || rawSection === 'AriZone' || rawSection === 'AriZone (Blog)') return 'arizone';
@@ -332,3 +341,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Upload failed.' });
   }
 }
+
+

@@ -305,6 +305,35 @@ footer {
   text-align: left;
 }
 
+.intro-title-note--swap {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  min-height: 1.6em;
+}
+
+.intro-title-note__message {
+  grid-area: 1 / 1;
+  display: block;
+  opacity: 0;
+  transform: translateY(0.18em);
+  transition: opacity 360ms ease, transform 360ms ease;
+}
+
+.intro-title-note__message.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-title-note__message.is-outgoing {
+  opacity: 1;
+}
+
+.intro-title-note__message.is-outgoing.is-fading-out {
+  opacity: 0;
+  transform: translateY(-0.18em);
+}
+
 .intro-social-links {
   margin-top: 0.85rem;
   display: flex;
@@ -337,11 +366,6 @@ footer {
 
 .intro-social-links a:hover {
   background: #f2f2f2;
-}
-
-.type-caret {
-  margin-left: 0.1rem;
-  animation: blinkCaret 1s steps(1, end) infinite;
 }
 
 .quote-band {

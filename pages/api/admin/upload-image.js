@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
 import formidable from 'formidable';
-import sharp from 'sharp';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
 import { toPublicStorageUrl } from '../../../lib/storage';
@@ -56,6 +55,21 @@ function toFileBaseFromOriginalName(fileName) {
   const raw = typeof fileName === 'string' ? fileName : '';
   const base = raw.replace(/\.[^/.]+$/, '');
   return toFileNameBase(base);
+}
+
+function getFileExtension(file) {
+  const mime = String(file?.mimetype || '').trim().toLowerCase();
+  if (mime && ALLOWED_MIME_TO_EXT[mime]) {
+    return ALLOWED_MIME_TO_EXT[mime];
+  }
+
+  const originalName = String(file?.originalFilename || '').trim();
+  const match = originalName.match(/\.[^/.]+$/);
+  if (match) {
+    return match[0].toLowerCase();
+  }
+
+  return '.bin';
 }
 
 function getSupabaseBaseUrl() {
@@ -225,12 +239,12 @@ function replaceBlobExt(pathname, ext = '.webp') {
   return clean.replace(/\.[^/.]+$/, ext);
 }
 
-function resolveExplicitUploadPath(fields) {
+function resolveExplicitUploadPath(fields, ext) {
   const rawTarget = Array.isArray(fields?.targetPath) ? fields.targetPath[0] : fields?.targetPath;
   const rawPath = Array.isArray(fields?.path) ? fields.path[0] : fields?.path;
   const target = toCleanRelativePath(rawTarget || rawPath || '');
   if (!target) return '';
-  return replaceBlobExt(target, '.webp');
+  return replaceBlobExt(target, ext);
 }
 
 function isCleanSectionPath(pathname, sectionFolder) {
@@ -271,10 +285,10 @@ export default async function handler(req, res) {
     const subcategory = Array.isArray(fields?.subcategory) ? fields.subcategory[0] : fields?.subcategory;
     const currentUrl = Array.isArray(fields?.currentUrl) ? fields.currentUrl[0] : fields?.currentUrl;
     const baseName = toFileBaseFromOriginalName(file.originalFilename || '');
+    const outputExt = getFileExtension(file);
     const sectionFolder = resolveSectionFolder(section, sectionHref);
-    const explicitPath = resolveExplicitUploadPath(fields);
+    const explicitPath = resolveExplicitUploadPath(fields, outputExt);
     const currentPath = toCleanRelativePath(currentUrl);
-    const outputExt = '.webp';
     const fileName = explicitPath || (isCleanSectionPath(currentPath, sectionFolder)
       ? replaceBlobExt(currentPath, outputExt)
       : buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext: outputExt }));
@@ -285,9 +299,6 @@ export default async function handler(req, res) {
     }
 
     const fileBuffer = await readFile(file.filepath);
-    const webpBuffer = await sharp(fileBuffer, { animated: true })
-      .webp({ quality: 100, effort: 3 })
-      .toBuffer();
     const uploadKey = getSupabaseUploadKey();
     if (!uploadKey) {
       res.status(500).json({ error: 'Supabase upload key is missing. Set SUPABASE_SERVICE_ROLE_KEY (recommended).' });
@@ -304,9 +315,9 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${uploadKey}`,
         apikey: uploadKey,
         'x-upsert': 'true',
-        'content-type': 'image/webp',
+        'content-type': file.mimetype || 'application/octet-stream',
       },
-      body: webpBuffer,
+      body: fileBuffer,
     });
 
     if (!response.ok) {

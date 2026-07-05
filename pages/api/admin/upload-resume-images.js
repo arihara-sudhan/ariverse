@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { del, put } from '@vercel/blob';
 import formidable from 'formidable';
-import sharp from 'sharp';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
 
@@ -69,6 +68,21 @@ function normalizeCurrentUrls(fields) {
   }
 }
 
+function getFileExtension(file) {
+  const mime = String(file?.mimetype || '').trim().toLowerCase();
+  if (mime && ALLOWED_MIME_TO_EXT[mime]) {
+    return ALLOWED_MIME_TO_EXT[mime];
+  }
+
+  const originalName = String(file?.originalFilename || '').trim();
+  const match = originalName.match(/\.[^/.]+$/);
+  if (match) {
+    return match[0].toLowerCase();
+  }
+
+  return '.bin';
+}
+
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -96,16 +110,14 @@ export default async function handler(req, res) {
     for (let index = 0; index < imageFiles.length; index += 1) {
       const file = imageFiles[index];
       const fileBuffer = await readFile(file.filepath);
-      const webpBuffer = await sharp(fileBuffer, { animated: true })
-        .webp({ quality: 100, effort: 3 })
-        .toBuffer();
-      const fileName = `ari-resume/pages/${generationId}/page-${index + 1}.webp`;
-      const blob = await put(fileName, webpBuffer, {
+      const outputExt = getFileExtension(file);
+      const fileName = `ari-resume/pages/${generationId}/page-${index + 1}${outputExt}`;
+      const blob = await put(fileName, fileBuffer, {
         access: 'public',
         token: process.env.BLOB_READ_WRITE_TOKEN,
         addRandomSuffix: false,
         allowOverwrite: true,
-        contentType: 'image/webp',
+        contentType: file.mimetype || 'application/octet-stream',
       });
       uploadedUrls.push(blob.url);
     }

@@ -155,6 +155,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const isArizoneSection = normalizedSectionLabel === 'AriZone (Blog)' || normalizedSectionLabel === 'AriZone';
   const isArichuvadiSection = normalizedSectionLabel === 'Arichuvadi (Blog)' || normalizedSectionLabel === 'Arichuvadi';
   const blogSection = isArichuvadiSection ? 'arichuvadi' : isArizoneSection ? 'arizone' : '';
+  const blogStoragePrefix = isArichuvadiSection ? 'arichuvadi' : 'arizone';
   const isBinomialSection = sectionLabel === 'Binomial Names';
   const isClayPlaySection = sectionLabel === 'Clay Play';
   const isGuestLecturesSection = sectionLabel === 'Guest Lectures';
@@ -327,7 +328,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     setArizoneError('');
 
     const slug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title);
-    const storagePrefix = blogSection || 'arizone';
+    const storagePrefix = blogStoragePrefix || 'arizone';
     const payload = {
       title: arizoneDraft.title,
       slug,
@@ -447,7 +448,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   async function uploadArizoneCover(file) {
     const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title) || 'untitled';
     return uploadArizoneAsset(file, 'cover', {
-      targetPath: `arizone/posts/${nextSlug}/images/cover.webp`,
+      targetPath: `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`,
     });
   }
 
@@ -477,8 +478,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     ...prev,
                     title: nextTitle,
                     slug: nextSlug,
-                    storageFolder: `arizone/posts/${nextSlug}`,
-                    coverImagePath: prev.coverImagePath || `arizone/posts/${nextSlug}/images/cover.webp`,
+                    storageFolder: `${blogStoragePrefix}/posts/${nextSlug}`,
+                    coverImagePath: prev.coverImagePath || `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`,
                   };
                 })}
                 placeholder="Post title"
@@ -609,7 +610,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-+|-+$/g, '') || 'image';
                   return uploadArizoneAsset(file, arizoneDraft.title || 'article-image', {
-                    targetPath: `arizone/posts/${nextSlug}/images/${safeName}.webp`,
+                    targetPath: `${blogStoragePrefix}/posts/${nextSlug}/images/${safeName}.webp`,
                   });
                 }}
               />

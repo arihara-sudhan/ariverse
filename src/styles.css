@@ -1986,6 +1986,50 @@ body.mini-project-open-body::-webkit-scrollbar {
   background: #f3f3f3;
 }
 
+.mini-project-pagination {
+  margin-top: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.mini-project-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid #111111;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  transition: background-color 180ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+.mini-project-pagination-btn:hover:not(:disabled) {
+  background: #f3f3f3;
+  transform: translateY(-1px);
+}
+
+.mini-project-pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.mini-project-pagination-status {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .projects-list {
   margin-top: 1rem;
   display: grid;
@@ -3737,6 +3781,15 @@ body.mini-project-open-body::-webkit-scrollbar {
 
   .mini-project-card {
     gap: 0.6rem;
+  }
+
+  .mini-project-pagination {
+    gap: 0.65rem;
+  }
+
+  .mini-project-pagination-btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.82rem;
   }
 
   .projects-card {

@@ -31,6 +31,7 @@ export async function getStaticProps() {
 
 export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
   const [brokenImageByTitle, setBrokenImageByTitle] = useState({});
   const heroQuote = String(hero?.quote || '').trim();
   const normalizedProjects = useMemo(() => miniProjects || [], [miniProjects]);
@@ -38,11 +39,23 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
     () => Array.from(new Set(normalizedProjects.map((project) => project.category).filter(Boolean))),
     [normalizedProjects],
   );
+  const pageSize = 12;
 
   const filteredProjects = useMemo(() => {
     if (activeCategory === 'ALL') return normalizedProjects;
     return normalizedProjects.filter((project) => project.category === activeCategory);
   }, [activeCategory, normalizedProjects]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pagedProjects = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * pageSize;
+    return filteredProjects.slice(startIndex, startIndex + pageSize);
+  }, [filteredProjects, safeCurrentPage]);
+
+  function goToPage(nextPage) {
+    setCurrentPage(Math.min(Math.max(nextPage, 1), totalPages));
+  }
 
   return (
     <div className="site">
@@ -62,8 +75,11 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
           <div className="books-read-filters" aria-label="Mini project categories">
             <button
               type="button"
-              className={`books-filter-btn${activeCategory === 'ALL' ? ' is-active' : ''}`}
-              onClick={() => setActiveCategory('ALL')}
+            className={`books-filter-btn${activeCategory === 'ALL' ? ' is-active' : ''}`}
+              onClick={() => {
+                setActiveCategory('ALL');
+                setCurrentPage(1);
+              }}
             >
               All ({normalizedProjects.length})
             </button>
@@ -74,7 +90,10 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
                   key={category}
                   type="button"
                   className={`books-filter-btn${activeCategory === category ? ' is-active' : ''}`}
-                  onClick={() => setActiveCategory(category)}
+                  onClick={() => {
+                    setActiveCategory(category);
+                    setCurrentPage(1);
+                  }}
                 >
                   {category} ({count})
                 </button>
@@ -83,7 +102,7 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
           </div>
 
           <div className="mini-project-grid">
-            {filteredProjects.map((project) => {
+            {pagedProjects.map((project) => {
               const viewerHref = `/mini-projects/open?url=${encodeURIComponent(project.embedLink || '')}&title=${encodeURIComponent(project.title || 'Mini Project')}`;
               const isBroken = Boolean(brokenImageByTitle[project.title]);
               return (
@@ -125,6 +144,32 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
               );
             })}
           </div>
+
+          {filteredProjects.length > pageSize ? (
+            <div className="mini-project-pagination" aria-label="Mini projects pagination">
+              <button
+                type="button"
+                className="mini-project-pagination-btn"
+                onClick={() => goToPage(safeCurrentPage - 1)}
+                disabled={safeCurrentPage <= 1}
+              >
+                <span aria-hidden="true">←</span>
+                <span>Previous</span>
+              </button>
+              <p className="mini-project-pagination-status">
+                Page {safeCurrentPage} of {totalPages}
+              </p>
+              <button
+                type="button"
+                className="mini-project-pagination-btn"
+                onClick={() => goToPage(safeCurrentPage + 1)}
+                disabled={safeCurrentPage >= totalPages}
+              >
+                <span>Next</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          ) : null}
         </section>
       </main>
     </div>

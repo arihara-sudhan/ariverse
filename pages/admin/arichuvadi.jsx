@@ -291,7 +291,7 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
           ) : (
             <>
               <form className="contact-card" onSubmit={savePost}>
-                <label htmlFor="arichuvadi-title">Title</label>
+                <label htmlFor="arichuvadi-title">Display title</label>
                 <input
                   id="arichuvadi-title"
                   type="text"
@@ -301,15 +301,16 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
                   required
                 />
 
-                <label htmlFor="arichuvadi-slug">Slug</label>
+                <label htmlFor="arichuvadi-slug">English name</label>
                 <input
                   id="arichuvadi-slug"
                   type="text"
                   value={draft.slug}
                   onChange={(event) => updateField('slug', event.target.value)}
-                  placeholder="post-folder-name"
+                  placeholder="oyvu-naal"
                   required
                 />
+                <p className="contact-note">Use an English name here. It becomes the URL and folder name.</p>
 
                 <label htmlFor="arichuvadi-cover">Cover image</label>
                 <input

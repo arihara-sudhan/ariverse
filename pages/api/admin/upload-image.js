@@ -103,9 +103,6 @@ function resolveSectionFolder(section, sectionHref = '') {
   ) {
     return 'arichuvadi';
   }
-  if (rawHref === '/ariyin-kavithaigal' || rawSection === 'à®…à®°à®¿à®¯à®¿à®©à¯ à®•à®µà®¿à®¤à¯ˆà®•à®³à¯' || rawSection === 'Ariyin Kavithaigal' || rawSection === 'Kavithaigal') {
-    return 'ariyin-kavithaigal';
-  }
   if (rawHref === '/arizone' || rawSection === 'AriZone' || rawSection === 'AriZone (Blog)') return 'arizone';
   if (rawHref === '/arichuvadi' || rawSection === 'Arichuvadi' || rawSection === 'Arichuvadi (Blog)' || rawSection === 'Arichuvadu') return 'arichuvadi';
   if (rawHref === '/ari-read-books' || rawSection === 'Books Read') return 'books-read';
@@ -143,10 +140,6 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
     return `${sectionFolder}/hero${ext}`;
   }
 
-  if (sectionFolder === 'ariyin-kavithaigal') {
-    return `ariyin-kavithaigal/${titleBase}${ext}`;
-  }
-
   if (sectionFolder === 'arizone') {
     if (looksLikeLogo) {
       return `arizone/categories/${titleBase}/logo${ext}`;
@@ -155,6 +148,17 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
       return `arizone/assets/hero${ext}`;
     }
     return joinBlobPath('arizone', 'posts', titleBase, `${baseName}${ext}`);
+  }
+
+  if (sectionFolder === 'arichuvadi') {
+    const postFolder = titleBase || baseName || 'untitled';
+    if (titleFolder === 'hero') {
+      return `arichuvadi/hero${ext}`;
+    }
+    if (titleFolder === 'cover') {
+      return `arichuvadi/posts/${postFolder}/images/cover${ext}`;
+    }
+    return `arichuvadi/posts/${postFolder}/images/${baseName}${ext}`;
   }
 
   if (sectionFolder === 'careers') {

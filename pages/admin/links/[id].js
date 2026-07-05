@@ -168,7 +168,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const isMiniProjectsSection = sectionLabel === 'Mini-Projects';
   const isProjectsSection = sectionLabel === 'Projects';
   const isCareerSection = sectionLabel === 'Career' || sectionLabel === 'Works' || sectionLabel === 'Experience';
-  const isKavithaiSection = sectionLabel === 'அரியின் கவிதைகள்' || sectionLabel === 'Ariyin Kavithaigal';
+  const isKavithaiSection = sectionLabel === 'My Poems' || sectionLabel === 'அரியின் கவிதைகள்' || sectionLabel === 'Ariyin Kavithaigal';
   const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isShelfSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection || isExperimentsSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
   const [items, setItems] = useState(

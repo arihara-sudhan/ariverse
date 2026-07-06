@@ -322,15 +322,47 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     setArizoneCategoryError('');
   }
 
+  function promptForArichuvadiTitle(currentTitle = '') {
+    const fallbackTitle = String(currentTitle || '').trim();
+    return String(
+      window.prompt('Enter the Arichuvadi post name before uploading the cover.', fallbackTitle) || '',
+    ).trim();
+  }
+
+  function ensureArichuvadiDraftTitle() {
+    const existingTitle = String(arizoneDraft.title || '').trim();
+    if (existingTitle) return existingTitle;
+
+    const promptedTitle = promptForArichuvadiTitle(existingTitle);
+    if (!promptedTitle) return '';
+
+    const nextSlug = slugifyArizoneTitle(promptedTitle) || 'untitled';
+    setArizoneDraft((prev) => ({
+      ...prev,
+      title: promptedTitle,
+      slug: nextSlug,
+      storageFolder: `${blogStoragePrefix}/posts/${nextSlug}`,
+      coverImagePath: prev.coverImagePath || `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`,
+    }));
+    return promptedTitle;
+  }
+
   async function saveArizonePost(event) {
     event.preventDefault();
     setArizoneSaving(true);
     setArizoneError('');
 
-    const slug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title);
+    const resolvedTitle = String(arizoneDraft.title || '').trim() || ensureArichuvadiDraftTitle();
+    if (!resolvedTitle) {
+      setArizoneSaving(false);
+      setArizoneError('Please enter a post name before saving.');
+      return;
+    }
+
+    const slug = arizoneDraft.slug || slugifyArizoneTitle(resolvedTitle) || 'untitled';
     const storagePrefix = blogStoragePrefix || 'arizone';
     const payload = {
-      title: arizoneDraft.title,
+      title: resolvedTitle,
       slug,
       categoryLabel: arizoneDraft.categoryLabel || 'Deep Learning',
       categorySlug: arizoneDraft.categorySlug || 'deep-learning',
@@ -446,7 +478,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   }
 
   async function uploadArizoneCover(file) {
-    const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title) || 'untitled';
+    const resolvedTitle = ensureArichuvadiDraftTitle();
+    if (!resolvedTitle) {
+      throw new Error('Please enter a post name before uploading the cover image.');
+    }
+
+    const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(resolvedTitle) || 'untitled';
     return uploadArizoneAsset(file, 'cover', {
       targetPath: `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`,
     });
@@ -602,14 +639,18 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                 value={arizoneDraft.contentMarkdown}
                 onChange={(nextValue) => setArizoneDraft((prev) => ({ ...prev, contentMarkdown: nextValue }))}
                 onUploadImage={async (file) => {
-                  const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(arizoneDraft.title) || 'untitled';
+                  const resolvedTitle = String(arizoneDraft.title || '').trim() || ensureArichuvadiDraftTitle();
+                  if (!resolvedTitle) {
+                    throw new Error('Please enter a post name before uploading inline images.');
+                  }
+                  const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(resolvedTitle) || 'untitled';
                   const safeName = String(file?.name || 'image')
                     .replace(/\.[^.]+$/, '')
                     .normalize('NFKD')
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-+|-+$/g, '') || 'image';
-                  return uploadArizoneAsset(file, arizoneDraft.title || 'article-image', {
+                  return uploadArizoneAsset(file, resolvedTitle || 'article-image', {
                     targetPath: `${blogStoragePrefix}/posts/${nextSlug}/images/${safeName}.webp`,
                   });
                 }}

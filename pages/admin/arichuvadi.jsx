@@ -157,14 +157,22 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
     setError('');
     setInfo('');
 
+    const resolvedTitle = String(draft.title || '').trim() || ensureArichuvadiDraftTitle();
+    if (!resolvedTitle) {
+      setSaving(false);
+      setError('Please enter a post name before saving.');
+      return;
+    }
+
     const paths = buildArichuvadiPathsFromDraft(draft);
     const payload = {
       ...draft,
       ...paths,
-      slug: draft.slug || slugifyText(draft.title),
-      storageFolder: `arichuvadi/posts/${draft.slug || slugifyText(draft.title)}`,
-      contentPath: `arichuvadi/posts/${draft.slug || slugifyText(draft.title)}/content.md`,
-      coverImagePath: draft.coverImagePath || `arichuvadi/posts/${draft.slug || slugifyText(draft.title)}/images/cover.webp`,
+      title: resolvedTitle,
+      slug: draft.slug || slugifyText(resolvedTitle),
+      storageFolder: `arichuvadi/posts/${draft.slug || slugifyText(resolvedTitle)}`,
+      contentPath: `arichuvadi/posts/${draft.slug || slugifyText(resolvedTitle)}/content.md`,
+      coverImagePath: draft.coverImagePath || `arichuvadi/posts/${draft.slug || slugifyText(resolvedTitle)}/images/cover.webp`,
       isPublished: Boolean(draft.isPublished),
     };
 
@@ -241,6 +249,30 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
     });
   }
 
+  function promptForArichuvadiTitle(currentTitle = '') {
+    const fallbackTitle = String(currentTitle || '').trim();
+    return String(
+      window.prompt('Enter the Arichuvadi post name before uploading the cover image.', fallbackTitle) || '',
+    ).trim();
+  }
+
+  function ensureArichuvadiDraftTitle() {
+    const existingTitle = String(draft.title || '').trim();
+    if (existingTitle) return existingTitle;
+
+    const promptedTitle = promptForArichuvadiTitle(existingTitle);
+    if (!promptedTitle) return '';
+
+    const nextSlug = slugifyText(promptedTitle) || 'untitled';
+    setDraft((prev) => ({
+      ...prev,
+      title: promptedTitle,
+      slug: nextSlug,
+      coverImagePath: prev.coverImagePath || `arichuvadi/posts/${nextSlug}/images/cover.webp`,
+    }));
+    return promptedTitle;
+  }
+
   async function uploadArichuvadiAsset(file, title, targetPath) {
     const formData = new FormData();
     formData.append('image', file);
@@ -261,7 +293,12 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
   }
 
   async function uploadCover(file) {
-    const nextSlug = draft.slug || slugifyText(draft.title) || 'untitled';
+    const resolvedTitle = ensureArichuvadiDraftTitle();
+    if (!resolvedTitle) {
+      throw new Error('Please enter a post name before uploading the cover image.');
+    }
+
+    const nextSlug = draft.slug || slugifyText(resolvedTitle) || 'untitled';
     return uploadArichuvadiAsset(file, 'cover', `arichuvadi/posts/${nextSlug}/images/cover.webp`);
   }
 
@@ -346,7 +383,11 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
                   value={draft.contentMarkdown}
                   onChange={(value) => updateField('contentMarkdown', value)}
                   onUploadImage={async (file) => {
-                    const nextSlug = draft.slug || slugifyText(draft.title) || 'untitled';
+                    const resolvedTitle = String(draft.title || '').trim() || ensureArichuvadiDraftTitle();
+                    if (!resolvedTitle) {
+                      throw new Error('Please enter a post name before uploading inline images.');
+                    }
+                    const nextSlug = draft.slug || slugifyText(resolvedTitle) || 'untitled';
                     const safeName = String(file?.name || 'image')
                       .replace(/\.[^.]+$/, '')
                       .normalize('NFKD')

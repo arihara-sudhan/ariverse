@@ -139,6 +139,24 @@ function normalizeArizoneDraft(post = {}) {
   };
 }
 
+function normalizeArichuvadiDraft(post = {}) {
+  const slug = String(post?.slug || '').trim();
+  const title = String(post?.title || '').trim();
+  const safeSlug = slug || slugifyArizoneTitle(title);
+  return {
+    id: post?.id ?? null,
+    title,
+    slug: safeSlug,
+    categoryLabel: String(post?.categoryLabel || post?.category_label || 'Ariyin Kavithaigal').trim() || 'Ariyin Kavithaigal',
+    categorySlug: String(post?.categorySlug || post?.category_slug || 'kavithaigal').trim() || 'kavithaigal',
+    coverImagePath: String(post?.coverImagePath || post?.cover_image_path || (safeSlug ? `arichuvadi/posts/${safeSlug}/images/cover.webp` : '')).trim(),
+    contentMarkdown: String(post?.contentMarkdown || post?.content_markdown || ''),
+    publishedAt: String(post?.publishedAt || post?.published_at || new Date().toISOString().slice(0, 10)).slice(0, 10),
+    isPublished: Boolean(post?.isPublished ?? post?.is_published ?? true),
+    storageFolder: String(post?.storageFolder || post?.storage_folder || (safeSlug ? `arichuvadi/posts/${safeSlug}` : '')).trim(),
+  };
+}
+
 function normalizeArizoneCategoryDraft(category = {}) {
   const label = String(category?.label || category?.categoryLabel || '').trim();
   const slug = String(category?.slug || category?.categorySlug || '').trim() || slugifyArizoneTitle(label) || label || 'untitled';
@@ -171,6 +189,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const isKavithaiSection = sectionLabel === 'My Poems' || sectionLabel === 'அரியின் கவிதைகள்' || sectionLabel === 'Ariyin Kavithaigal';
   const isItemManagedSection = isBinomialSection || isGallerySection || isBooksReadSection || isShelfSection || isKavithaiSection || isMiniProjectsSection || isProjectsSection || isCareerSection || isExperimentsSection;
   const defaultHeroQuote = isClayPlaySection ? DEFAULT_CLAY_QUOTE : '';
+  const normalizeBlogDraft = isArichuvadiSection ? normalizeArichuvadiDraft : normalizeArizoneDraft;
   const [items, setItems] = useState(
     (initialItems || []).map((item) => ({
       ...item,
@@ -290,9 +309,11 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const [heroDraftImageUrl, setHeroDraftImageUrl] = useState(initialHero?.imageUrl || '');
   const [editingHero, setEditingHero] = useState(false);
   const [savingHero, setSavingHero] = useState(false);
-  const [arizonePosts, setArizonePosts] = useState((initialArizonePosts || []).map((post) => normalizeArizoneDraft(post)));
+  const [arizonePosts, setArizonePosts] = useState((initialArizonePosts || []).map((post) => (
+    isArichuvadiSection ? normalizeArichuvadiDraft(post) : normalizeArizoneDraft(post)
+  )));
   const [arizoneCategories, setArizoneCategories] = useState((initialArizoneCategories || []).map((category) => normalizeArizoneCategoryDraft(category)));
-  const [arizoneDraft, setArizoneDraft] = useState(normalizeArizoneDraft());
+  const [arizoneDraft, setArizoneDraft] = useState(isArichuvadiSection ? normalizeArichuvadiDraft() : normalizeArizoneDraft());
   const [arizoneCategoryDraft, setArizoneCategoryDraft] = useState(normalizeArizoneCategoryDraft());
   const [arizoneSelectedId, setArizoneSelectedId] = useState(null);
   const [arizoneSelectedCategoryId, setArizoneSelectedCategoryId] = useState(null);
@@ -310,8 +331,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const inlineImageTargetRef = useRef({ mode: 'create', itemId: null, selectionStart: null, selectionEnd: null });
 
   function syncArizoneDraft(post = null) {
+    syncCurrentDraft(post);
+  }
+
+  function syncCurrentDraft(post = null) {
     setArizoneSelectedId(post?.id ?? null);
-    setArizoneDraft(normalizeArizoneDraft(post || {}));
+    setArizoneDraft(isArichuvadiSection ? normalizeArichuvadiDraft(post || {}) : normalizeArizoneDraft(post || {}));
     setArizoneError('');
   }
 
@@ -336,7 +361,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     const promptedTitle = promptForArichuvadiTitle(existingTitle);
     if (!promptedTitle) return '';
 
-    const nextSlug = slugifyArizoneTitle(promptedTitle) || 'untitled';
+    const nextSlug = slugifyArizoneTitle(promptedTitle);
+    if (!nextSlug) return '';
     setArizoneDraft((prev) => ({
       ...prev,
       title: promptedTitle,
@@ -359,7 +385,12 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
       return;
     }
 
-    const slug = arizoneDraft.slug || slugifyArizoneTitle(resolvedTitle) || 'untitled';
+    const slug = slugifyArizoneTitle(arizoneDraft.slug || resolvedTitle);
+    if (!slug) {
+      setArizoneSaving(false);
+      setArizoneError('Please enter an English folder name before saving.');
+      return;
+    }
     const storagePrefix = blogStoragePrefix || 'arizone';
     const payload = {
       title: resolvedTitle,
@@ -389,7 +420,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
       return;
     }
 
-    const nextPost = normalizeArizoneDraft(data.post || payload);
+    const nextPost = isArichuvadiSection ? normalizeArichuvadiDraft(data.post || payload) : normalizeArizoneDraft(data.post || payload);
     setArizonePosts((prev) => {
       const withoutCurrent = prev.filter((post) => Number(post.id) !== Number(nextPost.id));
       return [nextPost, ...withoutCurrent].sort((a, b) => String(a.publishedAt || '').localeCompare(String(b.publishedAt || '')) * -1);
@@ -483,7 +514,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
       throw new Error('Please enter a post name before uploading the cover image.');
     }
 
-    const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(resolvedTitle) || 'untitled';
+    const nextSlug = slugifyArizoneTitle(arizoneDraft.slug || resolvedTitle);
+    if (!nextSlug) {
+      throw new Error('Please enter an English folder name for this post.');
+    }
     return uploadArizoneAsset(file, 'cover', {
       targetPath: `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`,
     });
@@ -501,28 +535,43 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
 
             <form className="contact-card" onSubmit={saveArizonePost}>
               <p className="contact-note" style={{ marginTop: 0 }}>
-                Add or edit a post. Keep the fields simple: name, cover image, and the markdown article.
+                Add or edit a post. Give the post a Tamil title and an English name. The English name becomes the slug, folder, and endpoint.
               </p>
-              <label htmlFor="arizone-title">Name</label>
+              <label htmlFor="arizone-title">Post title</label>
               <input
                 id="arizone-title"
                 type="text"
                 value={arizoneDraft.title}
                 onChange={(event) => setArizoneDraft((prev) => {
                   const nextTitle = event.target.value;
-                  const nextSlug = prev.id ? prev.slug : (slugifyArizoneTitle(nextTitle) || 'untitled');
+                  const nextSlug = prev.id
+                    ? prev.slug
+                    : (isArichuvadiSection
+                        ? slugifyArizoneTitle(nextTitle)
+                        : (slugifyArizoneTitle(nextTitle) || 'untitled'));
                   return {
                     ...prev,
                     title: nextTitle,
                     slug: nextSlug,
-                    storageFolder: `${blogStoragePrefix}/posts/${nextSlug}`,
-                    coverImagePath: prev.coverImagePath || `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`,
+                    storageFolder: nextSlug ? `${blogStoragePrefix}/posts/${nextSlug}` : '',
+                    coverImagePath: nextSlug ? (prev.coverImagePath || `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`) : prev.coverImagePath,
                   };
                 })}
-                placeholder="Post title"
+                placeholder={isArichuvadiSection ? 'நிலவினும் அழகிய முகம்' : 'Post title'}
                 required
               />
-
+              <label htmlFor="arizone-slug">English name</label>
+              <input
+                id="arizone-slug"
+                type="text"
+                value={arizoneDraft.slug}
+                onChange={(event) => updateField('slug', event.target.value)}
+                placeholder="oyvu-naal"
+                required
+              />
+              <p className="contact-note">
+                Use an English name like <code>oyvu-naal</code>. It will be used for <code>arichuvadi/posts/oyvu-naal</code> and the post endpoint.
+              </p>
               <label htmlFor="arizone-category-select">Category</label>
               <select
                 id="arizone-category-select"
@@ -643,7 +692,10 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                   if (!resolvedTitle) {
                     throw new Error('Please enter a post name before uploading inline images.');
                   }
-                  const nextSlug = arizoneDraft.slug || slugifyArizoneTitle(resolvedTitle) || 'untitled';
+                  const nextSlug = slugifyArizoneTitle(arizoneDraft.slug || resolvedTitle);
+                  if (!nextSlug) {
+                    throw new Error('Please enter an English folder name before uploading inline images.');
+                  }
                   const safeName = String(file?.name || 'image')
                     .replace(/\.[^.]+$/, '')
                     .normalize('NFKD')

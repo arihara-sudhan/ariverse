@@ -1,9 +1,24 @@
 import Head from 'next/head';
 import { ArichuvadiPostView } from '../../src/components/ArichuvadiBlog';
-import { getArichuvadiPostBySlug } from '../../lib/arichuvadiData';
+import { getArichuvadiPostBySlug, listArichuvadiPosts } from '../../lib/arichuvadiData';
 import { ARICHUVADI_SITE_LOGO_URL } from '../../lib/arichuvadiAssets';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../../lib/pageCache';
 
-export async function getServerSideProps(context) {
+export async function getStaticPaths() {
+  const posts = await listArichuvadiPosts();
+
+  return {
+    paths: Array.isArray(posts)
+      ? posts
+          .map((post) => String(post?.slug || '').trim())
+          .filter(Boolean)
+          .map((slug) => ({ params: { slug } }))
+      : [],
+    fallback: 'blocking',
+  };
+}
+
+export async function getStaticProps(context) {
   const slug = context?.params?.slug;
   const post = await getArichuvadiPostBySlug(slug);
 
@@ -20,6 +35,7 @@ export async function getServerSideProps(context) {
       initialComments: [],
       initialLikesCount: 0,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
@@ -29,9 +45,6 @@ export default function ArichuvadiPostPage({ post, initialComments, initialLikes
       <Head>
         <title>{post?.title ? `${post.title} | அரிச்சுவடி` : 'அரிச்சுவடி'}</title>
         <meta name="description" content={post?.summary || post?.title || 'அரிச்சுவடி பதிவு.'} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet" />
         <link rel="icon" href={ARICHUVADI_SITE_LOGO_URL} />
         <link rel="apple-touch-icon" href={ARICHUVADI_SITE_LOGO_URL} />
       </Head>

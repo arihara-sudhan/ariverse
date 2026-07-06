@@ -103,7 +103,8 @@ footer {
   padding: 2rem 1.25rem 4rem;
 }
 
-.home-loading-screen {
+.home-loading-screen,
+.route-loading-screen {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -115,7 +116,8 @@ footer {
   -webkit-backdrop-filter: blur(6px);
 }
 
-.home-loading-screen__title {
+.home-loading-screen__title,
+.route-loading-screen__title {
   font-family: var(--font-headline);
   font-size: clamp(2.6rem, 8vw, 5rem);
   font-weight: 800;

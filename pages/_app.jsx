@@ -1,7 +1,7 @@
 import '../src/styles.css';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toPublicStorageUrl } from '../lib/storage';
 
 const SITE_TITLE = 'AriVerse';
@@ -12,6 +12,29 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   const pathname = String(router.pathname || '');
   const isNoIndexRoute = pathname.startsWith('/admin');
+  const [routeLoadingLabel, setRouteLoadingLabel] = useState('');
+
+  useEffect(() => {
+    const handleRouteStart = (url) => {
+      if (String(url || '').startsWith('/arichuvadi')) {
+        setRouteLoadingLabel('ARICHUVADI');
+      }
+    };
+
+    const handleRouteDone = () => {
+      setRouteLoadingLabel('');
+    };
+
+    router.events.on('routeChangeStart', handleRouteStart);
+    router.events.on('routeChangeComplete', handleRouteDone);
+    router.events.on('routeChangeError', handleRouteDone);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteStart);
+      router.events.off('routeChangeComplete', handleRouteDone);
+      router.events.off('routeChangeError', handleRouteDone);
+    };
+  }, [router.events]);
 
   useEffect(() => {
     if (IS_INSPECTABLE) {
@@ -86,6 +109,11 @@ export default function App({ Component, pageProps }) {
         <link rel="icon" href={SITE_IMAGE} />
         <link rel="apple-touch-icon" href={SITE_IMAGE} />
       </Head>
+      {routeLoadingLabel ? (
+        <div className="route-loading-screen" aria-live="polite" aria-label={`Loading ${routeLoadingLabel}`}>
+          <div className="route-loading-screen__title">{routeLoadingLabel}</div>
+        </div>
+      ) : null}
       <Component {...pageProps} />
     </>
   );

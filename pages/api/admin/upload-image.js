@@ -151,7 +151,10 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   }
 
   if (sectionFolder === 'arichuvadi') {
-    const postFolder = titleBase || baseName || 'untitled';
+    const postFolder = titleBase;
+    if (!postFolder) {
+      return '';
+    }
     if (titleFolder === 'hero') {
       return `arichuvadi/hero${ext}`;
     }
@@ -305,6 +308,11 @@ export default async function handler(req, res) {
     const fileName = explicitPath || (isCleanSectionPath(currentPath, sectionFolder)
       ? replaceBlobExt(currentPath, outputExt)
       : buildBlobPath({ section, sectionHref, title, category, subcategory, baseName, ext: outputExt }));
+
+    if (!fileName && sectionFolder === 'arichuvadi') {
+      res.status(400).json({ error: 'Arichuvadi uploads need a post name before they can be stored.' });
+      return;
+    }
 
     if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
       res.status(413).json({ error: 'File too large.' });

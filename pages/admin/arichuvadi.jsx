@@ -163,16 +163,22 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
       setError('Please enter a post name before saving.');
       return;
     }
+    const resolvedSlug = slugifyText(String(draft.slug || '').trim() || resolvedTitle);
+    if (!resolvedSlug) {
+      setSaving(false);
+      setError('Please enter an English folder name for this post.');
+      return;
+    }
 
     const paths = buildArichuvadiPathsFromDraft(draft);
     const payload = {
       ...draft,
       ...paths,
       title: resolvedTitle,
-      slug: draft.slug || slugifyText(resolvedTitle),
-      storageFolder: `arichuvadi/posts/${draft.slug || slugifyText(resolvedTitle)}`,
-      contentPath: `arichuvadi/posts/${draft.slug || slugifyText(resolvedTitle)}/content.md`,
-      coverImagePath: draft.coverImagePath || `arichuvadi/posts/${draft.slug || slugifyText(resolvedTitle)}/images/cover.webp`,
+      slug: resolvedSlug,
+      storageFolder: `arichuvadi/posts/${resolvedSlug}`,
+      contentPath: `arichuvadi/posts/${resolvedSlug}/content.md`,
+      coverImagePath: draft.coverImagePath || `arichuvadi/posts/${resolvedSlug}/images/cover.webp`,
       isPublished: Boolean(draft.isPublished),
     };
 
@@ -229,20 +235,20 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
   function updateField(name, value) {
     setDraft((prev) => {
       if (name === 'title') {
-        const nextSlug = selectedId ? prev.slug : (slugifyText(value) || String(value || '').trim() || 'untitled');
+        const nextSlug = selectedId ? prev.slug : slugifyText(value);
         return {
           ...prev,
           title: value,
           slug: nextSlug,
-          coverImagePath: prev.coverImagePath || `arichuvadi/posts/${nextSlug}/images/cover.webp`,
+          coverImagePath: nextSlug ? (prev.coverImagePath || `arichuvadi/posts/${nextSlug}/images/cover.webp`) : prev.coverImagePath,
         };
       }
       if (name === 'slug') {
-        const nextSlug = slugifyText(value) || String(value || '').trim() || 'untitled';
+        const nextSlug = slugifyText(value);
         return {
           ...prev,
           slug: nextSlug,
-          coverImagePath: prev.coverImagePath || `arichuvadi/posts/${nextSlug}/images/cover.webp`,
+          coverImagePath: nextSlug ? (prev.coverImagePath || `arichuvadi/posts/${nextSlug}/images/cover.webp`) : prev.coverImagePath,
         };
       }
       return { ...prev, [name]: value };
@@ -298,8 +304,11 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
       throw new Error('Please enter a post name before uploading the cover image.');
     }
 
-    const nextSlug = draft.slug || slugifyText(resolvedTitle) || 'untitled';
-    return uploadArichuvadiAsset(file, 'cover', `arichuvadi/posts/${nextSlug}/images/cover.webp`);
+    const nextSlug = slugifyText(draft.slug || resolvedTitle);
+    if (!nextSlug) {
+      throw new Error('Please enter an English folder name for this post.');
+    }
+    return uploadArichuvadiAsset(file, resolvedTitle, `arichuvadi/posts/${nextSlug}/images/cover.webp`);
   }
 
   return (
@@ -328,17 +337,18 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
           ) : (
             <>
               <form className="contact-card" onSubmit={savePost}>
-                <label htmlFor="arichuvadi-title">Display title</label>
+                <label htmlFor="arichuvadi-title">Post name</label>
                 <input
                   id="arichuvadi-title"
                   type="text"
                   value={draft.title}
                   onChange={(event) => updateField('title', event.target.value)}
-                  placeholder="Post title"
+                  placeholder="Post name"
                   required
                 />
+                <p className="contact-note">This is the name you will keep for the post. It is used to build the folder and URL slug.</p>
 
-                <label htmlFor="arichuvadi-slug">English name</label>
+                <label htmlFor="arichuvadi-slug">Folder / URL name</label>
                 <input
                   id="arichuvadi-slug"
                   type="text"
@@ -356,7 +366,7 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
                   type="file"
                   accept="image/*"
                   style={{ display: 'none' }}
-                  onChange={async (event) => {
+                onChange={async (event) => {
                     const file = event.target.files?.[0] || null;
                     if (!file) return;
                     try {
@@ -382,19 +392,22 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
                   label="Article"
                   value={draft.contentMarkdown}
                   onChange={(value) => updateField('contentMarkdown', value)}
-                  onUploadImage={async (file) => {
+                onUploadImage={async (file) => {
                     const resolvedTitle = String(draft.title || '').trim() || ensureArichuvadiDraftTitle();
                     if (!resolvedTitle) {
                       throw new Error('Please enter a post name before uploading inline images.');
                     }
-                    const nextSlug = draft.slug || slugifyText(resolvedTitle) || 'untitled';
+                    const nextSlug = slugifyText(draft.slug || resolvedTitle);
+                    if (!nextSlug) {
+                      throw new Error('Please enter an English folder name for this post.');
+                    }
                     const safeName = String(file?.name || 'image')
                       .replace(/\.[^.]+$/, '')
                       .normalize('NFKD')
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/g, '-')
                       .replace(/^-+|-+$/g, '') || 'image';
-                    return uploadArichuvadiAsset(file, safeName, `arichuvadi/posts/${nextSlug}/images/${safeName}.webp`);
+                    return uploadArichuvadiAsset(file, resolvedTitle, `arichuvadi/posts/${nextSlug}/images/${safeName}.webp`);
                   }}
                 />
 

@@ -1,4 +1,5 @@
 import { listFeatureImages, listVisibleProfileLinks } from '../lib/adminData';
+import Link from 'next/link';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { HOME_HERO_IMAGE_URL, toPublicStorageUrl } from '../lib/storage';
 import Header from '../src/components/Header';
@@ -956,6 +957,20 @@ export default function HomePage({ profileLinks, featureImages }) {
                       link.label === 'Works' || link.label === 'Experience'
                         ? 'Career'
                         : link.label;
+
+                    if (safeHref === '/arichuvadi' && !isExternal) {
+                      return (
+                        <Link
+                          key={link.id}
+                          className="category-link-shimmer"
+                          href={safeHref}
+                          prefetch
+                          scroll={false}
+                        >
+                          {displayLabel}
+                        </Link>
+                      );
+                    }
 
                     return (
                       <a

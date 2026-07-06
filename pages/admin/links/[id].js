@@ -563,7 +563,15 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                 id="arizone-slug"
                 type="text"
                 value={arizoneDraft.slug}
-                onChange={(event) => updateField('slug', event.target.value)}
+                onChange={(event) => setArizoneDraft((prev) => {
+                  const nextSlug = String(event.target.value || '').trim();
+                  return {
+                    ...prev,
+                    slug: nextSlug,
+                    storageFolder: nextSlug ? `${blogStoragePrefix}/posts/${nextSlug}` : '',
+                    coverImagePath: nextSlug ? (prev.coverImagePath || `${blogStoragePrefix}/posts/${nextSlug}/images/cover.webp`) : prev.coverImagePath,
+                  };
+                })}
                 placeholder="oyvu-naal"
                 required
               />

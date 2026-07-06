@@ -244,7 +244,7 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
         };
       }
       if (name === 'slug') {
-        const nextSlug = slugifyText(value);
+        const nextSlug = String(value || '').trim();
         return {
           ...prev,
           slug: nextSlug,

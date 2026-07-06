@@ -546,9 +546,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                   const nextTitle = event.target.value;
                   const nextSlug = prev.id
                     ? prev.slug
-                    : (isArichuvadiSection
-                        ? slugifyArizoneTitle(nextTitle)
-                        : (slugifyArizoneTitle(nextTitle) || 'untitled'));
+                    : (isArichuvadiSection ? prev.slug : (slugifyArizoneTitle(nextTitle) || 'untitled'));
                   return {
                     ...prev,
                     title: nextTitle,
@@ -569,9 +567,6 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                 placeholder="oyvu-naal"
                 required
               />
-              <p className="contact-note">
-                Use an English name like <code>oyvu-naal</code>. It will be used for <code>arichuvadi/posts/oyvu-naal</code> and the post endpoint.
-              </p>
               <label htmlFor="arizone-category-select">Category</label>
               <select
                 id="arizone-category-select"

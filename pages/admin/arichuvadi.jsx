@@ -235,7 +235,7 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
   function updateField(name, value) {
     setDraft((prev) => {
       if (name === 'title') {
-        const nextSlug = selectedId ? prev.slug : slugifyText(value);
+        const nextSlug = selectedId ? prev.slug : prev.slug;
         return {
           ...prev,
           title: value,

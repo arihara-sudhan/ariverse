@@ -2,8 +2,9 @@ import Head from 'next/head';
 import { AriZoneIndexView } from '../../src/components/AriZoneBlog';
 import { listArizoneCategories, listArizonePosts } from '../../lib/arizoneData';
 import { ARIZONE_SITE_LOGO_URL } from '../../lib/arizoneAssets';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../../lib/pageCache';
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const [posts, categories] = await Promise.all([listArizonePosts(), listArizoneCategories()]);
 
   return {
@@ -11,6 +12,7 @@ export async function getServerSideProps() {
       posts,
       categories,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

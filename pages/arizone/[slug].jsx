@@ -1,10 +1,24 @@
 import Head from 'next/head';
 import { AriZonePostView } from '../../src/components/AriZoneBlog';
-import { getArizonePostBySlug } from '../../lib/arizoneData';
-import { listContentComments, listContentEntryReactions } from '../../lib/adminData';
+import { getArizonePostBySlug, listArizonePosts } from '../../lib/arizoneData';
 import { ARIZONE_SITE_LOGO_URL } from '../../lib/arizoneAssets';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../../lib/pageCache';
 
-export async function getServerSideProps(context) {
+export async function getStaticPaths() {
+  const posts = await listArizonePosts();
+
+  return {
+    paths: Array.isArray(posts)
+      ? posts
+          .map((post) => String(post?.slug || '').trim())
+          .filter(Boolean)
+          .map((slug) => ({ params: { slug } }))
+      : [],
+    fallback: 'blocking',
+  };
+}
+
+export async function getStaticProps(context) {
   const slug = context?.params?.slug;
   const post = await getArizonePostBySlug(slug);
 
@@ -17,9 +31,11 @@ export async function getServerSideProps(context) {
   return {
     props: {
       post,
-      initialComments: await listContentComments({ sectionKey: 'arizone', entryId: post.id }),
-      initialLikesCount: (await listContentEntryReactions({ sectionKey: 'arizone', entryIds: [post.id] }))?.[post.id]?.likesCount || 0,
+      // Let the client fetch live social state after the post HTML is already visible.
+      initialComments: [],
+      initialLikesCount: 0,
     },
+    revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 

@@ -286,6 +286,12 @@ function ArichuvadiThemeStyles() {
         margin: 0 0 1rem;
       }
 
+      .arizone-shell .post-content hr {
+        border: 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.2);
+        margin: 1.4rem 0;
+      }
+
       .arizone-shell .post-content img {
         display: block;
         max-width: 100%;

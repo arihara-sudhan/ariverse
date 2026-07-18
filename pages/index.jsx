@@ -48,6 +48,18 @@ function formatTestimonialRole(role) {
   if (!cleanRole) return '';
   return cleanRole.startsWith("Ari's ") ? cleanRole : `Ari's ${cleanRole}`;
 }
+
+function stableImageIndex(images) {
+  const key = (Array.isArray(images) ? images : [])
+    .map((image) => `${image?.src || ''}:${image?.alt || ''}`)
+    .join('|');
+  let hash = 0;
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+  }
+  return images.length > 0 ? hash % images.length : 0;
+}
+
 const WELCOME_MESSAGES = [
   { lang: 'en', text: 'Welcome to ARIVERSE...' },
   { lang: 'ta', text: 'அரிவெர்சுக்கு வரவேற்கிறோம்...' }
@@ -116,9 +128,7 @@ export default function HomePage({ profileLinks, featureImages }) {
         alt: 'Feature image',
       })).filter((image) => image.src)
     : DEFAULT_FEATURE_IMAGES;
-  const [featureImage] = useState(() => (
-    featureImagePool[Math.floor(Math.random() * featureImagePool.length)] || DEFAULT_FEATURE_IMAGES[0]
-  ));
+  const featureImage = featureImagePool[stableImageIndex(featureImagePool)] || DEFAULT_FEATURE_IMAGES[0];
   const [isHomeReady, setIsHomeReady] = useState(false);
   const quotePanelRef = useRef(null);
   const quoteBlobRef = useRef(null);

@@ -1,16 +1,7 @@
 import Header from '../../src/components/Header';
 import LikeButton from '../../src/components/LikeButton';
 import DiscussionThread from '../../src/components/DiscussionThread';
-import { listContentEntryReactions, listProjectComments, listProjectEntries } from '../../lib/adminData';
-
-function slugify(input) {
-  return (
-    String(input || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'project'
-  );
-}
+import { getProjectEntryBySlug, listContentEntryReactions, listProjectComments } from '../../lib/adminData';
 
 function toLines(text) {
   return String(text || '')
@@ -69,15 +60,16 @@ function renderReadme(text) {
 }
 
 export async function getServerSideProps({ params }) {
-  const projects = await listProjectEntries();
   const slug = String(params?.slug || '');
-  const project = (projects || []).find((item) => slugify(item.title) === slug) || null;
+  const project = await getProjectEntryBySlug(slug);
   if (!project) return { notFound: true };
-  const comments = await listProjectComments(project.id);
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'projects',
-    entryIds: [project.id],
-  });
+  const [comments, likesByEntry] = await Promise.all([
+    listProjectComments(project.id),
+    listContentEntryReactions({
+      sectionKey: 'projects',
+      entryIds: [project.id],
+    }),
+  ]);
   return { props: { project, comments, likesByEntry } };
 }
 

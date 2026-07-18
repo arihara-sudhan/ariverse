@@ -19,8 +19,7 @@ function prettyCategoryLabel(category) {
   if (key === 'all') return 'All';
   if (key === 'machine-learning') return 'Deep Learning';
   if (key === 'web') return 'Web Technology';
-  if (key === 'biology') return 'Biology';
-  if (key === 'general') return 'General';
+  if (key === 'biology-general' || key === 'biology' || key === 'general') return 'Biology General';
   if (key === 'python') return 'Python';
   if (key === 'tamizh') return 'Tamil';
   return category;

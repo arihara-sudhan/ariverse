@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/router';
+import Link from 'next/link';
 import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
@@ -18,9 +18,7 @@ export async function getStaticProps() {
 }
 
 export default function ProjectsPage({ hero, projects, likesByEntry }) {
-  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('ALL');
-  const [loadingProjectId, setLoadingProjectId] = useState(null);
   const heroHeading = String(hero?.heading || '').trim() || "#Ari'sProjects";
   const heroDescription = String(hero?.description || '').trim() || 'Lorem ipsum as description';
   const heroQuote = String(hero?.quote || '').trim() || 'lorm ipsum for hero text';
@@ -41,16 +39,6 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'project';
-
-  async function openProject(project) {
-    const slug = slugify(project.title);
-    setLoadingProjectId(project.id);
-    try {
-      await router.push(`/projects/${slug}`);
-    } catch (_error) {
-      setLoadingProjectId(null);
-    }
-  }
 
   return (
     <div className="site">
@@ -127,14 +115,13 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
                           storageNamespace="projects"
                           className="projects-like"
                         />
-                        <button
-                          type="button"
+                        <Link
                           className="projects-open-btn"
-                          onClick={() => openProject(project)}
-                          disabled={loadingProjectId === project.id}
+                          href={`/projects/${slugify(project.title)}`}
+                          prefetch
                         >
-                          {loadingProjectId === project.id ? 'Loading' : 'Open'}
-                        </button>
+                          Open
+                        </Link>
                       </div>
                     </div>
                   </div>

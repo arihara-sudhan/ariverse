@@ -1726,31 +1726,6 @@ footer {
 
 .aris-books-grid-wrap .books-read-filters {
   margin: 0 0 1rem;
-  gap: 0.55rem;
-}
-
-.aris-books-grid-wrap .books-filter-btn {
-  border: 1px solid #cfd6de;
-  background: linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%);
-  color: #1f2937;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
-  transition: all 0.2s ease;
-}
-
-.aris-books-grid-wrap .books-filter-btn:hover {
-  border-color: #98a2b3;
-  transform: translateY(-1px);
-}
-
-.aris-books-grid-wrap .books-filter-btn.is-active {
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-  border-color: #0f172a;
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25);
 }
 
 .aris-books-grid {
@@ -2452,8 +2427,17 @@ body.mini-project-open-body::-webkit-scrollbar {
 }
 
 .binomial-like .like-button {
+  margin-top: 0;
+  border: 1px solid #ddd8d3;
+  background: transparent;
+  color: #111111;
   padding: 0.22rem 0.46rem;
   font-size: 0.8rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
 }
 
 .binomial-comments {

@@ -14,14 +14,38 @@ function toWorkingBookUrl(url) {
   return input;
 }
 
-function prettyCategoryLabel(category) {
+const BOOK_CATEGORY_ALIASES = new Map([
+  ['all', 'all'],
+  ['machine-learning', 'machine-learning'],
+  ['machine learning', 'machine-learning'],
+  ['deep learning', 'machine-learning'],
+  ['deep-learning', 'machine-learning'],
+  ['deep learning fundamentals', 'machine-learning'],
+  ['web', 'web'],
+  ['web technology', 'web'],
+  ['web development', 'web'],
+  ['biology', 'biology-general'],
+  ['general', 'biology-general'],
+  ['biology general', 'biology-general'],
+  ['biology-general', 'biology-general'],
+  ['python', 'python'],
+  ['tamizh', 'tamil'],
+  ['tamil', 'tamil'],
+]);
+
+function normalizeBookCategoryKey(category) {
   const key = String(category || '').trim().toLowerCase();
+  return BOOK_CATEGORY_ALIASES.get(key) || key;
+}
+
+function prettyCategoryLabel(category) {
+  const key = normalizeBookCategoryKey(category);
   if (key === 'all') return 'All';
   if (key === 'machine-learning') return 'Deep Learning';
   if (key === 'web') return 'Web Technology';
-  if (key === 'biology-general' || key === 'biology' || key === 'general') return 'Biology General';
+  if (key === 'biology-general') return 'Biology General';
   if (key === 'python') return 'Python';
-  if (key === 'tamizh') return 'Tamil';
+  if (key === 'tamil') return 'Tamil';
   return category;
 }
 
@@ -42,13 +66,19 @@ export default function ArisBooksPage({ hero, books, likesByEntry }) {
   const safeBooks = Array.isArray(books) ? books : [];
   const heroQuote = String(hero?.quote || '').trim() || DEFAULT_ARIS_BOOKS_QUOTE;
   const categories = useMemo(() => {
-    const unique = Array.from(new Set(safeBooks.map((book) => (book?.tag || '').trim()).filter(Boolean)));
+    const unique = Array.from(
+      new Set(
+        safeBooks
+          .map((book) => normalizeBookCategoryKey(book?.tag))
+          .filter((value) => Boolean(value) && value !== 'all'),
+      ),
+    );
     return ['all', ...unique];
   }, [safeBooks]);
   const [activeCategory, setActiveCategory] = useState('all');
   const filteredBooks = useMemo(() => {
     if (activeCategory === 'all') return safeBooks;
-    return safeBooks.filter((book) => (book?.tag || '').trim() === activeCategory);
+    return safeBooks.filter((book) => normalizeBookCategoryKey(book?.tag) === activeCategory);
   }, [safeBooks, activeCategory]);
   return (
     <div className="site">

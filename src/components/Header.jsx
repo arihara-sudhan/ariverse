@@ -13,7 +13,7 @@ export default function Header({ subPage = false }) {
         <a href="https://github.com/arihara-sudhan" target="_blank" rel="noreferrer" aria-label="GitHub">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.61-3.37-1.18-3.37-1.18-.45-1.15-1.1-1.45-1.1-1.45-.9-.62.07-.61.07-.61 1 .07 1.52 1.03 1.52 1.03.89 1.52 2.33 1.08 2.9.82.09-.64.35-1.08.63-1.33-2.22-.25-4.56-1.1-4.56-4.94 0-1.1.39-2 1.03-2.7-.1-.25-.45-1.27.1-2.64 0 0 .85-.27 2.78 1.03A9.7 9.7 0 0 1 12 6.83c.85 0 1.7.12 2.5.36 1.93-1.3 2.77-1.03 2.77-1.03.56 1.37.21 2.39.11 2.64.64.7 1.03 1.6 1.03 2.7 0 3.85-2.34 4.69-4.57 4.93.36.31.67.92.67 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>
         </a>
-        <a href="https://twitter.com/TheDruidDroog" target="_blank" rel="noreferrer" aria-label="Twitter">
+        <a href="https://x.com/ariverXe" target="_blank" rel="noreferrer" aria-label="X">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.73L23.2 22h-6.25l-4.9-6.45L6.4 22H3.3l7.24-8.28L.8 2h6.4l4.43 5.85L18.9 2zm-1.1 18h1.73L6.23 3.9H4.37L17.8 20z"/></svg>
         </a>
         <a href="https://www.youtube.com/@ai_with_ari" target="_blank" rel="noreferrer" aria-label="YouTube">

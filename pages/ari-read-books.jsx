@@ -5,6 +5,8 @@ import LikeButton from '../src/components/LikeButton';
 import { getProfileLinkByLabel, getSectionHero, listBooksReadEntries, listContentEntryReactions } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
+const PAGE_SIZE = 10;
+
 export async function getStaticProps() {
   let entries = [];
   let hero = { heading: 'Books Read', imageUrl: '' };
@@ -45,6 +47,7 @@ function toParagraphs(text) {
 export default function AriReadBooksPage({ entries, hero, likesByEntry }) {
   const safeEntries = Array.isArray(entries) ? entries : [];
   const [activeCategory, setActiveCategory] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const categories = useMemo(
     () => Array.from(new Set(safeEntries.map((book) => (book.category || 'ENGLISH').toUpperCase()))),
     [safeEntries],
@@ -62,6 +65,17 @@ export default function AriReadBooksPage({ entries, hero, likesByEntry }) {
     if (!activeCategory) return safeEntries;
     return safeEntries.filter((book) => (book.category || 'ENGLISH').toUpperCase() === activeCategory);
   }, [activeCategory, safeEntries]);
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (safeCurrentPage - 1) * PAGE_SIZE;
+  const pagedEntries = useMemo(
+    () => filteredEntries.slice(pageStartIndex, pageStartIndex + PAGE_SIZE),
+    [filteredEntries, pageStartIndex],
+  );
+
+  function goToPage(nextPage) {
+    setCurrentPage(Math.min(Math.max(nextPage, 1), totalPages));
+  }
 
   const booksReadMetaBlock = (
     <div className="books-read-hero-meta">
@@ -79,14 +93,20 @@ export default function AriReadBooksPage({ entries, hero, likesByEntry }) {
           <button
             type="button"
             className={`books-filter-btn${activeCategory === 'ENGLISH' ? ' is-active' : ''}`}
-            onClick={() => setActiveCategory((prev) => (prev === 'ENGLISH' ? '' : 'ENGLISH'))}
+            onClick={() => {
+              setActiveCategory((prev) => (prev === 'ENGLISH' ? '' : 'ENGLISH'));
+              setCurrentPage(1);
+            }}
           >
             English ({categoryCounts.ENGLISH || 0})
           </button>
           <button
             type="button"
             className={`books-filter-btn${activeCategory === 'TAMIL' ? ' is-active' : ''}`}
-            onClick={() => setActiveCategory((prev) => (prev === 'TAMIL' ? '' : 'TAMIL'))}
+            onClick={() => {
+              setActiveCategory((prev) => (prev === 'TAMIL' ? '' : 'TAMIL'));
+              setCurrentPage(1);
+            }}
           >
             Tamil ({categoryCounts.TAMIL || 0})
           </button>
@@ -113,13 +133,13 @@ export default function AriReadBooksPage({ entries, hero, likesByEntry }) {
           <div className="books-read-meta-mobile">{booksReadMetaBlock}</div>
 
           <div className="books-read-list">
-            {filteredEntries.map((book, index) => (
+            {pagedEntries.map((book, index) => (
               <article key={book.id} className="books-read-card">
                 <figure className="books-read-cover">
                   <img loading="lazy" decoding="async" src={book.imageUrl} alt={book.title || 'Book cover'} />
                 </figure>
                 <div className="books-read-copy">
-                  <h3>{`${index + 1}. ${book.title}`}</h3>
+                  <h3>{`${pageStartIndex + index + 1}. ${book.title}`}</h3>
                   <div className="books-read-caption">
                     {toParagraphs(book.markdownText).map((line, idx) => (
                       <p key={`${book.id}-${idx}`}>{line}</p>
@@ -136,6 +156,30 @@ export default function AriReadBooksPage({ entries, hero, likesByEntry }) {
               </article>
             ))}
           </div>
+
+          {filteredEntries.length > PAGE_SIZE ? (
+            <div className="books-read-pagination" aria-label="Books read pagination">
+              <button
+                type="button"
+                className="books-read-pagination-btn"
+                onClick={() => goToPage(safeCurrentPage - 1)}
+                disabled={safeCurrentPage <= 1}
+              >
+                Previous
+              </button>
+              <p className="books-read-pagination-status">
+                Page {safeCurrentPage} of {totalPages}
+              </p>
+              <button
+                type="button"
+                className="books-read-pagination-btn"
+                onClick={() => goToPage(safeCurrentPage + 1)}
+                disabled={safeCurrentPage >= totalPages}
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
         </section>
       </main>
     </div>

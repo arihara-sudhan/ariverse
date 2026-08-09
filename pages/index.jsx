@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { HOME_HERO_IMAGE_URL, toPublicStorageUrl } from '../lib/storage';
 import Header from '../src/components/Header';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 const HERO_FLOWER_URL = toPublicStorageUrl('assets/glory-lily.jpg');
 const AALKAATTI_URL = toPublicStorageUrl('assets/aalkaatti.png');
 const CYNODON_BLOB_URL = 'https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/assets/cynodon-testimonial-image.webp';
@@ -47,17 +47,6 @@ function formatTestimonialRole(role) {
   const cleanRole = String(role || '').trim();
   if (!cleanRole) return '';
   return cleanRole.startsWith("Ari's ") ? cleanRole : `Ari's ${cleanRole}`;
-}
-
-function stableImageIndex(images) {
-  const key = (Array.isArray(images) ? images : [])
-    .map((image) => `${image?.src || ''}:${image?.alt || ''}`)
-    .join('|');
-  let hash = 0;
-  for (let index = 0; index < key.length; index += 1) {
-    hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
-  }
-  return images.length > 0 ? hash % images.length : 0;
 }
 
 const WELCOME_MESSAGES = [
@@ -117,18 +106,18 @@ export default function HomePage({ profileLinks, featureImages }) {
   const [isContactPaused, setIsContactPaused] = useState(false);
   const [mailState, setMailState] = useState('idle');
   const [mailMessage, setMailMessage] = useState('');
-  const [subscriptionState, setSubscriptionState] = useState('idle');
-  const [subscriptionMessage, setSubscriptionMessage] = useState('');
   const [testimonialState, setTestimonialState] = useState('idle');
   const [testimonialMessage, setTestimonialMessage] = useState('');
   const [isTypingPaused, setIsTypingPaused] = useState(false);
-  const featureImagePool = Array.isArray(featureImages) && featureImages.length > 0
-    ? featureImages.map((image) => ({
-        src: String(image?.imageUrl || '').trim(),
-        alt: 'Feature image',
-      })).filter((image) => image.src)
-    : DEFAULT_FEATURE_IMAGES;
-  const featureImage = featureImagePool[stableImageIndex(featureImagePool)] || DEFAULT_FEATURE_IMAGES[0];
+  const featureImagePool = useMemo(() => (
+    Array.isArray(featureImages) && featureImages.length > 0
+      ? featureImages.map((image) => ({
+          src: String(image?.imageUrl || '').trim(),
+          alt: 'Feature image',
+        })).filter((image) => image.src)
+      : DEFAULT_FEATURE_IMAGES
+  ), [featureImages]);
+  const [featureImage, setFeatureImage] = useState(featureImagePool[0] || DEFAULT_FEATURE_IMAGES[0]);
   const [isHomeReady, setIsHomeReady] = useState(false);
   const quotePanelRef = useRef(null);
   const quoteBlobRef = useRef(null);
@@ -139,7 +128,6 @@ export default function HomePage({ profileLinks, featureImages }) {
   const welcomeTransitionTimerRef = useRef(null);
   const contactResumeTimerRef = useRef(null);
   const mailResetTimerRef = useRef(null);
-  const subscriptionResetTimerRef = useRef(null);
   const testimonialResetTimerRef = useRef(null);
   const CAROUSEL_RESUME_DELAY_MS = 5000;
   const WELCOME_CROSSFADE_DELAY_MS = 5000;
@@ -310,9 +298,14 @@ export default function HomePage({ profileLinks, featureImages }) {
     }
 
     async function preloadHomepageAssets() {
+      const randomFeatureImage = featureImagePool.length > 0
+        ? featureImagePool[Math.floor(Math.random() * featureImagePool.length)]
+        : DEFAULT_FEATURE_IMAGES[0];
+      setFeatureImage(randomFeatureImage || DEFAULT_FEATURE_IMAGES[0]);
+
       const sources = [
         HOME_HERO_IMAGE_URL,
-        featureImage?.src,
+        randomFeatureImage?.src,
         CYNODON_BLOB_URL,
       ].filter(Boolean);
 
@@ -332,7 +325,7 @@ export default function HomePage({ profileLinks, featureImages }) {
     return () => {
       cancelled = true;
     };
-  }, [featureImage?.src]);
+  }, [featureImagePool]);
 
   useEffect(() => {
     function updateQuotePanelHeight() {
@@ -378,7 +371,6 @@ export default function HomePage({ profileLinks, featureImages }) {
       if (quoteTextClearTimerRef.current) clearTimeout(quoteTextClearTimerRef.current);
       if (contactResumeTimerRef.current) clearTimeout(contactResumeTimerRef.current);
       if (mailResetTimerRef.current) clearTimeout(mailResetTimerRef.current);
-      if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
       if (testimonialResetTimerRef.current) clearTimeout(testimonialResetTimerRef.current);
     },
     [],
@@ -389,56 +381,6 @@ export default function HomePage({ profileLinks, featureImages }) {
     setWelcomeOutgoingIndex(null);
     setIsWelcomeVisible(true);
   }, []);
-
-  async function handleSubscribeSubmit(event) {
-    event.preventDefault();
-    if (subscriptionState === 'sending') return;
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    setSubscriptionState('sending');
-    setSubscriptionMessage('Subscribing you to Ariverse...');
-
-    try {
-      const response = await fetch('/api/newsletter/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          email: String(formData.get('email') || '').trim(),
-        }),
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.error || 'Unable to subscribe right now.');
-      }
-
-      form.reset();
-      setSubscriptionState('success');
-      setSubscriptionMessage(payload?.message || 'Subscribed! You will receive Ariverse updates.');
-
-      if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
-      subscriptionResetTimerRef.current = setTimeout(() => {
-        setSubscriptionState('idle');
-        setSubscriptionMessage('');
-        subscriptionResetTimerRef.current = null;
-      }, 3500);
-    } catch (_error) {
-      setSubscriptionState('error');
-      setSubscriptionMessage('Unable to subscribe right now. Please try again.');
-
-      if (subscriptionResetTimerRef.current) clearTimeout(subscriptionResetTimerRef.current);
-      subscriptionResetTimerRef.current = setTimeout(() => {
-        setSubscriptionState('idle');
-        setSubscriptionMessage('');
-        subscriptionResetTimerRef.current = null;
-      }, 4500);
-    }
-  }
 
   async function handleTestimonialSubmit(event) {
     event.preventDefault();
@@ -495,72 +437,6 @@ export default function HomePage({ profileLinks, featureImages }) {
 
   const contactSlides = [
     {
-      eyebrow: 'leaf',
-      title: 'Drop ARI a message',
-      note: "Drop ARI a message and He'll get back to you!",
-      body: (
-        <form onSubmit={handleMailSubmit} onFocusCapture={handleTypingFocus} onBlurCapture={handleTypingBlur}>
-          <label htmlFor="contact-name">Your Name</label>
-          <input
-            id="contact-name"
-            name="name"
-            type="text"
-            placeholder="Your name"
-            required
-          />
-
-          <label htmlFor="contact-email">Your Email</label>
-          <input
-            id="contact-email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            required
-          />
-
-          <label htmlFor="contact-message">Your Message</label>
-          <textarea
-            id="contact-message"
-            name="message"
-            placeholder="Write your message here..."
-            rows="4"
-            required
-          />
-
-          <button type="submit" disabled={mailState === 'sending' || mailState === 'success'}>
-            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent \u2713' : 'Send Message'}
-          </button>
-          {mailMessage ? (
-            <p className={`contact-status ${mailState}`}>{mailMessage}</p>
-          ) : null}
-        </form>
-      ),
-    },
-    {
-      eyebrow: 'ember',
-      title: 'Subscribe to Ariverse',
-      note: 'Get updates when new career posts, projects, experiments, lectures, books, clay play, and books read entries are added.',
-      body: (
-        <form onSubmit={handleSubscribeSubmit} onFocusCapture={handleTypingFocus} onBlurCapture={handleTypingBlur}>
-          <label htmlFor="subscribe-email">Your Email</label>
-          <input
-            id="subscribe-email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            required
-          />
-
-          <button type="submit" disabled={subscriptionState === 'sending' || subscriptionState === 'success'}>
-            {subscriptionState === 'sending' ? 'Subscribing...' : subscriptionState === 'success' ? 'Subscribed \u2713' : 'Subscribe'}
-          </button>
-          {subscriptionMessage ? (
-            <p className={`contact-status ${subscriptionState}`}>{subscriptionMessage}</p>
-          ) : null}
-        </form>
-      ),
-    },
-    {
       eyebrow: 'petal',
       title: 'Share a testimonial for ARI',
       note: 'Tell ARI how you know him and what you feel about working, learning, or being with him.',
@@ -607,6 +483,48 @@ export default function HomePage({ profileLinks, featureImages }) {
           </button>
           {testimonialMessage ? (
             <p className={`contact-status ${testimonialState}`}>{testimonialMessage}</p>
+          ) : null}
+        </form>
+      ),
+    },
+    {
+      eyebrow: 'leaf',
+      title: 'Drop ARI a message',
+      note: "Drop ARI a message and He'll get back to you!",
+      body: (
+        <form onSubmit={handleMailSubmit} onFocusCapture={handleTypingFocus} onBlurCapture={handleTypingBlur}>
+          <label htmlFor="contact-name">Your Name</label>
+          <input
+            id="contact-name"
+            name="name"
+            type="text"
+            placeholder="Your name"
+            required
+          />
+
+          <label htmlFor="contact-email">Your Email</label>
+          <input
+            id="contact-email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            required
+          />
+
+          <label htmlFor="contact-message">Your Message</label>
+          <textarea
+            id="contact-message"
+            name="message"
+            placeholder="Write your message here..."
+            rows="4"
+            required
+          />
+
+          <button type="submit" disabled={mailState === 'sending' || mailState === 'success'}>
+            {mailState === 'sending' ? 'Sending...' : mailState === 'success' ? 'Sent \u2713' : 'Send Message'}
+          </button>
+          {mailMessage ? (
+            <p className={`contact-status ${mailState}`}>{mailMessage}</p>
           ) : null}
         </form>
       ),
@@ -975,7 +893,6 @@ export default function HomePage({ profileLinks, featureImages }) {
                           className="category-link-shimmer"
                           href={safeHref}
                           prefetch
-                          scroll={false}
                         >
                           {displayLabel}
                         </Link>

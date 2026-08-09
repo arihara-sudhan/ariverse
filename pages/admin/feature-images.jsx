@@ -6,20 +6,30 @@ import { listFeatureImages } from '../../lib/adminData';
 
 export async function getServerSideProps({ req }) {
   const isAuthed = isAdminRequest(req);
-  const initialImages = isAuthed ? await listFeatureImages() : [];
+  let initialImages = [];
+  let initialError = '';
+
+  if (isAuthed) {
+    try {
+      initialImages = await listFeatureImages();
+    } catch (_error) {
+      initialError = 'Feature images are temporarily unavailable because the database could not be reached.';
+    }
+  }
 
   return {
     props: {
       isAuthed,
       initialImages,
+      initialError,
     },
   };
 }
 
-export default function FeatureImagesAdminPage({ isAuthed, initialImages }) {
+export default function FeatureImagesAdminPage({ isAuthed, initialImages, initialError }) {
   const [authed, setAuthed] = useState(isAuthed);
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError || '');
   const [images, setImages] = useState(initialImages);
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);

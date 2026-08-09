@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const COMMENTER_TOKEN_STORAGE_KEY = 'ariverse_commenter_token_v1';
+const EMPTY_OBJECT = Object.freeze({});
 
 function formatRelativeTime(value) {
   const dt = new Date(value);
@@ -49,8 +50,8 @@ export default function DiscussionThread({
   endpoint,
   itemId,
   itemIdField = 'projectEntryId',
-  queryParams = {},
-  extraPayload = {},
+  queryParams = EMPTY_OBJECT,
+  extraPayload = EMPTY_OBJECT,
   initialComments = [],
   namePlaceholder = 'உங்கள் பெயர் (கட்டாயமில்லை)',
   commentPlaceholder = 'Share your thoughts',
@@ -67,21 +68,35 @@ export default function DiscussionThread({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [commenterToken, setCommenterToken] = useState('');
-  const queryParamsKey = useMemo(() => JSON.stringify(queryParams || {}), [queryParams]);
+  const queryParamsKey = useMemo(() => JSON.stringify(queryParams || EMPTY_OBJECT), [queryParams]);
+  const extraPayloadKey = useMemo(() => JSON.stringify(extraPayload || EMPTY_OBJECT), [extraPayload]);
+  const stableQueryParams = useMemo(() => queryParams || EMPTY_OBJECT, [queryParamsKey]);
+  const stableExtraPayload = useMemo(() => extraPayload || EMPTY_OBJECT, [extraPayloadKey]);
+  const commentsUrl = useMemo(() => {
+    if (!commenterToken || !endpoint) return '';
+    return buildCommentsUrl({
+      endpoint,
+      itemIdField,
+      itemId,
+      queryParams: stableQueryParams,
+      commenterToken,
+      extraPayload: stableExtraPayload,
+    });
+  }, [commenterToken, endpoint, itemIdField, itemId, queryParamsKey, extraPayloadKey]);
 
   useEffect(() => {
     setCommenterToken(getOrCreateCommenterToken());
   }, []);
 
   useEffect(() => {
-    if (!commenterToken || !endpoint) return;
-    fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken, extraPayload }))
+    if (!commentsUrl) return;
+    fetch(commentsUrl)
       .then((res) => res.json())
       .then((data) => {
         setComments(Array.isArray(data.comments) ? data.comments : []);
       })
       .catch(() => null);
-  }, [commenterToken, endpoint, itemIdField, itemId, queryParamsKey, extraPayload]);
+  }, [commentsUrl]);
 
   const commentTree = useMemo(() => {
     const roots = comments.filter((item) => !item.parentCommentId);
@@ -136,7 +151,7 @@ export default function DiscussionThread({
         setCommentText('');
       }
       setNotice(data.message || 'Comment submitted for approval.');
-      const refresh = await fetch(buildCommentsUrl({ endpoint, itemIdField, itemId, queryParams, commenterToken, extraPayload }));
+      const refresh = await fetch(commentsUrl);
       const refreshData = await refresh.json().catch(() => ({}));
       if (refresh.ok && Array.isArray(refreshData.comments)) setComments(refreshData.comments);
     }

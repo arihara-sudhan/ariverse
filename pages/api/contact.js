@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { neon } from '@neondatabase/serverless';
+import { notifyAdminContactMessage } from '../../lib/formspree';
 import { checkRateLimit, enforceSameOriginWrite } from '../../lib/security';
 
 loadEnv({ path: path.join(process.cwd(), '.env') });
@@ -42,45 +43,6 @@ async function ensureContactTable() {
     )
   `;
   contactTableReady = true;
-}
-
-async function forwardViaResend({ name, email, subject, message }) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const toEmail = process.env.CONTACT_TO_EMAIL;
-  const fromEmail = process.env.CONTACT_FROM_EMAIL;
-
-  if (!resendApiKey || !toEmail || !fromEmail) {
-    return { delivered: false, skipped: true };
-  }
-
-  const plainText = [
-    `Name: ${name}`,
-    `Email: ${email}`,
-    '',
-    message,
-  ].join('\n');
-
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [toEmail],
-      reply_to: email,
-      subject: subject || 'New message from ARIVERSE contact form',
-      text: plainText,
-    }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    return { delivered: false, skipped: false, error: text || 'Mail provider error' };
-  }
-
-  return { delivered: true, skipped: false };
 }
 
 export default async function handler(req, res) {
@@ -131,10 +93,10 @@ export default async function handler(req, res) {
       `;
     }
 
-    const delivery = await forwardViaResend({ name, email, subject, message });
-    if (!delivery.delivered && !delivery.skipped) {
-      res.status(202).json({
-        message: 'Message received. ARI will get back to you soon.',
+    const delivery = await notifyAdminContactMessage({ name, email, subject, message });
+    if (!delivery.ok) {
+      res.status(502).json({
+        error: 'Your message was saved, but email delivery failed. Please try again shortly.',
       });
       return;
     }
@@ -144,4 +106,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Unable to send your message right now. Please try again.' });
   }
 }
-

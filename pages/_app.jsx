@@ -13,16 +13,51 @@ export default function App({ Component, pageProps }) {
   const pathname = String(router.pathname || '');
   const isNoIndexRoute = pathname.startsWith('/admin');
   const [routeLoadingLabel, setRouteLoadingLabel] = useState('');
+  const [routeLoadingMeta, setRouteLoadingMeta] = useState(null);
 
   useEffect(() => {
     const handleRouteStart = (url) => {
-      if (String(url || '').startsWith('/arichuvadi')) {
+      const nextUrl = String(url || '');
+      if (nextUrl.startsWith('/arichuvadi')) {
         setRouteLoadingLabel('ARICHUVADI');
+        setRouteLoadingMeta(null);
+        return;
+      }
+
+      if (nextUrl.startsWith('/projects/')) {
+        let loaderMeta = null;
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = window.sessionStorage.getItem('ariverse:route-loader');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.type === 'project') {
+                loaderMeta = {
+                  type: 'project',
+                  title: String(parsed.title || 'Project').trim() || 'Project',
+                  imageUrl: String(parsed.imageUrl || '').trim(),
+                };
+              }
+            }
+          } catch (_error) {
+            loaderMeta = null;
+          }
+        }
+        setRouteLoadingLabel('PROJECT');
+        setRouteLoadingMeta(loaderMeta);
       }
     };
 
     const handleRouteDone = () => {
       setRouteLoadingLabel('');
+      setRouteLoadingMeta(null);
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.removeItem('ariverse:route-loader');
+        } catch (_error) {
+          // ignore storage cleanup failures
+        }
+      }
     };
 
     router.events.on('routeChangeStart', handleRouteStart);
@@ -111,7 +146,26 @@ export default function App({ Component, pageProps }) {
       </Head>
       {routeLoadingLabel ? (
         <div className="route-loading-screen" aria-live="polite" aria-label={`Loading ${routeLoadingLabel}`}>
-          <div className="route-loading-screen__title">{routeLoadingLabel}</div>
+          {routeLoadingMeta?.type === 'project' ? (
+            <div className="route-loading-project">
+              {routeLoadingMeta.imageUrl ? (
+                <img
+                  className="route-loading-project__image"
+                  src={routeLoadingMeta.imageUrl}
+                  alt={routeLoadingMeta.title || 'Project image'}
+                />
+              ) : (
+                <div className="route-loading-project__placeholder" aria-hidden="true">No Image</div>
+              )}
+              <div className="route-loading-project__title">{routeLoadingMeta.title}</div>
+              <div className="route-loading-project__status" aria-hidden="true">
+                <span className="route-loading-project__dot" />
+                <span>Loading project</span>
+              </div>
+            </div>
+          ) : (
+            <div className="route-loading-screen__title">{routeLoadingLabel}</div>
+          )}
         </div>
       ) : null}
       <Component {...pageProps} />

@@ -41,7 +41,10 @@ export default async function handler(req, res) {
       }
 
       const result = await addContentEntryLike({ sectionKey: section, entryId, name, count });
-      res.status(200).json({ ok: true, likesCount: result.likesCount || 0 });
+      res.status(200).json({
+        ok: true,
+        likesCount: result.likesCount || 0,
+      });
       return;
     }
 

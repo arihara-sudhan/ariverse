@@ -1,5 +1,5 @@
 :root {
-  --bg: #f6f6f5;
+  --bg: #f0f0ec;
   --surface: #ffffff;
   --text: #131313;
   --muted: #646464;
@@ -9,9 +9,9 @@
   --color-gradient-amber: #b9852a;
   --color-gradient-gold: #d4af37;
   --color-gradient-sun: #f3d77a;
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-sans);
-  --font-headline: var(--font-sans);
+  --font-sans: "Raleway", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Merriweather", Georgia, serif;
+  --font-headline: "Raleway", ui-sans-serif, system-ui, sans-serif;
 }
 
 @font-face {
@@ -48,12 +48,41 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 42%);
+  background: radial-gradient(circle at top, #fcfcfb 0%, var(--bg) 42%);
   color: var(--text);
   font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.6;
   overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.brand,
+.eyebrow,
+.nav a,
+.nav-social a,
+.intro-social-links a,
+button,
+[type="button"],
+[type="submit"],
+[type="reset"] {
+  font-family: var(--font-headline);
+}
+
+input,
+textarea,
+select,
+label,
+p,
+li,
+blockquote,
+figcaption {
+  font-family: var(--font-body);
 }
 
 ::-webkit-scrollbar {
@@ -143,6 +172,67 @@ footer {
     goldShimmer 1.15s ease-in-out 1;
 }
 
+.route-loading-project {
+  width: min(78vw, 420px);
+  display: grid;
+  justify-items: center;
+  gap: 1.1rem;
+  text-align: center;
+  animation: fadeIn 280ms ease-out;
+}
+
+.route-loading-project__image,
+.route-loading-project__placeholder {
+  width: min(78vw, 320px);
+  height: min(78vw, 320px);
+  border-radius: 18px;
+  border: 1px solid #d9d4ca;
+  background: #ffffff;
+  display: block;
+  object-fit: contain;
+  box-shadow: 0 14px 36px rgba(17, 17, 17, 0.08);
+}
+
+.route-loading-project__placeholder {
+  display: grid;
+  place-items: center;
+  color: #6b6b6b;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.route-loading-project__title {
+  max-width: 28rem;
+  color: #151515;
+  font-family: var(--font-headline);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.route-loading-project__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #5b5b5b;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.route-loading-project__dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: #111111;
+  box-shadow: 0 0 0 rgba(17, 17, 17, 0.22);
+  animation: routeLoaderPulse 1.15s ease-in-out infinite;
+}
+
 @keyframes goldShimmer {
   0% {
     background-position: 0% 50%;
@@ -157,6 +247,24 @@ footer {
   100% {
     background-position: 160% 50%;
     filter: brightness(1);
+  }
+}
+
+@keyframes routeLoaderPulse {
+  0% {
+    transform: scale(0.88);
+    opacity: 0.72;
+    box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.22);
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 10px rgba(17, 17, 17, 0);
+  }
+  100% {
+    transform: scale(0.88);
+    opacity: 0.72;
+    box-shadow: 0 0 0 0 rgba(17, 17, 17, 0);
   }
 }
 
@@ -194,7 +302,7 @@ footer {
 }
 
 .nav a {
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   font-size: 0.86rem;
   color: var(--muted);
   transition: color 180ms ease;
@@ -354,7 +462,7 @@ footer {
   border-radius: 999px;
   background: #ffffff;
   color: #111111;
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 700;
   padding: 0.32rem 0.68rem;
@@ -443,7 +551,7 @@ footer {
 
 .quote-panel-author {
   margin: 0.7rem 0 0;
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1737,7 +1845,7 @@ footer {
   border-radius: 999px;
   background: #ffffff;
   color: #111111;
-  font-family: var(--font-body);
+  font-family: "Manrope", "Segoe UI", sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   padding: 0.55rem 0.9rem;
@@ -2025,7 +2133,7 @@ body.mini-project-open-body::-webkit-scrollbar {
   border-radius: 999px;
   background: #ffffff;
   color: #111111;
-  font-family: var(--font-body);
+  font-family: "Manrope", "Segoe UI", sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   padding: 0.55rem 0.9rem;

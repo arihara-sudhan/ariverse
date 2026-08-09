@@ -69,9 +69,9 @@ export default function LikeButton({
 }) {
   const entryKey = String(entryId);
   const storageKey = `ariverse:like-pending:${storageNamespace}`;
-  const flushTimerRef = useRef(null);
   const pendingDeltaRef = useRef(0);
   const countRequestRef = useRef(0);
+  const flushInFlightRef = useRef(false);
   const [count, setCount] = useState(() => {
     const pendingMap = readPendingMap(storageKey);
     const pendingDelta = toPositiveCount(pendingMap[entryKey]);
@@ -79,7 +79,6 @@ export default function LikeButton({
     return toPositiveCount(initialCount) + pendingDelta;
   });
   const [isFlushing, setIsFlushing] = useState(false);
-  const autoFlushDoneRef = useRef(false);
 
   useEffect(() => {
     const pendingMap = readPendingMap(storageKey);
@@ -116,20 +115,14 @@ export default function LikeButton({
     };
   }, [endpoint, entryId, section]);
 
-  useEffect(() => {
-    if (autoFlushDoneRef.current) return;
-    if (pendingDeltaRef.current <= 0) return;
-    autoFlushDoneRef.current = true;
-    flushPending(false);
-  }, [entryKey, endpoint, section, storageKey]);
+  function clearPendingDelta() {
+    pendingDeltaRef.current = 0;
+    writePendingMap(storageKey, { ...readPendingMap(storageKey), [entryKey]: 0 });
+  }
 
-  async function flushPending(useBeacon = false) {
+  async function flushPending({ useBeacon = false } = {}) {
     const delta = pendingDeltaRef.current;
-    if (!delta) return;
-    if (flushTimerRef.current) {
-      clearTimeout(flushTimerRef.current);
-      flushTimerRef.current = null;
-    }
+    if (!delta || flushInFlightRef.current) return;
 
     const payload = {
       action: 'like',
@@ -138,55 +131,36 @@ export default function LikeButton({
       count: delta,
     };
 
+    flushInFlightRef.current = true;
     setIsFlushing(true);
     try {
-      let ok = false;
       if (useBeacon && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-        ok = navigator.sendBeacon(
+        const queued = navigator.sendBeacon(
           endpoint,
           new Blob([JSON.stringify(payload)], { type: 'application/json' }),
         );
-      } else {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        });
-        ok = res.ok;
+        if (queued) {
+          clearPendingDelta();
+        }
+        return;
       }
 
-      if (ok) {
-        pendingDeltaRef.current = 0;
-        writePendingMap(storageKey, { ...readPendingMap(storageKey), [entryKey]: 0 });
-        try {
-          const response = await fetch(buildLikeQuery(endpoint, entryId, section), {
-            method: 'GET',
-            headers: { Accept: 'application/json' },
-          });
-          if (response.ok) {
-            const payload = await response.json();
-            const liveCount = readLikesCount(payload, entryId);
-            if (liveCount !== null) {
-              setCount(liveCount);
-            }
-          }
-        } catch (_error) {
-          // Keep the optimistic count if the refresh lookup fails.
-        }
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      });
+
+      if (res.ok) {
+        clearPendingDelta();
       }
     } catch (_error) {
       // Keep the queued delta in session storage so it can be retried.
     } finally {
+      flushInFlightRef.current = false;
       setIsFlushing(false);
     }
-  }
-
-  function scheduleFlush() {
-    if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-    flushTimerRef.current = setTimeout(() => {
-      flushPending(false);
-    }, 1200);
   }
 
   function handleLike() {
@@ -194,17 +168,16 @@ export default function LikeButton({
     pendingDeltaRef.current = nextDelta;
     setCount((current) => current + 1);
     writePendingMap(storageKey, { ...readPendingMap(storageKey), [entryKey]: nextDelta });
-    scheduleFlush();
   }
 
   useEffect(() => {
     const handlePageHide = () => {
-      flushPending(true);
+      flushPending({ useBeacon: true });
     };
 
     const handleVisibilityChange = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        flushPending(true);
+        flushPending({ useBeacon: true });
       }
     };
 
@@ -214,8 +187,7 @@ export default function LikeButton({
     return () => {
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-      flushPending(true);
+      flushPending({ useBeacon: false });
     };
   }, [entryKey, endpoint, storageKey]);
 

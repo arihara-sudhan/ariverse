@@ -40,6 +40,19 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'project';
 
+  function rememberProjectLoader(project) {
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem('ariverse:route-loader', JSON.stringify({
+        type: 'project',
+        title: String(project?.title || 'Project').trim() || 'Project',
+        imageUrl: String(project?.logo || '').trim(),
+      }));
+    } catch (_error) {
+      // Ignore storage failures and fall back to the default route loader.
+    }
+  }
+
   return (
     <div className="site">
       <Header subPage />
@@ -118,6 +131,7 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
                         <Link
                           className="projects-open-btn"
                           href={`/projects/${slugify(project.title)}`}
+                          onClick={() => rememberProjectLoader(project)}
                           prefetch
                         >
                           Open

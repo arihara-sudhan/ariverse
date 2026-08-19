@@ -100,7 +100,10 @@ export default function HomePage({ profileLinks, featureImages }) {
   const [quoteOutgoingIndex, setQuoteOutgoingIndex] = useState(null);
   const [isQuoteTextVisible, setIsQuoteTextVisible] = useState(true);
   const [quotePanelHeight, setQuotePanelHeight] = useState(null);
+  const [quoteCopyHeight, setQuoteCopyHeight] = useState(null);
   const [publicTestimonials, setPublicTestimonials] = useState([]);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isQuoteInViewport, setIsQuoteInViewport] = useState(false);
   const quoteSlides = [FIXED_TESTIMONIAL, ...publicTestimonials];
   const [contactIndex, setContactIndex] = useState(0);
   const [isContactPaused, setIsContactPaused] = useState(false);
@@ -133,8 +136,12 @@ export default function HomePage({ profileLinks, featureImages }) {
   const WELCOME_CROSSFADE_DELAY_MS = 5000;
   const WELCOME_CROSSFADE_MS = 360;
   const QUOTE_PANEL_GAP_PX = 16;
-  const TESTIMONIAL_SLIDE_INDEX = 2;
+  const MOBILE_QUOTE_COPY_CLEARANCE_PX = 88;
+  const MOBILE_QUOTE_ART_REVEAL_PX = 92;
+  const TESTIMONIAL_SLIDE_INDEX = 0;
   const hasPublicTestimonials = publicTestimonials.length > 0;
+  const isQuoteViewportPaused = isMobileViewport && isQuoteInViewport;
+  const isQuoteAnimationPaused = isQuotePaused || isQuoteViewportPaused;
 
   function clearCarouselResumeTimer(timerRef) {
     if (timerRef.current) {
@@ -283,6 +290,22 @@ export default function HomePage({ profileLinks, featureImages }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const mediaQuery = window.matchMedia('(max-width: 640px)');
+    const updateIsMobileViewport = (event) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener('change', updateIsMobileViewport);
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateIsMobileViewport);
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function preloadImage(src) {
@@ -340,7 +363,11 @@ export default function HomePage({ profileLinks, featureImages }) {
       }, 0);
 
       if (textHeights > 0) {
-        setQuotePanelHeight(Math.ceil(paddingTop + textHeights + QUOTE_PANEL_GAP_PX));
+        const bottomClearance = isMobileViewport ? MOBILE_QUOTE_COPY_CLEARANCE_PX : QUOTE_PANEL_GAP_PX;
+        const nextQuoteCopyHeight = Math.ceil(textHeights + bottomClearance);
+        const artReveal = isMobileViewport ? MOBILE_QUOTE_ART_REVEAL_PX : 0;
+        setQuoteCopyHeight(nextQuoteCopyHeight);
+        setQuotePanelHeight(Math.ceil(paddingTop + nextQuoteCopyHeight + artReveal));
       }
     }
 
@@ -355,13 +382,35 @@ export default function HomePage({ profileLinks, featureImages }) {
       window.removeEventListener('resize', updateQuotePanelHeight);
       blob?.removeEventListener('load', updateQuotePanelHeight);
     };
-  }, [quoteSlides.length]);
+  }, [isMobileViewport, quoteSlides.length]);
 
   useEffect(() => {
     setQuoteIndex(0);
     setQuoteOutgoingIndex(null);
     setIsQuoteTextVisible(true);
   }, [publicTestimonials.length]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const panel = quotePanelRef.current;
+    if (!panel) return undefined;
+
+    const observer = new window.IntersectionObserver(
+      ([entry]) => {
+        setIsQuoteInViewport(Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.3));
+      },
+      {
+        threshold: [0, 0.3, 1],
+      },
+    );
+
+    observer.observe(panel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(
     () => () => {
@@ -552,14 +601,14 @@ export default function HomePage({ profileLinks, featureImages }) {
   }, [contactSlides.length, isContactPaused, isTypingPaused]);
 
   useEffect(() => {
-    if (isQuotePaused || isTypingPaused || quoteSlides.length <= 1) return undefined;
+    if (isQuoteAnimationPaused || isTypingPaused || quoteSlides.length <= 1) return undefined;
 
     const timer = setInterval(() => {
       transitionToQuoteSlide((quoteIndex + 1) % quoteSlides.length);
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [isQuotePaused, isTypingPaused, quoteIndex, quoteSlides.length]);
+  }, [isQuoteAnimationPaused, isTypingPaused, quoteIndex, quoteSlides.length]);
 
   function handleQuoteCardClick() {
     setIsQuotePaused(true);
@@ -567,11 +616,13 @@ export default function HomePage({ profileLinks, featureImages }) {
   }
 
   function handleQuoteMouseEnter() {
+    if (isMobileViewport) return;
     setIsQuotePaused(true);
     clearCarouselResumeTimer(quoteResumeTimerRef);
   }
 
   function handleQuoteMouseLeave() {
+    if (isMobileViewport) return;
     if (!isQuotePaused) return;
     scheduleCarouselResume(setIsQuotePaused, quoteResumeTimerRef);
   }
@@ -735,14 +786,14 @@ export default function HomePage({ profileLinks, featureImages }) {
 
         <div
           ref={quotePanelRef}
-          className={`quote-panel ${isQuotePaused ? 'is-paused' : ''}`}
+          className={`quote-panel ${isQuoteAnimationPaused ? 'is-paused' : ''}`}
           aria-label="Timeless quotes"
           onMouseEnter={handleQuoteMouseEnter}
           onMouseLeave={handleQuoteMouseLeave}
           onClick={handleQuoteCardClick}
           role="button"
           tabIndex={0}
-          aria-pressed={isQuotePaused}
+          aria-pressed={isQuoteAnimationPaused}
           onKeyDown={(event) => {
             if (shouldIgnoreCarouselKey(event)) return;
             if (event.key === 'Enter' || event.key === ' ') {
@@ -750,7 +801,14 @@ export default function HomePage({ profileLinks, featureImages }) {
               handleQuoteCardClick();
             }
           }}
-          style={quotePanelHeight ? { height: `${quotePanelHeight}px` } : undefined}
+          style={
+            quotePanelHeight
+              ? {
+                  height: `${quotePanelHeight}px`,
+                  '--quote-panel-copy-height': quoteCopyHeight ? `${quoteCopyHeight}px` : undefined,
+                }
+              : undefined
+          }
         >
           {quoteOutgoingIndex !== null ? (
             <div
@@ -811,7 +869,7 @@ export default function HomePage({ profileLinks, featureImages }) {
             ))}
           </div>
 
-          <div className={`quote-panel-controls ${isQuotePaused ? 'is-visible' : ''}`} aria-label="Quote navigation">
+          <div className={`quote-panel-controls ${isQuoteAnimationPaused ? 'is-visible' : ''}`} aria-label="Quote navigation">
             {quoteIndex > 0 ? (
               <button
                 type="button"
@@ -847,7 +905,7 @@ export default function HomePage({ profileLinks, featureImages }) {
 
           <button
             type="button"
-            className={`quote-panel-write-btn ${isQuotePaused ? 'is-visible' : ''}`}
+            className={`quote-panel-write-btn ${isQuoteAnimationPaused ? 'is-visible' : ''}`}
             onClick={(event) => {
               event.stopPropagation();
               goToContactSlide(TESTIMONIAL_SLIDE_INDEX);

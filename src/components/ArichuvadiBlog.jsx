@@ -686,6 +686,7 @@ export function ArichuvadiPostView({ post, initialComments = [], initialLikesCou
                 extraPayload={{ section: 'arichuvadi' }}
                 itemId={normalizedPost.id}
                 initialComments={initialComments}
+                namePlaceholder="உங்கள் பெயர் (கட்டாயமில்லை)"
                 commentPlaceholder="உங்கள் கருத்தை எழுதுங்கள்"
                 submitLabel="கருத்தை பதிவு செய்யவும்"
               />

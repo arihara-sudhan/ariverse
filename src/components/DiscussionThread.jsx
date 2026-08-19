@@ -53,7 +53,7 @@ export default function DiscussionThread({
   queryParams = EMPTY_OBJECT,
   extraPayload = EMPTY_OBJECT,
   initialComments = [],
-  namePlaceholder = 'உங்கள் பெயர் (கட்டாயமில்லை)',
+  namePlaceholder = 'Your name (optional)',
   commentPlaceholder = 'Share your thoughts',
   submitLabel = 'Post Comment',
 }) {

@@ -1,81 +1,8 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero } from '../lib/adminData';
+import { getProfileLinkByLabel, getSectionHero, getSkillsetEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { ICON_BRAND_COLORS, SKILL_ICONS, getSkillIconKey } from '../src/data/skillsetIcons';
-
-const SKILL_CATEGORIES = [
-  {
-    name: 'Machine Learning Foundations',
-    eyebrow: 'Core stack',
-    description:
-      'Python-first experimentation workflow for notebooks, numerical computing, environment management, and model prototyping.',
-    skills: ['Python Core', 'Anaconda', 'NumPy', 'Jupyter'],
-  },
-  {
-    name: 'Deep Learning',
-    eyebrow: 'Neural systems',
-    description:
-      'Building and iterating on neural networks with tensor-based training loops and practical experimentation discipline.',
-    skills: ['PyTorch'],
-  },
-  {
-    name: 'Generative AI',
-    eyebrow: 'LLM orchestration',
-    description:
-      'Composing prompt-driven applications, chaining model calls, and shaping agent-style workflows for intelligent products.',
-    skills: ['LangChain'],
-  },
-  {
-    name: 'Computer Vision',
-    eyebrow: 'Perception',
-    description:
-      'Image understanding and visual processing pipelines for detection, analysis, and camera-facing AI experiences.',
-    skills: ['OpenCV'],
-  },
-  {
-    name: 'Programming Foundations',
-    eyebrow: 'Core engineering',
-    description:
-      'Strong base across systems and application programming, supporting problem solving from low-level logic to typed web code.',
-    skills: ['C Programming', 'Core Java', 'Vanilla JS', 'TypeScript'],
-  },
-  {
-    name: 'Frontend Engineering',
-    eyebrow: 'Interface systems',
-    description:
-      'Crafting responsive interfaces and component-driven applications with modern styling and state management patterns.',
-    skills: ['HTML', 'CSS', 'Bootstrap', 'Tailwind CSS', 'ReactJS', 'Redux'],
-  },
-  {
-    name: 'Backend & APIs',
-    eyebrow: 'Service layer',
-    description:
-      'Designing server-side applications and API layers across JavaScript and Python frameworks for product and data workflows.',
-    skills: ['Node JS', 'ExpressJS', 'FastAPI', 'Flask', 'Django'],
-  },
-  {
-    name: 'Data & Persistence',
-    eyebrow: 'Storage layer',
-    description:
-      'Working with relational and document databases to support application state, querying, and structured data management.',
-    skills: ['MySQL', 'MongoDB'],
-  },
-  {
-    name: 'Cloud, DevOps & Collaboration',
-    eyebrow: 'Delivery',
-    description:
-      'Versioning, containerization, cloud deployment, and team workflows that keep software reliable and shippable.',
-    skills: ['Docker', 'Git', 'GitHub', 'GitLab', 'AWS', 'Azure'],
-  },
-  {
-    name: 'Automation & Creative Tech',
-    eyebrow: 'Extended toolkit',
-    description:
-      'Workflow automation and visual production tools that expand software work into robotics, 3D, and post-production.',
-    skills: ['UIPath', 'Blender', 'Davinci Resolve'],
-  },
-];
 
 const DEFAULT_SKILLSET_DESCRIPTION =
   'A category-led map of my technical stack across AI, software engineering, data systems, delivery, and creative tooling.';
@@ -83,13 +10,14 @@ const DEFAULT_SKILLSET_QUOTE = 'The more I learn, the more I can create';
 
 export async function getStaticProps() {
   const link = await getProfileLinkByLabel('Skillset');
+  const skillCategories = await getSkillsetEntries();
   const hero = link
     ? await getSectionHero(link.id, '#AriSkills')
     : { heading: '#AriSkills', description: '', imageUrl: '' };
-  return { props: { hero }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  return { props: { hero, skillCategories }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
-export default function SkillsetPage({ hero }) {
+export default function SkillsetPage({ hero, skillCategories = [] }) {
   const heroQuote = String(hero?.quote || '').trim() || DEFAULT_SKILLSET_QUOTE;
 
   return (
@@ -111,31 +39,32 @@ export default function SkillsetPage({ hero }) {
         </section>
 
         <section className="skillset-bands" aria-label="Skill categories">
-          {SKILL_CATEGORIES.map((category, index) => (
+          {skillCategories.map((category, index) => (
             <article
-              key={category.name}
+              key={category.id || category.skillname}
               className="skill-band"
               style={{ '--band-delay': `${index * 90}ms` }}
             >
               <div className="skill-band-copy">
-                <p className="skill-band-eyebrow">{category.eyebrow}</p>
-                <h2>{category.name}</h2>
+                <p className="skill-band-eyebrow">{category.title}</p>
+                <h2>{category.skillname}</h2>
                 <p>{category.description}</p>
               </div>
 
               <div className="skill-band-meta">
                 <div className="skill-band-skills">
-                  {category.skills.map((skill) => {
-                    const iconKey = getSkillIconKey(skill);
+                  {category.skillsSvgList.map((skillKey) => {
+                    const iconKey = getSkillIconKey(skillKey);
                     const icon = iconKey ? SKILL_ICONS[iconKey] : null;
                     const brandColor = iconKey ? ICON_BRAND_COLORS[iconKey] || '#191919' : '#191919';
+                    const iconTitle = icon?.title || String(skillKey || '').replace(/[-_]+/g, ' ').trim();
 
                     return (
                       <span
-                        key={skill}
+                        key={skillKey}
                         className={`skill-pill${icon ? '' : ' skill-pill-fallback'}`}
-                        aria-label={skill}
-                        title={skill}
+                        aria-label={iconTitle}
+                        title={iconTitle}
                         style={{ '--skill-brand': brandColor }}
                       >
                         {icon ? (
@@ -147,7 +76,7 @@ export default function SkillsetPage({ hero }) {
                             </svg>
                           )
                         ) : (
-                          <strong>{skill.split(' ').map((part) => part[0]).join('').slice(0, 2)}</strong>
+                          <strong>{iconTitle.split(' ').map((part) => part[0]).join('').slice(0, 2)}</strong>
                         )}
                       </span>
                     );

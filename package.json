@@ -6,6 +6,7 @@
         "dev": "next dev --webpack",
         "build": "next build",
         "start": "next start",
+        "test": "node --test tests/ari-xpands-core.test.mjs",
         "resume:images": "node scripts/generate-resume-images.mjs",
         "audit:media-urls": "node scripts/audit-media-urls.mjs",
         "dump:neon": "node scripts/dump-neon-all-tables.mjs",

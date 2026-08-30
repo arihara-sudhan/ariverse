@@ -168,6 +168,17 @@ export default function AdminPage({ isAuthed, initialLinks, awaitingApprovalsCou
                 </Link>
               </article>
 
+              <article className="playlist-card">
+                <Link href="/admin/ari-xpands">
+                  <h3>ARI XPands</h3>
+                </Link>
+                <p>Learning journeys, questions, evidence, and logs.</p>
+                <p>Create an Xpand from title only.</p>
+                <Link className="ai-channel-subscribe" href="/admin/ari-xpands">
+                  Open ARI XPands
+                </Link>
+              </article>
+
               <div className="playlist-grid">
                 {isLoadingLinks && <p className="contact-note">Loading section links...</p>}
                 {links.map((link) => {

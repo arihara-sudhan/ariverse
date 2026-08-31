@@ -62,7 +62,6 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PASSIONAL' },
   { id: 'f-experiments', label: 'Experiments', href: '/aris-xperiments', category: 'PASSIONAL' },
   { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PROFESSIONAL' },
-  { id: 'f-ari-xpands', label: 'ARI XPands', href: '/ari-xpands', category: 'PASSIONAL' },
   { id: 'f-my-books', label: 'My Books', href: '/aris-books', category: 'PASSIONAL' },
   { id: 'f-shelf', label: 'Shelf', href: '/aris-shelf', category: 'PASSIONAL' },
   { id: 'f-blog', label: 'Arichuvadi', href: '/arichuvadi', category: 'HOBBYAL' },
@@ -694,7 +693,10 @@ export default function HomePage({ profileLinks, featureImages }) {
           isHidden: 0,
         },
       ];
-  const visibleLinks = normalizedLinks.filter((link) => String(link.label || '').trim() !== 'Arichuvadu');
+  const visibleLinks = normalizedLinks.filter((link) => {
+    const label = String(link.label || '').trim();
+    return label !== 'Arichuvadu' && label !== 'ARI XPands';
+  });
   const preferredOrder = [
     'Career',
     'Works',
@@ -702,7 +704,6 @@ export default function HomePage({ profileLinks, featureImages }) {
     'Skillset',
     'Projects',
     'Mini-Projects',
-    'ARI XPands',
     'Resume',
     'Experiments',
     'Guest Lectures',

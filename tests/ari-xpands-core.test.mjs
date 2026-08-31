@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  getMonthBounds,
   normalizeSlugBase,
+  normalizeMonthKey,
   parseDurationToMinutes,
   parseQuickLogInput,
   resolveDuplicateSlug,
@@ -36,6 +38,23 @@ test('duration parser rejects invalid values', () => {
   assert.equal(parseDurationToMinutes('0m'), null);
   assert.equal(parseDurationToMinutes('abc'), null);
   assert.equal(parseDurationToMinutes('1 hour'), null);
+});
+
+test('month helpers normalize and bound valid month keys', () => {
+  assert.equal(normalizeMonthKey('2026-09'), '2026-09');
+  assert.equal(normalizeMonthKey('2026-13'), '');
+  assert.equal(normalizeMonthKey('nope'), '');
+
+  assert.deepEqual(getMonthBounds('2026-09'), {
+    monthKey: '2026-09',
+    startDate: '2026-09-01',
+    endDateExclusive: '2026-10-01',
+  });
+  assert.deepEqual(getMonthBounds('2026-12'), {
+    monthKey: '2026-12',
+    startDate: '2026-12-01',
+    endDateExclusive: '2027-01-01',
+  });
 });
 
 test('quick log parser supports one command', () => {

@@ -1,14 +1,13 @@
 import Head from 'next/head';
 import Header from '../../src/components/Header';
 import { AriXpandsIndexView } from '../../src/components/AriXpandsPublic';
-import { getXpandsGlobalStats, listXpands } from '../../lib/ariXpands';
+import { listXpands } from '../../lib/ariXpands';
 import { getProfileLinkByHref, getSectionHero } from '../../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../../lib/pageCache';
 
 export async function getStaticProps() {
-  const [xpands, stats, link] = await Promise.all([
+  const [xpands, link] = await Promise.all([
     listXpands({ includePrivate: false }),
-    getXpandsGlobalStats(),
     getProfileLinkByHref('/ari-xpands'),
   ]);
   const hero = link
@@ -23,14 +22,13 @@ export async function getStaticProps() {
   return {
     props: {
       xpands,
-      stats,
       hero,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function AriXpandsIndexPage({ xpands, stats, hero }) {
+export default function AriXpandsIndexPage({ xpands, hero }) {
   const description = String(hero?.description || '').trim()
     || 'A living record of things Ari is learning, building, questioning, and exploring.';
 
@@ -40,9 +38,9 @@ export default function AriXpandsIndexPage({ xpands, stats, hero }) {
         <title>ARI XPands | AriVerse</title>
         <meta name="description" content={description} />
       </Head>
-      <div className="site ari-xpands-site">
+      <div className="site">
         <Header subPage />
-        <AriXpandsIndexView xpands={xpands} stats={stats} hero={hero} />
+        <AriXpandsIndexView xpands={xpands} hero={hero} />
       </div>
     </>
   );

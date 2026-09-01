@@ -69,7 +69,6 @@ function XpandCard({ xpand }) {
       <h2>{xpand.title}</h2>
       <p>{summary}</p>
       <div className="ari-xpand-list-card__meta">
-        {xpand.startDate ? <span>Started {formatDate(xpand.startDate)}</span> : null}
         <span>{xpand.stats?.daysLogged || 0} logged days</span>
         <span>{formatHours(xpand.stats?.timeSpentMinutes || 0)}</span>
       </div>
@@ -92,45 +91,28 @@ function SnippetList({ label, items = [] }) {
 }
 
 function LogSnippet({ log }) {
-  const title = log.title || 'Snippet';
+  const outcome = Array.isArray(log.failed) && log.failed.length > 0 ? 'failure' : 'success';
+  const outcomeLabel = outcome === 'failure' ? 'Failure' : 'Success';
+  const noteText = String(log.freeformNote || log.summary || '').trim();
+
   return (
-    <article className="ari-xpand-snippet">
+    <article className={`ari-xpand-snippet ari-xpand-snippet--${outcome}`}>
       <div className="ari-xpand-snippet__head">
-        <h2>{title}</h2>
+        <span className={`ari-xpand-snippet__status ari-xpand-snippet__status--${outcome}`}>{outcomeLabel}</span>
         <span>{formatDate(log.date)}</span>
       </div>
-      {log.summary ? <p className="ari-xpand-snippet__summary">{log.summary}</p> : null}
       <div className="ari-xpand-snippet__body">
-        <SnippetList label="Done" items={log.done} />
-        <SnippetList label="Learned" items={log.learned} />
-        <SnippetList label="Questions" items={log.questions} />
-        <SnippetList label="Failed" items={log.failed} />
-        <SnippetList label="Blockers" items={log.blockers} />
-        <SnippetList label="Next" items={log.next} />
+        {noteText ? <p className="ari-xpand-snippet__summary">{noteText}</p> : <p className="ari-xpand-snippet__summary">No note for this day.</p>}
       </div>
-      {log.timeSpentMinutes > 0 ? (
-        <p className="ari-xpand-snippet__time">Time invested: {formatHours(log.timeSpentMinutes)}</p>
-      ) : null}
-      <MarkdownBlock value={log.freeformNote} />
     </article>
   );
 }
 
 function MonthPagination({ slug, months = [], selectedMonth = '' }) {
   if (!Array.isArray(months) || months.length === 0) return null;
-  const currentIndex = months.findIndex((entry) => entry.monthKey === selectedMonth);
-  const newerMonth = currentIndex > 0 ? months[currentIndex - 1] : null;
-  const olderMonth = currentIndex >= 0 && currentIndex < months.length - 1 ? months[currentIndex + 1] : null;
 
   return (
     <div className="ari-xpands-month-nav">
-      <div className="ari-xpands-month-nav__top">
-        <strong>{formatMonthLabel(selectedMonth)}</strong>
-        <div className="ari-xpands-month-nav__arrows">
-          {newerMonth ? <Link href={buildMonthHref(slug, newerMonth.monthKey)}>Newer</Link> : <span>Newer</span>}
-          {olderMonth ? <Link href={buildMonthHref(slug, olderMonth.monthKey)}>Older</Link> : <span>Older</span>}
-        </div>
-      </div>
       <div className="ari-xpands-month-nav__list">
         {months.map((entry) => (
           <Link
@@ -211,7 +193,6 @@ export function AriXpandDetailView({ xpand }) {
             {xpand.subtitle ? <p className="ari-xpands-detail-hero__subtitle">{xpand.subtitle}</p> : null}
             <div className="ari-xpand-detail-shell__chips">
               <span>{xpand.status}</span>
-              {xpand.startDate ? <span>Started {formatDate(xpand.startDate)}</span> : null}
               {xpand.lastTouched ? <span>Last touched {formatDate(xpand.lastTouched)}</span> : null}
             </div>
             {xpand.description ? (
@@ -235,9 +216,6 @@ export function AriXpandDetailView({ xpand }) {
               {logs.map((log, index) => (
                 <div key={log.id || `${log.date}-${index}`} className="ari-xpand-snippet-stack__item">
                   <LogSnippet log={log} />
-                  {index < logs.length - 1 ? (
-                    <div className="ari-xpand-snippet-stack__arrow" aria-hidden="true">&darr;</div>
-                  ) : null}
                 </div>
               ))}
             </div>

@@ -38,7 +38,7 @@ export default function AriXpandsIndexPage({ xpands, hero }) {
         <title>ARI XPands | AriVerse</title>
         <meta name="description" content={description} />
       </Head>
-      <div className="site">
+      <div className="site ari-xpand-page-shell">
         <Header subPage />
         <AriXpandsIndexView xpands={xpands} hero={hero} />
       </div>

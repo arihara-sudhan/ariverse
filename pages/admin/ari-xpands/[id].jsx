@@ -79,6 +79,7 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
   });
   const [dailyNote, setDailyNote] = useState(buildDailyNoteDraft());
   const [saving, setSaving] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [info, setInfo] = useState('');
   const [error, setError] = useState('');
 
@@ -125,6 +126,27 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
     await reloadXpand();
     setSaving(false);
     setInfo('Xpand settings saved.');
+  }
+
+  async function uploadCoverImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('section', 'ARI XPands');
+    formData.append('sectionHref', '/ari-xpands');
+    formData.append('title', settings.title || xpand.title || 'cover');
+    if (settings.coverImage) {
+      formData.append('currentUrl', settings.coverImage);
+    }
+
+    const response = await fetch('/api/admin/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || 'Cover upload failed.');
+    }
+    return payload.imageUrl;
   }
 
   async function saveDailyNote(event) {
@@ -245,8 +267,30 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
             <input id="xpand-tags" value={settings.tags} onChange={(event) => setSettings((prev) => ({ ...prev, tags: event.target.value }))} placeholder="cuda, gpu, systems" />
             <label htmlFor="xpand-cover-image">Cover image URL</label>
             <input id="xpand-cover-image" value={settings.coverImage} onChange={(event) => setSettings((prev) => ({ ...prev, coverImage: event.target.value }))} />
+            <label htmlFor="xpand-cover-image-upload">Cover image upload</label>
+            <input
+              id="xpand-cover-image-upload"
+              type="file"
+              accept="image/*"
+              onChange={async (event) => {
+                const files = Array.from(event.target.files || []);
+                if (files.length === 0) return;
+                setUploadingCover(true);
+                setInfo('');
+                setError('');
+                try {
+                  const uploadedUrl = await uploadCoverImage(files[0]);
+                  setSettings((prev) => ({ ...prev, coverImage: uploadedUrl }));
+                  setInfo('Cover image uploaded.');
+                } catch (uploadError) {
+                  setError(uploadError.message || 'Cover upload failed.');
+                } finally {
+                  setUploadingCover(false);
+                }
+              }}
+            />
             <div className="admin-item-actions">
-              <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Settings'}</button>
+              <button type="submit" disabled={saving || uploadingCover}>{saving ? 'Saving...' : uploadingCover ? 'Uploading...' : 'Save Settings'}</button>
               <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={archiveXpandNow} disabled={saving}>Archive</button>
               <button type="button" className="playlist-watch-btn admin-item-action-btn" onClick={deleteXpandNow} disabled={saving}>Delete</button>
             </div>

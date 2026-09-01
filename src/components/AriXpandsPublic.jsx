@@ -26,16 +26,6 @@ function formatMonthLabel(monthKey) {
   }).format(date);
 }
 
-function formatHours(minutes = 0) {
-  const total = Number(minutes) || 0;
-  if (total <= 0) return '0h';
-  const hours = Math.floor(total / 60);
-  const mins = total % 60;
-  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
-  if (hours > 0) return `${hours}h`;
-  return `${mins}m`;
-}
-
 function excerptText(value, maxLength = 170) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   if (!text) return '';
@@ -57,20 +47,18 @@ function MarkdownBlock({ value = '' }) {
 }
 
 function XpandCard({ xpand }) {
-  const summary = xpand.subtitle || excerptText(xpand.description) || 'Open the monthly log snippets.';
-  const monthLabel = formatDate(xpand.lastTouched);
+  const summary = xpand.subtitle || excerptText(xpand.description);
 
   return (
     <Link className="ari-xpand-list-card" href={`/ari-xpands/${xpand.slug}`}>
-      <div className="ari-xpand-list-card__top">
-        <span className="ari-xpand-list-card__status">{xpand.status}</span>
-        {monthLabel ? <span className="ari-xpand-list-card__date">{monthLabel}</span> : null}
-      </div>
-      <h2>{xpand.title}</h2>
-      <p>{summary}</p>
-      <div className="ari-xpand-list-card__meta">
-        <span>{xpand.stats?.daysLogged || 0} logged days</span>
-        <span>{formatHours(xpand.stats?.timeSpentMinutes || 0)}</span>
+      {xpand.coverImage ? (
+        <div className="ari-xpand-list-card__media">
+          <img src={xpand.coverImage} alt={xpand.title} />
+        </div>
+      ) : null}
+      <div className="ari-xpand-list-card__copy">
+        <h2>{xpand.title}</h2>
+        {summary ? <p>{summary}</p> : null}
       </div>
     </Link>
   );
@@ -151,14 +139,6 @@ export function AriXpandsIndexView({ xpands = [], hero = {} }) {
       </section>
 
       <section className="ari-xpands-index-section">
-        <div className="ari-xpands-section-head">
-          <div>
-            <p className="eyebrow">Published journeys</p>
-            <h2>XPands</h2>
-          </div>
-          <p>{hasXpands ? `${xpands.length} public xpands` : 'No public xpands yet.'}</p>
-        </div>
-
         {hasXpands ? (
           <div className="ari-xpands-list">
             {xpands.map((xpand) => (
@@ -191,15 +171,7 @@ export function AriXpandDetailView({ xpand }) {
             </p>
             <h1 id="ari-xpand-detail-title">{xpand.title}</h1>
             {xpand.subtitle ? <p className="ari-xpands-detail-hero__subtitle">{xpand.subtitle}</p> : null}
-            <div className="ari-xpand-detail-shell__chips">
-              <span>{xpand.status}</span>
-              {xpand.lastTouched ? <span>Last touched {formatDate(xpand.lastTouched)}</span> : null}
-            </div>
-            {xpand.description ? (
-              <MarkdownBlock value={xpand.description} />
-            ) : (
-              <p className="ari-xpands-detail-hero__subtitle">A focused learning journey.</p>
-            )}
+            {xpand.description ? <MarkdownBlock value={xpand.description} /> : null}
           </div>
           {xpand.coverImage ? (
             <div className="ari-xpands-detail-hero__cover">

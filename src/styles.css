@@ -4851,6 +4851,13 @@ body.mini-project-open-body::-webkit-scrollbar {
   gap: 1rem;
 }
 
+.ari-xpand-snippet-stack {
+  border: 1px solid #dddddd;
+  border-radius: 0;
+  background: #ffffff;
+  padding: 1rem 1.1rem;
+}
+
 .ari-xpands-section-head,
 .ari-xpands-admin-group__head,
 .ari-xpand-list-card__top,
@@ -4896,25 +4903,41 @@ body.mini-project-open-body::-webkit-scrollbar {
   border: 1px solid #dddddd;
   border-radius: 18px;
   background: #ffffff;
-  box-shadow: 0 16px 40px rgba(17, 17, 17, 0.06);
+  box-shadow: none;
 }
 
 .ari-xpand-list-card {
   padding: 1.25rem;
   display: grid;
-  gap: 0.9rem;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
   text-decoration: none;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
-.ari-xpand-list-card:hover,
-.ari-xpand-list-card:focus-visible {
-  transform: translateY(-2px);
-  border-color: #c8b27a;
-  box-shadow: 0 24px 44px rgba(17, 17, 17, 0.1);
+.ari-xpand-list-card__media {
+  width: 7rem;
+  height: 7rem;
+  overflow: hidden;
+  border-radius: 0;
+  background: #ffffff;
+}
+
+.ari-xpand-list-card__media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.ari-xpand-list-card__copy {
+  display: grid;
+  gap: 0.6rem;
+  align-content: center;
 }
 
 .ari-xpand-list-card h2 {
+  margin: 0;
   font-size: 1.45rem;
   line-height: 1.08;
 }
@@ -5050,18 +5073,19 @@ body.mini-project-open-body::-webkit-scrollbar {
 }
 
 .ari-xpand-snippet {
-  padding: 1rem 1.1rem;
-  border: 1px solid #d7d7d7;
+  padding: 0;
+  border: none;
   border-radius: 0;
   box-shadow: none;
-  background: #ffffff;
+  background: transparent;
   display: grid;
   gap: 0.9rem;
 }
 
 .ari-xpand-snippet__head {
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 0.35rem;
 }
 
 .ari-xpand-snippet__head h2 {
@@ -5202,6 +5226,16 @@ body.mini-project-open-body::-webkit-scrollbar {
     align-items: start;
   }
 
+  .ari-xpand-list-card {
+    grid-template-columns: 1fr;
+  }
+
+  .ari-xpand-list-card__media {
+    width: min(100%, 9rem);
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
   .ari-xpands-detail-hero__copy {
     justify-items: center;
     text-align: center;
@@ -5222,6 +5256,7 @@ body.mini-project-open-body::-webkit-scrollbar {
     max-width: 90vw;
     margin: 0 auto;
     justify-self: center;
+    padding: 0.8rem 0.85rem;
   }
 
   .ari-xpand-snippet-stack__item,
@@ -5231,15 +5266,13 @@ body.mini-project-open-body::-webkit-scrollbar {
   }
 
   .ari-xpand-snippet {
-    padding: 0.8rem 0.85rem;
     justify-items: center;
   }
 
   .ari-xpand-snippet__head {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     width: 100%;
+    justify-content: flex-start;
+    align-items: center;
   }
 
   .ari-xpands-detail-hero__copy h1 {

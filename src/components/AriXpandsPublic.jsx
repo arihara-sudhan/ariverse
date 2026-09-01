@@ -1,18 +1,11 @@
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { formatReadableDate } from '../../lib/ariXpandsCore.mjs';
 import SectionHero from './SectionHero';
 
 function formatDate(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
+  return formatReadableDate(value, { timeZone: 'Asia/Kolkata' });
 }
 
 function formatMonthLabel(monthKey) {
@@ -169,13 +162,15 @@ export function AriXpandDetailView({ xpand }) {
             <p className="eyebrow">
               <Link href="/ari-xpands">ARI XPands</Link> / {xpand.slug}
             </p>
-            <h1 id="ari-xpand-detail-title">{xpand.title}</h1>
+            <h1 id="ari-xpand-detail-title" className="ari-xpands-detail-hero__title">#{xpand.title}</h1>
             {xpand.subtitle ? <p className="ari-xpands-detail-hero__subtitle">{xpand.subtitle}</p> : null}
             {xpand.description ? <MarkdownBlock value={xpand.description} /> : null}
           </div>
           {xpand.coverImage ? (
-            <div className="ari-xpands-detail-hero__cover">
-              <img src={xpand.coverImage} alt={xpand.title} />
+            <div className="ari-xpands-detail-hero__media">
+              <div className="ari-xpands-detail-hero__cover">
+                <img src={xpand.coverImage} alt={xpand.title} />
+              </div>
             </div>
           ) : null}
         </section>

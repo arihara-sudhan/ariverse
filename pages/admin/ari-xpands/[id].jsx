@@ -4,6 +4,7 @@ import Header from '../../../src/components/Header';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { getXpandById } from '../../../lib/ariXpands';
 import {
+  formatReadableDate,
   XPAND_STATUSES,
   XPAND_VISIBILITIES,
 } from '../../../lib/ariXpandsCore.mjs';
@@ -35,10 +36,16 @@ function getLogOutcome(log = {}) {
 
 function buildDailyNoteDraft(log = null) {
   return {
+    id: Number(log?.id) || null,
+    sourceDate: log?.date || null,
     date: log?.date || getTodayDateInputValue(),
     note: log?.freeformNote || log?.summary || '',
     outcome: getLogOutcome(log || {}),
   };
+}
+
+function formatAdminNoteDate(value) {
+  return formatReadableDate(value, { timeZone: 'Asia/Kolkata' }) || value;
 }
 
 export async function getServerSideProps({ req, params }) {
@@ -82,6 +89,17 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [info, setInfo] = useState('');
   const [error, setError] = useState('');
+  const sortedLogs = Array.isArray(xpand.logs)
+    ? [...xpand.logs].sort((left, right) => {
+      const dateCompare = String(right?.date || '').localeCompare(String(left?.date || ''));
+      if (dateCompare !== 0) return dateCompare;
+      return Number(right?.id || 0) - Number(left?.id || 0);
+    })
+    : [];
+
+  function startNewDailyNote(date = getTodayDateInputValue()) {
+    setDailyNote(buildDailyNoteDraft({ date, freeformNote: '', failed: [] }));
+  }
 
   async function reloadXpand() {
     const response = await fetch(`/api/admin/ari-xpands/${xpand.id}`);
@@ -102,6 +120,7 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
       tags: Array.isArray(payload.xpand.tags) ? payload.xpand.tags.join(', ') : '',
       coverImage: payload.xpand.coverImage || '',
     });
+    return payload.xpand;
   }
 
   async function saveSettings(event) {
@@ -154,7 +173,9 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
     setSaving(true);
     setInfo('');
     setError('');
-    const existingLog = (xpand.logs || []).find((log) => log.date === dailyNote.date);
+    const existingLog = dailyNote.id
+      ? (xpand.logs || []).find((log) => log.id === dailyNote.id)
+      : (xpand.logs || []).find((log) => log.date === dailyNote.date);
     const response = await fetch('/api/admin/ari-xpand-entities', {
       method: existingLog?.id ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -182,14 +203,44 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
       setError((payload.errors || [payload.error || 'Could not save daily note.']).join(' '));
       return;
     }
-    await reloadXpand();
-    setDailyNote(buildDailyNoteDraft({
+    const refreshedXpand = await reloadXpand();
+    const savedLog = (refreshedXpand.logs || []).find((log) => log.id === payload.entity?.id)
+      || (refreshedXpand.logs || []).find((log) => log.date === dailyNote.date);
+    setDailyNote(savedLog ? buildDailyNoteDraft(savedLog) : buildDailyNoteDraft({
       date: dailyNote.date,
       freeformNote: dailyNote.note,
       failed: dailyNote.outcome === 'failure' ? ['Failure'] : [],
     }));
     setSaving(false);
     setInfo('Daily note saved.');
+  }
+
+  async function deleteDailyNoteNow() {
+    if (!dailyNote.id) return;
+    const confirmed = window.confirm(`Delete the daily note for ${formatAdminNoteDate(dailyNote.date)}? This cannot be undone.`);
+    if (!confirmed) return;
+    setSaving(true);
+    setInfo('');
+    setError('');
+    const response = await fetch('/api/admin/ari-xpand-entities', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entityType: 'log',
+        id: dailyNote.id,
+        xpandId: xpand.id,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setSaving(false);
+      setError(payload.error || 'Could not delete daily note.');
+      return;
+    }
+    await reloadXpand();
+    startNewDailyNote(dailyNote.date || getTodayDateInputValue());
+    setSaving(false);
+    setInfo('Daily note deleted.');
   }
 
   async function archiveXpandNow() {
@@ -299,6 +350,41 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
           <form className="contact-card" onSubmit={saveDailyNote}>
             <h3>Daily Note</h3>
             <p className="contact-note">Use one note for one day. Mark it green for success or red for failure.</p>
+            <div className="contact-links ari-xpand-admin-note-actions">
+              <button type="button" onClick={() => startNewDailyNote()} disabled={saving}>New / Today</button>
+              <button
+                type="button"
+                className="playlist-watch-btn admin-item-action-btn"
+                onClick={deleteDailyNoteNow}
+                disabled={saving || !dailyNote.id}
+              >
+                Delete Selected Note
+              </button>
+            </div>
+            {sortedLogs.length > 0 ? (
+              <div className="ari-xpand-admin-note-browser">
+                <p className="ari-xpand-admin-note-browser__label">Saved note dates</p>
+                <div className="ari-xpand-admin-note-browser__list">
+                  {sortedLogs.map((log) => (
+                    <button
+                      key={log.id}
+                      type="button"
+                      className={log.id === dailyNote.id ? 'is-active' : ''}
+                      onClick={() => setDailyNote(buildDailyNoteDraft(log))}
+                    >
+                      {formatAdminNoteDate(log.date)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="contact-note">No saved daily notes yet.</p>
+            )}
+            {dailyNote.id ? (
+              <p className="contact-note">Editing note for {formatAdminNoteDate(dailyNote.date)}.</p>
+            ) : (
+              <p className="contact-note">Creating a note for {formatAdminNoteDate(dailyNote.date)}.</p>
+            )}
             <label htmlFor="daily-note-date">Date</label>
             <input
               id="daily-note-date"
@@ -323,7 +409,7 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
               onChange={(event) => setDailyNote((prev) => ({ ...prev, note: event.target.value }))}
               placeholder="Write the note for this day."
             />
-            <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Daily Note'}</button>
+            <button type="submit" disabled={saving}>{saving ? 'Saving...' : dailyNote.id ? 'Update Daily Note' : 'Save Daily Note'}</button>
           </form>
 
           {info ? <p className="contact-note">{info}</p> : null}

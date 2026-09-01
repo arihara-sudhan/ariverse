@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  formatReadableDate,
   getMonthBounds,
+  getTimelineDayKey,
   normalizeSlugBase,
+  normalizeDateOnlyValue,
   normalizeMonthKey,
   parseDurationToMinutes,
   parseQuickLogInput,
@@ -55,6 +58,13 @@ test('month helpers normalize and bound valid month keys', () => {
     startDate: '2026-12-01',
     endDateExclusive: '2027-01-01',
   });
+});
+
+test('date helpers preserve the intended Kolkata calendar day', () => {
+  assert.equal(normalizeDateOnlyValue('2026-09-01'), '2026-09-01');
+  assert.equal(normalizeDateOnlyValue('2026-08-31T18:30:00.000Z'), '2026-09-01');
+  assert.equal(getTimelineDayKey('2026-08-31T18:30:00.000Z'), '2026-09-01');
+  assert.equal(formatReadableDate('2026-08-31T18:30:00.000Z', { timeZone: 'Asia/Kolkata' }), 'Sep 1, 2026');
 });
 
 test('quick log parser supports one command', () => {

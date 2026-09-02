@@ -83,6 +83,7 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
     endDate: initialXpand.endDate || '',
     tags: Array.isArray(initialXpand.tags) ? initialXpand.tags.join(', ') : '',
     coverImage: initialXpand.coverImage || '',
+    curriculumUrl: initialXpand.curriculumUrl || '',
   });
   const [dailyNote, setDailyNote] = useState(buildDailyNoteDraft());
   const [saving, setSaving] = useState(false);
@@ -119,6 +120,7 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
       endDate: payload.xpand.endDate || '',
       tags: Array.isArray(payload.xpand.tags) ? payload.xpand.tags.join(', ') : '',
       coverImage: payload.xpand.coverImage || '',
+      curriculumUrl: payload.xpand.curriculumUrl || '',
     });
     return payload.xpand;
   }
@@ -318,6 +320,13 @@ export default function AriXpandAdminDetailPage({ initialXpand }) {
             <input id="xpand-tags" value={settings.tags} onChange={(event) => setSettings((prev) => ({ ...prev, tags: event.target.value }))} placeholder="cuda, gpu, systems" />
             <label htmlFor="xpand-cover-image">Cover image URL</label>
             <input id="xpand-cover-image" value={settings.coverImage} onChange={(event) => setSettings((prev) => ({ ...prev, coverImage: event.target.value }))} />
+            <label htmlFor="xpand-curriculum-url">Curriculum PDF URL</label>
+            <input
+              id="xpand-curriculum-url"
+              value={settings.curriculumUrl}
+              onChange={(event) => setSettings((prev) => ({ ...prev, curriculumUrl: event.target.value }))}
+              placeholder="https://..."
+            />
             <label htmlFor="xpand-cover-image-upload">Cover image upload</label>
             <input
               id="xpand-cover-image-upload"

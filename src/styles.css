@@ -5072,6 +5072,14 @@ body.mini-project-open-body::-webkit-scrollbar {
   justify-content: center;
 }
 
+.ari-xpand-detail-shell__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 .ari-xpands-month-nav__list {
   display: flex;
   flex-wrap: wrap;
@@ -5079,8 +5087,21 @@ body.mini-project-open-body::-webkit-scrollbar {
   justify-content: center;
 }
 
-.ari-xpands-month-nav__list a.is-active {
-  background: #ffffff;
+.ari-xpands-month-nav__list span,
+.ari-xpands-month-nav__list a {
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: #111111;
+  font: inherit;
+  padding: 0.55rem 1rem;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+  text-decoration: none;
+}
+
+.ari-xpands-month-nav__list a:hover,
+.ari-xpands-month-nav__list span.is-active {
+  background: transparent;
   border-color: #111111;
   color: #111111;
 }

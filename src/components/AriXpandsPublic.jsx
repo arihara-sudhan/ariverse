@@ -39,11 +39,29 @@ function MarkdownBlock({ value = '' }) {
   );
 }
 
+function rememberXpandLoader(xpand) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem('ariverse:route-loader', JSON.stringify({
+      type: 'xpand',
+      title: String(xpand?.title || 'XPand').trim() || 'XPand',
+      imageUrl: String(xpand?.coverImage || '').trim(),
+    }));
+  } catch (_error) {
+    // Ignore storage failures and fall back to the default route loader.
+  }
+}
+
 function XpandCard({ xpand }) {
   const summary = xpand.subtitle || excerptText(xpand.description);
 
   return (
-    <Link className="ari-xpand-list-card" href={`/ari-xpands/${xpand.slug}`}>
+    <Link
+      className="ari-xpand-list-card"
+      href={`/ari-xpands/${xpand.slug}`}
+      onClick={() => rememberXpandLoader(xpand)}
+      prefetch
+    >
       {xpand.coverImage ? (
         <div className="ari-xpand-list-card__media">
           <img src={xpand.coverImage} alt={xpand.title} />
@@ -95,15 +113,15 @@ function MonthPagination({ slug, months = [], selectedMonth = '' }) {
   return (
     <div className="ari-xpands-month-nav">
       <div className="ari-xpands-month-nav__list">
-        {months.map((entry) => (
-          <Link
-            key={entry.monthKey}
-            href={buildMonthHref(slug, entry.monthKey)}
-            className={entry.monthKey === selectedMonth ? 'is-active' : ''}
-          >
+        {months.map((entry) => (entry.monthKey === selectedMonth ? (
+          <span key={entry.monthKey} className="is-active">
+            {formatMonthLabel(entry.monthKey)}
+          </span>
+        ) : (
+          <Link key={entry.monthKey} href={buildMonthHref(slug, entry.monthKey)}>
             {formatMonthLabel(entry.monthKey)}
           </Link>
-        ))}
+        )))}
       </div>
     </div>
   );
@@ -176,7 +194,9 @@ export function AriXpandDetailView({ xpand }) {
         </section>
 
         <section className="ari-xpand-detail-shell">
-          <MonthPagination slug={xpand.slug} months={months} selectedMonth={selectedMonth} />
+          <div className="ari-xpand-detail-shell__toolbar">
+            <MonthPagination slug={xpand.slug} months={months} selectedMonth={selectedMonth} />
+          </div>
 
           {logs.length > 0 ? (
             <div className="ari-xpand-snippet-stack">

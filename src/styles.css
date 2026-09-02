@@ -5312,12 +5312,26 @@ body.mini-project-open-body::-webkit-scrollbar {
 
   .ari-xpand-list-card {
     grid-template-columns: 1fr;
+    width: 90%;
+    margin: 0 auto;
+    justify-items: center;
+    text-align: center;
   }
 
   .ari-xpand-list-card__media {
     width: min(100%, 9rem);
     height: auto;
     aspect-ratio: 1 / 1;
+  }
+
+  .ari-xpand-list-card__copy {
+    justify-items: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .ari-xpand-list-card p {
+    display: none;
   }
 
   .ari-xpands-detail-hero__copy {

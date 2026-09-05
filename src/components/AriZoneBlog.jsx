@@ -9,7 +9,6 @@ import { toPublicStorageUrl } from '../../lib/storage';
 const POSTS_PER_PAGE = 10;
 const DEFAULT_LOGO_URL = ARIZONE_SITE_LOGO_URL;
 const TOPIC_LOGO_URLS = ARIZONE_TOPIC_LOGO_URLS;
-const ALLOWED_CATEGORY_SLUGS = new Set(['deep-learning', 'quantum-computing']);
 const CANONICAL_CATEGORY_LABELS = {
   'deep-learning': 'Deep Learning',
   'quantum-computing': 'Quantum Computing',
@@ -174,9 +173,9 @@ function AriZoneThemeStyles() {
         align-items: center;
         gap: 0.65vw;
         margin: 0.15vw 0 1.2vw 0;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         font-size: 1vw;
-        white-space: nowrap;
+        white-space: normal;
       }
 
       .arizone-shell .topics span {
@@ -199,6 +198,7 @@ function AriZoneThemeStyles() {
         font-size: 1vw;
         text-decoration: none;
         font-weight: normal;
+        white-space: nowrap;
       }
 
       .arizone-shell .topic-btn.active {
@@ -506,12 +506,15 @@ export function AriZoneIndexView({ posts = [], categories = [] }) {
           label: String(category?.label || '').trim() || String(category?.slug || '').trim(),
           logoUrl: String(category?.logoUrl || category?.logo_path || '').trim(),
         }))
-        .filter((category) => ALLOWED_CATEGORY_SLUGS.has(category.slug))
+        .filter((category) => category.slug)
         .map((category) => ({
           ...category,
           label: CANONICAL_CATEGORY_LABELS[category.slug] || category.label,
         }))
-    : getCategoryMeta(normalizedPosts).filter((category) => ALLOWED_CATEGORY_SLUGS.has(category.slug));
+    : getCategoryMeta(normalizedPosts).map((category) => ({
+        ...category,
+        label: CANONICAL_CATEGORY_LABELS[category.slug] || category.label,
+      }));
   const filteredPosts = currentTopic === 'all'
     ? normalizedPosts
     : normalizedPosts.filter((post) => post.categorySlug === currentTopic);

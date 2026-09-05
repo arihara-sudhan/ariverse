@@ -226,6 +226,7 @@ function AriZoneThemeStyles() {
       }
 
       .arizone-shell .post-card-image {
+        display: block;
         width: 100%;
         aspect-ratio: 1 / 1;
         height: auto;

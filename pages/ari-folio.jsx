@@ -1,220 +1,211 @@
 import Head from 'next/head';
+import folioData from '../public/ari-folio/data.json';
 import styles from '../src/ari-folio.module.css';
 
-const selectedWork = [
-  {
-    number: '01',
-    title: 'Production ML Systems',
-    description: 'Models designed around real constraints, measurable outcomes, and reliable deployment.',
-    detail: 'Machine Learning · MLOps',
-  },
-  {
-    number: '02',
-    title: 'Agentic Workflows',
-    description: 'Tool-using agents and automations that turn multi-step work into dependable systems.',
-    detail: 'Agents · Automation',
-  },
-  {
-    number: '03',
-    title: 'Applied Deep Learning',
-    description: 'Focused experiments that move from model behavior to useful product capability.',
-    detail: 'Deep Learning · Applied AI',
-  },
-];
+function toArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
 
-const focusAreas = [
-  ['Deep Learning', 'Training, adapting, and evaluating neural models for applied problems.'],
-  ['Applied AI', 'Turning model capability into products people can use and trust.'],
-  ['MLOps', 'Building repeatable paths from experiment to observable production system.'],
-  ['Agentic Systems', 'Designing agents that reason with tools, context, and clear boundaries.'],
-];
+function getInitials(name) {
+  return String(name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
 
-const buildSteps = [
-  ['01', 'Understand', 'Define the real problem, constraints, and useful measure of success.'],
-  ['02', 'Prototype', 'Build the smallest system that can test the important assumption.'],
-  ['03', 'Measure', 'Evaluate behavior, failure modes, cost, and operational fit.'],
-  ['04', 'Productionize', 'Make it reliable, observable, maintainable, and ready to improve.'],
-];
+function getLinkEntries(links) {
+  return Object.entries(links || {});
+}
 
-function SectionTitle({ index, children }) {
+function getDegreeLines(degree) {
+  const parts = String(degree || '')
+    .split(',')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return parts.map((line, index) => (index < parts.length - 1 ? `${line},` : line));
+}
+
+function isExternalLink(href) {
+  return /^https?:\/\//i.test(href);
+}
+
+function Section({ label, children }) {
   return (
-    <div className={styles.sectionTitle}>
-      <span>{index}</span>
-      <h2>{children}</h2>
-    </div>
+    <section className={styles.section}>
+      <h2 className={styles.sectionLabel}>{label}</h2>
+      {children}
+    </section>
   );
 }
 
 export default function AriFolioPage() {
+  const education = toArray(folioData.education);
+  const linkEntries = getLinkEntries(folioData.links);
+  const profileRole = folioData.role || folioData.experience?.[0]?.role || '';
+  const pageTitle = [folioData.name, profileRole].filter(Boolean).join(' | ');
+
   return (
     <>
       <Head>
-        <title>Ariharasudhan S — AI Engineer</title>
+        <title>{pageTitle}</title>
         <meta
           name="description"
-          content="Ariharasudhan S — AI Engineer building models, agents, and production ML systems."
+          content={`${folioData.name} - ${folioData.about}`}
         />
+        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#0b111c" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap"
           rel="stylesheet"
         />
       </Head>
 
       <main className={styles.page}>
-        <section id="top" className={styles.hero} aria-labelledby="folio-title">
-          <picture className={styles.backgroundWrap} aria-hidden="true">
-            <source media="(max-width: 620px)" srcSet="/ari-folio/folio-bg-mobile.png" />
-            <img className={styles.background} src="/ari-folio/folio-bg-system.png" alt="" />
-          </picture>
-          <div className={styles.shade} aria-hidden="true" />
+        <div className={styles.shell}>
+          <div className={styles.columns}>
+            <aside className={styles.sidebar}>
+            {folioData.dp ? (
+              <img className={styles.avatar} src={folioData.dp} alt={folioData.name} />
+            ) : (
+              <div className={styles.avatar} aria-hidden="true">
+                {getInitials(folioData.name)}
+              </div>
+            )}
 
-          <div className={styles.intro}>
-            <h1 id="folio-title">Ariharasudhan S</h1>
-            <p className={styles.role}>
-              AI Engineer building models, agents, and production ML systems.
-            </p>
+            <h1 className={styles.name}>{folioData.name}</h1>
+            {profileRole ? <p className={styles.role}>{profileRole}</p> : null}
+            <p className={styles.location}>{folioData.location}</p>
 
-            <p className={styles.specialties}>
-              Deep Learning <span>·</span> Applied AI <span>·</span> MLOps <span>·</span> Agentic Systems
-            </p>
+            {linkEntries.length > 0 ? (
+              <nav className={styles.links} aria-label="Profile links">
+                {linkEntries.map(([label, href]) => (
+                  <a
+                    href={href}
+                    key={label}
+                    target={isExternalLink(href) ? '_blank' : undefined}
+                    rel={isExternalLink(href) ? 'noreferrer' : undefined}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
+            ) : null}
 
-            <div className={styles.meta} aria-label="Career summary">
-              <span>3+ years</span>
-              <span>Zoho → Moative</span>
-              <span>Chennai, India</span>
-              <span>Open to global remote</span>
-            </div>
+            {education.length > 0 ? (
+              <section className={styles.sideSection}>
+                <h2>Education</h2>
+                <div className={styles.educationList}>
+                  {education.map((item) => (
+                    <article className={styles.educationItem} key={item.collegename || item.school}>
+                      <h3>{item.collegename || item.school}</h3>
+                      {getDegreeLines(item.degree).map((line) => (
+                        <p key={line}>{line}</p>
+                      ))}
+                      {item.field ? <p>{item.field}</p> : null}
+                      {item.cgpa ? <p>GPA: {item.cgpa}</p> : null}
+                      <span>{item.daterange || item.date}</span>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </aside>
 
-            <div className={styles.socials} aria-label="Social profiles">
-              <a href="/">
-                AriVerse <span aria-hidden="true">↗</span>
-              </a>
-              <a href="https://github.com/arihara-sudhan" target="_blank" rel="noreferrer">
-                GitHub <span aria-hidden="true">↗</span>
-              </a>
-              <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer">
-                LinkedIn <span aria-hidden="true">↗</span>
-              </a>
+          <div className={styles.content}>
+            <Section label="About">
+              <p className={styles.lead}>{folioData.about}</p>
+              <p className={styles.callout}>{folioData.currently_looking_for}</p>
+            </Section>
+
+            {folioData.experience?.length > 0 ? (
+              <Section label="Experience">
+                <div className={styles.timeline}>
+                  {folioData.experience.map((item) => (
+                    <article className={styles.entry} key={item.company}>
+                      <div className={styles.entryTop}>
+                        <h3>{[item.role, item.company].filter(Boolean).join(', ')}</h3>
+                        <span>{item.daterange}</span>
+                      </div>
+                      {item.description ? (
+                        <p className={styles.companyDescription}>{item.description}</p>
+                      ) : null}
+                      {item.work?.length > 0 ? (
+                        <ul className={styles.workList}>
+                          {item.work.map((work) => (
+                            <li key={work.workname}>
+                              <strong>{work.workname}.</strong> {work.description}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              </Section>
+            ) : null}
+
+            {folioData.selected_work?.length > 0 ? (
+              <Section label="Selected Work">
+                <div className={styles.selectedWorkList}>
+                  {folioData.selected_work.map((item) => (
+                    <article className={styles.selectedWorkItem} key={item.name}>
+                      <div className={styles.selectedWorkTop}>
+                        <div className={styles.selectedWorkTitleLine}>
+                          <h3>
+                            {item.link ? (
+                              <a
+                                href={item.link}
+                                target={isExternalLink(item.link) ? '_blank' : undefined}
+                                rel={isExternalLink(item.link) ? 'noreferrer' : undefined}
+                              >
+                                {item.name}
+                              </a>
+                            ) : (
+                              item.name
+                            )}
+                          </h3>
+                          {item.oneliner ? (
+                            <p>{item.oneliner}</p>
+                          ) : null}
+                        </div>
+                        <span>{item.year}</span>
+                      </div>
+                      <p className={styles.selectedWorkDescription}>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </Section>
+            ) : null}
+
+            {folioData.research?.length > 0 ? (
+              <Section label="Research">
+                <div className={styles.timeline}>
+                  {folioData.research.map((item) => (
+                    <article className={styles.entry} key={item.name}>
+                      <div className={styles.entryTop}>
+                        <h3>{item.name}</h3>
+                        <span>{item.daterange}</span>
+                      </div>
+                      <p className={styles.body}>{item.oneliner}</p>
+                      <p className={styles.body}>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </Section>
+            ) : null}
             </div>
           </div>
-        </section>
 
-        <div className={styles.sections}>
-          <section id="selected-work" className={styles.portfolioSection}>
-            <SectionTitle index="01">Selected Work</SectionTitle>
-            <div className={styles.workList}>
-              {selectedWork.map((work) => (
-                <a className={styles.workRow} href="/projects" key={work.number}>
-                  <span className={styles.rowNumber}>{work.number}</span>
-                  <div>
-                    <h3>{work.title}</h3>
-                    <p>{work.description}</p>
-                  </div>
-                  <span className={styles.rowDetail}>{work.detail}</span>
-                  <span className={styles.rowArrow} aria-hidden="true">↗</span>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          <section id="what-i-work-on" className={styles.portfolioSection}>
-            <SectionTitle index="02">What I Work On</SectionTitle>
-            <div className={styles.focusGrid}>
-              {focusAreas.map(([title, description]) => (
-                <article key={title}>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section id="experience" className={styles.portfolioSection}>
-            <SectionTitle index="03">Experience</SectionTitle>
-            <div className={styles.timeline}>
-              <article>
-                <p className={styles.timelineMeta}>Present · Chennai, India</p>
-                <h3>AI Engineer · Moative</h3>
-                <p>Building applied AI systems, model-driven products, and production workflows.</p>
-              </article>
-              <article>
-                <p className={styles.timelineMeta}>Previously · Chennai, India</p>
-                <h3>Engineer · Zoho</h3>
-                <p>Worked on software systems where reliability, scale, and clear engineering mattered.</p>
-              </article>
-            </div>
-          </section>
-
-          <section id="research" className={styles.portfolioSection}>
-            <SectionTitle index="04">Research &amp; Deeper Work</SectionTitle>
-            <div className={styles.researchLayout}>
-              <p className={styles.largeStatement}>
-                Looking past the demo to understand why intelligent systems work,
-                where they fail, and how they can become dependable.
-              </p>
-              <ul>
-                <li>Model behavior and failure modes</li>
-                <li>Evaluation before scale</li>
-                <li>Reliable learning systems</li>
-                <li>Human–AI collaboration</li>
-              </ul>
-            </div>
-          </section>
-
-          <section id="labs" className={styles.portfolioSection}>
-            <SectionTitle index="05">Labs</SectionTitle>
-            <a className={styles.featureLink} href="/aris-xperiments">
-              <span>
-                <small>Ongoing experiments</small>
-                <strong>Small tests. Fast feedback. Working code.</strong>
-              </span>
-              <span aria-hidden="true">Explore Labs ↗</span>
-            </a>
-          </section>
-
-          <section id="how-i-build" className={styles.portfolioSection}>
-            <SectionTitle index="06">How I Build</SectionTitle>
-            <div className={styles.buildGrid}>
-              {buildSteps.map(([number, title, description]) => (
-                <article key={number}>
-                  <span>{number}</span>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section id="about-ari" className={styles.portfolioSection}>
-            <SectionTitle index="07">About Ari</SectionTitle>
-            <div className={styles.aboutLayout}>
-              <p className={styles.largeStatement}>
-                I’m Ariharasudhan, an AI engineer interested in the full path from
-                learning systems to useful, production-ready software.
-              </p>
-              <p>
-                I work across deep learning, applied AI, MLOps, and agentic systems.
-                My approach is practical: understand the problem, test the core idea,
-                measure what matters, and build for the real environment.
-              </p>
-            </div>
-          </section>
-
-          <section id="contact" className={`${styles.portfolioSection} ${styles.contactSection}`}>
-            <SectionTitle index="08">Contact</SectionTitle>
-            <div className={styles.contactLayout}>
-              <h2>Have a difficult AI problem?</h2>
-              <a className={styles.contactCta} href="/#contact">Let’s talk <span aria-hidden="true">↗</span></a>
-            </div>
-            <div className={styles.footerLinks}>
-              <a href="/">AriVerse ↗</a>
-              <a href="https://github.com/arihara-sudhan" target="_blank" rel="noreferrer">GitHub ↗</a>
-              <a href="https://www.linkedin.com/in/arihara-sudhan/" target="_blank" rel="noreferrer">LinkedIn ↗</a>
-              <a href="#top">Back to top ↑</a>
-            </div>
-          </section>
+          <footer className={styles.footer}>
+            <p>© 2026 Ariharasudhan, www.ariverse.in</p>
+          </footer>
         </div>
       </main>
     </>

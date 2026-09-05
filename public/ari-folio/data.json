@@ -1,0 +1,89 @@
+{
+  "about": "I’m an AI Engineer working across deep learning, applied AI, agentic systems, and production ML. I enjoy taking ideas from experimentation to systems that can actually be used.",
+  "currently_looking_for": "AI/ML, Deep Learning, Applied AI, research-oriented, and globally distributed engineering roles.",
+  "experience": [
+    {
+      "role": "Applied AI Engineer",
+      "company": "Moative Innovations",
+      "description": "AI engineering across agentic automation, voice AI, RPA, compliance systems, CRM intelligence, and graph-backed AI products.",
+      "daterange": "Jun 2025 – Present",
+      "work": [
+        {
+          "workname": "Shrew",
+          "description": "Built an AI-driven low-code browser automation platform for creating and executing resilient web workflows. SHREW records user actions into editable JSON recipes, runs them through Playwright-based execution engines, and applies intelligent selector fallback and recovery when page structures change. The system was designed to make browser automation easier to author, debug, reuse, and maintain than brittle script-based approaches."
+        },
+        {
+          "workname": "ClaimBot",
+          "description": "Built an LLM-powered claims automation platform spanning 20 billing portals, covering portal navigation, claim-status extraction, structured reporting, and AI-generated summaries. Designed the workflow to operate within HIPAA-compliant constraints and support high-volume revenue-cycle operations. The system processed 2,500+ claims and reduced a workflow that previously took roughly a month to about two days."
+        },
+        {
+          "workname": "Nexus",
+          "description": "Built and deployed the initial MVP for Chargebee, a full-stack AI platform for lead mining and account-overlap detection. The system combined overlap scoring, Slack-based escalations, and Gemini-generated communications, and was deployed on AWS as a working client-facing prototype."
+        },
+        {
+          "workname": "POCs and Demos",
+          "description": "Built a range of rapid AI prototypes to validate product ideas and client use cases, including ShrewVoice for voice-driven browser automation with ElevenLabs, MCP, and Playwright; a conversational water-utilities assistant for consumption insights and outage reporting; Nexus for AI-assisted account-overlap detection and sales escalation; a CEQA automation platform combining OCR, NLP, and Gemini for environmental document classification and risk analysis; and a Neo4j-based clinical-trial intelligence system that translated natural-language questions into Cypher queries and surfaced PK, safety, and trial insights."
+        }
+      ]
+    },
+    {
+      "role": "Deep Learning / Fullstack Engineer",
+      "company": "Zoho Corporation",
+      "description": "Worked across ZLabs and Zoho Desk on deep learning, document intelligence, speech profiling and production product engineering.",
+      "daterange": "Jan 2023 – May 2025",
+      "work": [
+        {
+          "workname": "Few-shot Doc2Vec",
+          "description": "Worked on few-shot document understanding for classes with limited labeled data and high visual variation. Explored ResNet-50 and Document Image Transformer (DiT) embeddings, trained metric-learning representations with triplet loss, and evaluated similarity-based retrieval and classification behavior. Also investigated multimodal fusion by combining visual features with BERT-based textual representations to improve robustness and generalization across document layouts."
+        },
+        {
+          "workname": "Speech Profiling",
+          "description": "Worked on speech and audio profiling experiments involving feature extraction, sampling-rate inconsistencies, preprocessing, and acoustic analysis. Built and evaluated CNN-based audio classification approaches, investigated how recording quality and sampling differences affected model behavior, and experimented with representations suitable for downstream speech and audio understanding tasks."
+        },
+        {
+          "workname": "Zoho Desk",
+          "description": "Built production frontend features with React, JavaScript, TypeScript, and Java-backed APIs, including bulk agent-management workflows."
+        }
+      ]
+    }
+  ],
+  "selected_work": [
+    {
+      "name": "AI Powered MediKit",
+      "oneliner": "Multimodal AI for healthcare under limited data and compute.",
+      "year": 2024,
+      "description": "A healthcare-focused AI system combining medical image classification, heartbeat-sound analysis, and few-shot visual recognition. Explored ViT/CNN-based vision models, audio representations such as MFCCs, and representation-learning approaches for working with limited labeled data.",
+      "link": "https://github.com/arihara-sudhan/AI-Powered-MediKit"
+    },
+    {
+      "name": "Genie-Phenie",
+      "oneliner": "Exploring genome sequences as language for CRISPR analysis.",
+      "year": 2026,
+      "description": "An exploratory deep-learning and LLM project that treats genomic sequences as language for sequence understanding, similarity analysis, anomaly detection, and in-silico investigation of CRISPR off-target risk.",
+      "link": "https://github.com/arihara-sudhan/genei-phenie"
+    }
+  ],
+  "education": [
+    {
+      "collegename": "Einstein College of Engineering",
+      "degree": "Master of Engineering, Computer Science and Engineering",
+      "cgpa": "8.88/10",
+      "daterange": "2025 – 2027"
+    },
+    {
+      "collegename": "Einstein College of Engineering",
+      "degree": "Bachelor of Engineering, Computer Science and Engineering",
+      "cgpa": "8.97/10",
+      "daterange": "2019 – 2023"
+    }
+  ],
+  "name": "Ariharasudhan S",
+  "location": "Chennai, India",
+  "dp": "https://avatars.githubusercontent.com/u/100225369",
+  "links": {
+    "AriVerse": "https://www.ariverse.in",
+    "GitHub": "https://github.com/arihara-sudhan",
+    "LinkedIn": "https://www.linkedin.com/in/arihara-sudhan",
+    "Resume": "https://www.ariverse.in/ari-resume"
+  }
+}

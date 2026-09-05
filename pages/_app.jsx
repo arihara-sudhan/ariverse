@@ -138,14 +138,15 @@ export default function App({ Component, pageProps }) {
         <meta
           name="robots"
           content={isNoIndexRoute ? 'noindex, nofollow' : 'index, follow'}
+          key="robots"
         />
         <meta name="application-name" content={SITE_TITLE} />
         <meta name="apple-mobile-web-app-title" content={SITE_TITLE} />
-        <meta name="theme-color" content="#111111" />
-        <meta property="og:title" content={SITE_TITLE} />
-        <meta property="og:image" content={SITE_IMAGE} />
-        <meta name="twitter:title" content={SITE_TITLE} />
-        <meta name="twitter:image" content={SITE_IMAGE} />
+        <meta name="theme-color" content="#111111" key="theme-color" />
+        <meta property="og:title" content={SITE_TITLE} key="og:title" />
+        <meta property="og:image" content={SITE_IMAGE} key="og:image" />
+        <meta name="twitter:title" content={SITE_TITLE} key="twitter:title" />
+        <meta name="twitter:image" content={SITE_IMAGE} key="twitter:image" />
         <link rel="icon" href={SITE_IMAGE} />
         <link rel="apple-touch-icon" href={SITE_IMAGE} />
       </Head>

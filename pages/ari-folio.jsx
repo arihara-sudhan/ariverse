@@ -2,6 +2,21 @@ import Head from 'next/head';
 import folioData from '../public/ari-folio/data.json';
 import styles from '../src/ari-folio.module.css';
 
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ariverse.in').replace(/\/+$/, '');
+const PROFILE_PATH = '/ari-folio';
+const FALLBACK_IMAGE = `${SITE_URL}/assets/hero.png`;
+const SEO_KEYWORDS = [
+  'Ariharasudhan S',
+  'AI Engineer',
+  'AI ML Engineer',
+  'Deep Learning Engineer',
+  'Applied AI Engineer',
+  'MLOps',
+  'Agentic Systems',
+  'Production ML',
+  'Chennai AI Engineer',
+];
+
 function toArray(value) {
   if (!value) return [];
   return Array.isArray(value) ? value : [value];
@@ -34,6 +49,16 @@ function isExternalLink(href) {
   return /^https?:\/\//i.test(href);
 }
 
+function toAbsoluteUrl(pathname) {
+  if (!pathname) return SITE_URL;
+  if (isExternalLink(pathname)) return pathname;
+  return `${SITE_URL}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+}
+
+function toJsonLd(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 function Section({ label, children }) {
   return (
     <section className={styles.section}>
@@ -48,6 +73,61 @@ export default function AriFolioPage() {
   const linkEntries = getLinkEntries(folioData.links);
   const profileRole = folioData.role || folioData.experience?.[0]?.role || '';
   const pageTitle = 'Ari | AI/ML/Deep Learning Engineer';
+  const canonicalUrl = toAbsoluteUrl(PROFILE_PATH);
+  const profileImage = toAbsoluteUrl(folioData.dp || FALLBACK_IMAGE);
+  const seoDescription = `${folioData.name} is an ${profileRole} in ${folioData.location}, building applied AI, deep learning, agentic systems, and production ML workflows.`;
+  const sameAs = linkEntries
+    .map(([, href]) => href)
+    .filter(isExternalLink);
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    name: pageTitle,
+    url: canonicalUrl,
+    description: seoDescription,
+    image: profileImage,
+    mainEntity: {
+      '@type': 'Person',
+      name: folioData.name,
+      jobTitle: profileRole,
+      image: profileImage,
+      url: canonicalUrl,
+      homeLocation: {
+        '@type': 'Place',
+        name: folioData.location,
+      },
+      sameAs,
+      knowsAbout: [
+        'Deep Learning',
+        'Applied AI',
+        'MLOps',
+        'Agentic Systems',
+        'Production ML Systems',
+      ],
+      worksFor: folioData.experience?.[0]?.company
+        ? {
+            '@type': 'Organization',
+            name: folioData.experience[0].company,
+          }
+        : undefined,
+      alumniOf: education
+        .map((item) => item.collegename || item.school)
+        .filter(Boolean)
+        .map((name) => ({
+          '@type': 'CollegeOrUniversity',
+          name,
+        })),
+    },
+    hasPart: [
+      ...(folioData.selected_work || []).map((item) => ({
+        '@type': 'CreativeWork',
+        name: item.name,
+        url: item.link || canonicalUrl,
+        description: item.description || item.oneliner,
+        dateCreated: item.year ? String(item.year) : undefined,
+      })),
+    ],
+  };
 
   return (
     <>
@@ -55,10 +135,28 @@ export default function AriFolioPage() {
         <title>{pageTitle}</title>
         <meta
           name="description"
-          content={`${folioData.name} - ${folioData.about}`}
+          content={seoDescription}
+          key="description"
         />
+        <meta name="author" content={folioData.name} />
+        <meta name="keywords" content={SEO_KEYWORDS.join(', ')} />
+        <meta name="robots" content="index, follow, max-image-preview:large" key="robots" />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="profile" />
+        <meta property="og:site_name" content="AriVerse" />
+        <meta property="og:title" content={pageTitle} key="og:title" />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={profileImage} key="og:image" />
+        <meta property="og:image:alt" content={`${folioData.name} profile photo`} />
+        <meta property="profile:username" content="arihara-sudhan" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={pageTitle} key="twitter:title" />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={profileImage} key="twitter:image" />
+        <meta name="twitter:image:alt" content={`${folioData.name} profile photo`} />
         <meta name="color-scheme" content="dark" />
-        <meta name="theme-color" content="#0b111c" />
+        <meta name="theme-color" content="#0b111c" key="theme-color" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -94,6 +192,10 @@ export default function AriFolioPage() {
             background: #3d4f65;
           }
         `}</style>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }}
+        />
       </Head>
 
       <main className={styles.page}>

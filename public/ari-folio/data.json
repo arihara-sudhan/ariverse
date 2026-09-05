@@ -68,7 +68,7 @@
       "collegename": "Einstein College of Engineering",
       "degree": "Master of Engineering, Computer Science and Engineering",
       "cgpa": "8.88/10",
-      "daterange": "Aug 2025 – 2027"
+      "daterange": "Aug   2025 – 2027"
     },
     {
       "collegename": "Einstein College of Engineering",
@@ -78,6 +78,7 @@
     }
   ],
   "name": "Ariharasudhan S",
+  "role": "AI/ML/Deep Learning Engineer",
   "location": "Chennai, India",
   "dp": "https://avatars.githubusercontent.com/u/100225369",
   "links": {

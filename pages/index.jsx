@@ -56,6 +56,7 @@ const WELCOME_MESSAGES = [
 
 const HOME_FALLBACK_LINKS = [
   { id: 'f-career', label: 'Career', href: '/ari-career', category: 'PROFESSIONAL' },
+  { id: 'f-portfolio', label: 'Portfolio', href: '/ari-folio', category: 'PROFESSIONAL' },
   { id: 'f-projects', label: 'Projects', href: '/projects', category: 'PROFESSIONAL' },
   { id: 'f-skillset', label: 'Skillset', href: '/skillset', category: 'PROFESSIONAL' },
   { id: 'f-resume', label: 'Resume', href: '/ari-resume', category: 'PROFESSIONAL' },
@@ -73,6 +74,11 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-books-read', label: 'Books Read', href: '/ari-read-books', category: 'HOBBYAL' },
   { id: 'f-reviews', label: 'Book Reviews', href: '/book-reviews', category: 'HOBBYAL' },
   { id: 'f-binomial', label: 'Binomial Names', href: '/binomial-names', category: 'HOBBYAL' },
+];
+
+const REQUIRED_PROFESSIONAL_LINKS = [
+  { id: 'fallback-portfolio', label: 'Portfolio', href: '/ari-folio' },
+  { id: 'fallback-mini-projects', label: 'Mini-Projects', href: '/mini-projects' },
 ];
 
 export async function getStaticProps() {
@@ -680,20 +686,19 @@ export default function HomePage({ profileLinks, featureImages }) {
   }
 
   const safeLinks = Array.isArray(profileLinks) && profileLinks.length > 0 ? profileLinks : HOME_FALLBACK_LINKS;
-  const hasMiniProjects = safeLinks.some((link) => String(link.label).trim() === 'Mini-Projects');
-  const normalizedLinks = hasMiniProjects
-    ? safeLinks
-    : [
-        ...safeLinks,
-        {
-          id: 'fallback-mini-projects',
-          label: 'Mini-Projects',
-          href: '/mini-projects',
-          category: 'PROFESSIONAL',
-          sortOrder: Number.MAX_SAFE_INTEGER,
-          isHidden: 0,
-        },
-      ];
+  const normalizedLinks = REQUIRED_PROFESSIONAL_LINKS.reduce((links, fallbackLink) => {
+    const hasLink = links.some((link) => String(link.label).trim() === fallbackLink.label);
+    if (hasLink) return links;
+    return [
+      ...links,
+      {
+        ...fallbackLink,
+        category: 'PROFESSIONAL',
+        sortOrder: Number.MAX_SAFE_INTEGER,
+        isHidden: 0,
+      },
+    ];
+  }, safeLinks);
   const visibleLinks = normalizedLinks.filter((link) => {
     const label = String(link.label || '').trim();
     return label !== 'Arichuvadu';
@@ -702,6 +707,7 @@ export default function HomePage({ profileLinks, featureImages }) {
     'Career',
     'Works',
     'Experience',
+    'Portfolio',
     'Skillset',
     'Projects',
     'Mini-Projects',

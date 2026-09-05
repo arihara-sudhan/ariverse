@@ -10,7 +10,7 @@
       "work": [
         {
           "workname": "Shrew",
-          "description": "Built an AI-driven low-code browser automation platform for creating and executing resilient web workflows. SHREW records user actions into editable JSON recipes, runs them through Playwright-based execution engines, and applies intelligent selector fallback and recovery when page structures change. The system was designed to make browser automation easier to author, debug, reuse, and maintain than brittle script-based approaches."
+          "description": "Built an AI-driven low-code browser automation platform for creating and executing resilient web workflows. Shrew records user actions into editable JSON recipes, runs them through Playwright-based execution engines, and applies intelligent selector fallback and recovery when page structures change. The system was designed to make browser automation easier to author, debug, reuse, and maintain than brittle script-based approaches."
         },
         {
           "workname": "ClaimBot",
@@ -68,13 +68,13 @@
       "collegename": "Einstein College of Engineering",
       "degree": "Master of Engineering, Computer Science and Engineering",
       "cgpa": "8.88/10",
-      "daterange": "2025 – 2027"
+      "daterange": "Aug 2025 – 2027"
     },
     {
       "collegename": "Einstein College of Engineering",
       "degree": "Bachelor of Engineering, Computer Science and Engineering",
       "cgpa": "8.97/10",
-      "daterange": "2019 – 2023"
+      "daterange": "Aug 2019 – 2023"
     }
   ],
   "name": "Ariharasudhan S",

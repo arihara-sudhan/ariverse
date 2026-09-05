@@ -11,6 +11,29 @@
   text-rendering: optimizeLegibility;
 }
 
+.page {
+  scrollbar-width: thin;
+  scrollbar-color: #2b3a4c #0b111c;
+}
+
+.page::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.page::-webkit-scrollbar-track {
+  background: #0b111c;
+}
+
+.page::-webkit-scrollbar-thumb {
+  background: #2b3a4c;
+  border-radius: 999px;
+}
+
+.page::-webkit-scrollbar-thumb:hover {
+  background: #3d4f65;
+}
+
 .page :global(*) {
   box-sizing: border-box;
   font-family: "Inter Variable", "Inter", sans-serif;
@@ -47,8 +70,8 @@
 }
 
 .avatar {
-  width: 94px;
-  height: 94px;
+  width: 104px;
+  height: 104px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -56,7 +79,7 @@
   object-position: center;
   background: linear-gradient(135deg, #334155, #1e293b);
   color: #f4f6f8;
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 3px solid rgba(134, 239, 172, 0.86);
   font-size: 1.45rem;
   font-weight: 600;
   line-height: 1;
@@ -411,8 +434,8 @@
   }
 
   .avatar {
-    width: 82px;
-    height: 82px;
+    width: 90px;
+    height: 90px;
     font-size: 1.25rem;
   }
 

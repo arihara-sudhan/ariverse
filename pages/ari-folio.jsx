@@ -47,7 +47,7 @@ export default function AriFolioPage() {
   const education = toArray(folioData.education);
   const linkEntries = getLinkEntries(folioData.links);
   const profileRole = folioData.role || folioData.experience?.[0]?.role || '';
-  const pageTitle = [folioData.name, profileRole].filter(Boolean).join(' | ');
+  const pageTitle = 'Ari | AI/ML/Deep Learning Engineer';
 
   return (
     <>
@@ -65,6 +65,35 @@ export default function AriFolioPage() {
           href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap"
           rel="stylesheet"
         />
+        <style>{`
+          html,
+          body {
+            scrollbar-width: thin;
+            scrollbar-color: #2b3a4c #0b111c;
+          }
+
+          html::-webkit-scrollbar,
+          body::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+          }
+
+          html::-webkit-scrollbar-track,
+          body::-webkit-scrollbar-track {
+            background: #0b111c;
+          }
+
+          html::-webkit-scrollbar-thumb,
+          body::-webkit-scrollbar-thumb {
+            background: #2b3a4c;
+            border-radius: 999px;
+          }
+
+          html::-webkit-scrollbar-thumb:hover,
+          body::-webkit-scrollbar-thumb:hover {
+            background: #3d4f65;
+          }
+        `}</style>
       </Head>
 
       <main className={styles.page}>

@@ -7,6 +7,7 @@ const STATIC_ROUTES = [
   '/',
   '/ai-with-ari',
   '/ari-career',
+  '/ari-folio',
   '/ari-read-books',
   '/ari-resume',
   '/ari-xpands',

@@ -952,6 +952,7 @@ export default function HomePage({ profileLinks, featureImages }) {
                       ? resolvedHref
                       : '/';
                     const isExternal = safeHref.startsWith('http');
+                    const opensInNewTab = isExternal || link.label === 'Resume';
 
                     const displayLabel =
                       link.label === 'Works' || link.label === 'Experience'
@@ -976,8 +977,8 @@ export default function HomePage({ profileLinks, featureImages }) {
                         key={link.id}
                         className="category-link-shimmer"
                         href={safeHref}
-                        target={isExternal ? '_blank' : undefined}
-                        rel={isExternal ? 'noreferrer' : undefined}
+                        target={opensInNewTab ? '_blank' : undefined}
+                        rel={opensInNewTab ? 'noreferrer' : undefined}
                       >
                         {displayLabel}
                       </a>

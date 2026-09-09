@@ -11,6 +11,7 @@ const DEFAULT_FEATURE_IMAGES = [
   { src: HERO_FLOWER_URL, alt: 'Glory lily flower' },
   { src: AALKAATTI_URL, alt: 'Aalkaatti artwork' },
 ];
+const RESUME_PDF_URL = '/resume.pdf';
 const FIXED_TESTIMONIAL = {
   testimonial: 'Be Nothing! Everything!',
   name: 'ARISTOTLE',
@@ -942,6 +943,8 @@ export default function HomePage({ profileLinks, featureImages }) {
                     const resolvedHref =
                       link.label === 'Skillset'
                         ? '/skillset'
+                      : link.label === 'Resume'
+                        ? RESUME_PDF_URL
                       : link.label === 'Books Read'
                         ? '/ari-read-books'
                         : link.href;

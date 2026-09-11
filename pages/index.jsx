@@ -589,6 +589,16 @@ export default function HomePage({ profileLinks, featureImages }) {
   ];
 
   useEffect(() => {
+    if (!isMobileViewport) return;
+
+    clearWelcomeTransitionTimer();
+    setWelcomeIndex(0);
+    setWelcomeOutgoingIndex(null);
+    setIsWelcomeVisible(true);
+  }, [isMobileViewport]);
+
+  useEffect(() => {
+    if (isMobileViewport) return undefined;
     if (WELCOME_MESSAGES.length <= 1) return undefined;
 
     const timer = setInterval(() => {
@@ -596,7 +606,7 @@ export default function HomePage({ profileLinks, featureImages }) {
     }, WELCOME_CROSSFADE_DELAY_MS);
 
     return () => clearInterval(timer);
-  }, [welcomeIndex]);
+  }, [isMobileViewport, welcomeIndex]);
 
   useEffect(() => {
     if (isContactPaused || isTypingPaused || contactSlides.length <= 1) return undefined;
@@ -773,7 +783,7 @@ export default function HomePage({ profileLinks, featureImages }) {
               </span>
             </h1>
             <p className="intro-title-note intro-title-note--swap" aria-live="polite">
-              {welcomeOutgoingIndex !== null ? (
+              {!isMobileViewport && welcomeOutgoingIndex !== null ? (
                 <span
                   className={`intro-title-note__message is-outgoing${isWelcomeVisible ? '' : ' is-fading-out'}`}
                   aria-hidden="true"
@@ -783,10 +793,10 @@ export default function HomePage({ profileLinks, featureImages }) {
                 </span>
               ) : null}
               <span
-                className={`intro-title-note__message${isWelcomeVisible ? ' is-visible' : ''}`}
-                lang={WELCOME_MESSAGES[welcomeIndex].lang}
+                className={`intro-title-note__message${isMobileViewport || isWelcomeVisible ? ' is-visible' : ''}`}
+                lang={isMobileViewport ? WELCOME_MESSAGES[0].lang : WELCOME_MESSAGES[welcomeIndex].lang}
               >
-                {WELCOME_MESSAGES[welcomeIndex].text}
+                {isMobileViewport ? WELCOME_MESSAGES[0].text : WELCOME_MESSAGES[welcomeIndex].text}
               </span>
             </p>
           </section>
@@ -881,7 +891,7 @@ export default function HomePage({ profileLinks, featureImages }) {
             ))}
           </div>
 
-          <div className={`quote-panel-controls ${isQuoteAnimationPaused ? 'is-visible' : ''}`} aria-label="Quote navigation">
+          <div className="quote-panel-controls is-visible" aria-label="Quote navigation">
             {quoteIndex > 0 ? (
               <button
                 type="button"
@@ -917,7 +927,7 @@ export default function HomePage({ profileLinks, featureImages }) {
 
           <button
             type="button"
-            className={`quote-panel-write-btn ${isQuoteAnimationPaused ? 'is-visible' : ''}`}
+            className="quote-panel-write-btn is-visible"
             onClick={(event) => {
               event.stopPropagation();
               goToContactSlide(TESTIMONIAL_SLIDE_INDEX);

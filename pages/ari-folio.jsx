@@ -216,16 +216,21 @@ export default function AriFolioPage() {
 
             {linkEntries.length > 0 ? (
               <nav className={styles.links} aria-label="Profile links">
-                {linkEntries.map(([label, href]) => (
-                  <a
-                    href={href}
-                    key={label}
-                    target={isExternalLink(href) ? '_blank' : undefined}
-                    rel={isExternalLink(href) ? 'noreferrer' : undefined}
-                  >
-                    {label}
-                  </a>
-                ))}
+                {linkEntries.map(([label, href]) => {
+                  const resolvedHref = label === 'Resume' ? '/resume.pdf' : href;
+                  const opensInNewTab = label === 'Resume' || isExternalLink(resolvedHref);
+
+                  return (
+                    <a
+                      href={resolvedHref}
+                      key={label}
+                      target={opensInNewTab ? '_blank' : undefined}
+                      rel={opensInNewTab ? 'noreferrer' : undefined}
+                    >
+                      {label}
+                    </a>
+                  );
+                })}
               </nav>
             ) : null}
 

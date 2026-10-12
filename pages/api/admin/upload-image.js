@@ -36,25 +36,29 @@ function parseForm(req) {
 function toFolderName(value) {
   const text = typeof value === 'string' ? value.trim().toLowerCase() : '';
   const slug = text
-    .normalize('NFKC')
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    // Supabase Storage object keys use ASCII-safe names. Removing combining
+    // marks also prevents scripts such as Tamil from becoming malformed keys.
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return slug;
 }
 
-function toFileNameBase(value) {
+function toFileNameBase(value, fallback = '') {
   const text = typeof value === 'string' ? value.trim().toLowerCase() : '';
   const slug = text
-    .normalize('NFKC')
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return slug || `img-${Date.now()}`;
+  return slug || fallback;
 }
 
 function toFileBaseFromOriginalName(fileName) {
   const raw = typeof fileName === 'string' ? fileName : '';
   const base = raw.replace(/\.[^/.]+$/, '');
-  return toFileNameBase(base);
+  return toFileNameBase(base, `img-${Date.now()}`);
 }
 
 function getFileExtension(file) {
@@ -133,7 +137,7 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   const subcategoryFolder = toFolderName(subcategory);
   const rawCategory = String(category || '').trim().toLowerCase();
   const rawSubcategory = String(subcategory || '').trim().toLowerCase();
-  const titleBase = toFileNameBase(title) || baseName;
+  const titleBase = toFileNameBase(title, baseName) || 'untitled';
   const looksLikeLogo = titleFolder.endsWith('-company-logo') || titleFolder.includes('company-logo') || titleFolder.includes('logo');
 
   if (titleFolder === 'hero') {

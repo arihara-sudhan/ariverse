@@ -1,5 +1,6 @@
 ﻿import { readFile } from 'node:fs/promises';
 import formidable from 'formidable';
+import { randomUUID } from 'node:crypto';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
 import { toPublicStorageUrl } from '../../../lib/storage';
@@ -212,6 +213,11 @@ function buildBlobPath({ section, sectionHref, title, category, subcategory, bas
   }
 
   if (sectionFolder === 'mini-projects' || sectionFolder === 'experiments' || sectionFolder === 'guest-lectures' || sectionFolder === 'binomial-names') {
+    if (sectionFolder === 'guest-lectures') {
+      // Gallery uploads must never share a key: x-upsert is enabled below,
+      // so a title-only key would overwrite the previous lecture image.
+      return joinBlobPath(sectionFolder, titleBase, `${baseName}-${randomUUID()}${ext}`);
+    }
     return joinBlobPath(sectionFolder, `${titleBase}${ext}`);
   }
 

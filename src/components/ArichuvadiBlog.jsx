@@ -17,11 +17,14 @@ function normalizePostInput(post) {
     ...post,
     slug: String(post?.slug || '').trim(),
     title: String(post?.title || '').trim(),
+    titleEnglish: String(post?.titleEnglish || post?.title_english || '').trim(),
     categorySlug: String(post?.categorySlug || post?.category_slug || '').trim(),
     categoryLabel: String(post?.categoryLabel || post?.category_label || post?.category || '').trim(),
     coverImageUrl: String(post?.coverImageUrl || post?.cover_image_url || '').trim() || toPublicStorageUrl(coverImagePath),
     categoryLogoUrl: String(post?.categoryLogoUrl || post?.category_logo_url || '').trim(),
     publishedAt: String(post?.publishedAt || post?.published_at || ''),
+    translationReadme: String(post?.translationReadme || post?.translation_readme || '').trim(),
+    translationHtml: String(post?.translationHtml || '').trim(),
     html: String(post?.html || ''),
   };
 }
@@ -328,6 +331,39 @@ function ArichuvadiThemeStyles() {
         padding-top: 1vw;
       }
 
+      .arizone-shell .translation-toggle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.25vw;
+        height: 3.25vw;
+        min-width: 36px;
+        min-height: 36px;
+        flex: 0 0 auto;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #000000;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        font-size: 1.8rem;
+        line-height: 1;
+      }
+
+      .arizone-shell .translation-toggle:hover,
+      .arizone-shell .translation-toggle:focus-visible {
+        transform: scale(1.08);
+      }
+
+      .arizone-shell .translation-toggle:focus-visible {
+        outline: 2px solid #000000;
+        outline-offset: 3px;
+        border-radius: 0.25rem;
+      }
+
       .arizone-shell #post-title {
         font-family: 'Arichuvadi Tamil', 'Playfair Display', serif;
         font-size: 3vw;
@@ -482,6 +518,13 @@ function ArichuvadiThemeStyles() {
 
         .arizone-shell #post-title {
           font-size: 7vw;
+        }
+
+        .arizone-shell .translation-toggle {
+          width: 2rem;
+          height: 2rem;
+          padding: 1vw;
+          font-size: 1.7rem;
         }
 
         .arizone-shell .post-header {
@@ -644,6 +687,14 @@ export function ArichuvadiIndexView({ posts = [], categories = [], initialTopic 
 
 export function ArichuvadiPostView({ post, initialComments = [], initialLikesCount = 0 }) {
   const normalizedPost = normalizePostInput(post);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const hasTranslation = Boolean(normalizedPost.translationReadme);
+  const articleHtml = showTranslation && hasTranslation
+    ? (normalizedPost.translationHtml || normalizedPost.html)
+    : normalizedPost.html;
+  const displayTitle = showTranslation && hasTranslation && normalizedPost.titleEnglish
+    ? normalizedPost.titleEnglish
+    : normalizedPost.title;
 
   return (
     <div className="arizone-shell">
@@ -652,7 +703,19 @@ export function ArichuvadiPostView({ post, initialComments = [], initialLikesCou
         <div id="post-page" className="page active">
           <div className="container container-narrow">
             <div className="post-header">
-              <h1 id="post-title">{normalizedPost.title}</h1>
+              {hasTranslation ? (
+                <button
+                  type="button"
+                  className="translation-toggle"
+                  aria-label={showTranslation ? 'Hide translation' : 'Show translation'}
+                  aria-expanded={showTranslation}
+                  title={showTranslation ? 'Hide translation' : 'Show translation'}
+                  onClick={() => setShowTranslation((visible) => !visible)}
+                >
+                  <span aria-hidden="true">文</span>
+                </button>
+              ) : null}
+              <h1 id="post-title">{displayTitle}</h1>
               <hr />
             </div>
 
@@ -660,7 +723,7 @@ export function ArichuvadiPostView({ post, initialComments = [], initialLikesCou
               id="post-content"
               className="post-content"
               dangerouslySetInnerHTML={{
-                __html: normalizedPost.html || '<p class="empty-state">இந்த பதிவு இன்னும் வெளியிடப்படவில்லை.</p>',
+                __html: articleHtml || '<p class="empty-state">இந்த பதிவு இன்னும் வெளியிடப்படவில்லை.</p>',
               }}
             />
 

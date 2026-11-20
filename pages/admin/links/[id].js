@@ -128,11 +128,13 @@ function normalizeArizoneDraft(post = {}) {
   return {
     id: post?.id ?? null,
     title,
+    titleEnglish: String(post?.titleEnglish || post?.title_english || '').trim(),
     slug: safeSlug,
     categoryLabel: String(post?.categoryLabel || post?.category_label || 'Deep Learning').trim() || 'Deep Learning',
     categorySlug: String(post?.categorySlug || post?.category_slug || 'deep-learning').trim() || 'deep-learning',
     coverImagePath: String(post?.coverImagePath || post?.cover_image_path || `arizone/posts/${safeSlug}/images/cover.webp`).trim(),
     contentMarkdown: String(post?.contentMarkdown || post?.content_markdown || ''),
+    translationReadme: String(post?.translationReadme || post?.translation_readme || ''),
     publishedAt: String(post?.publishedAt || post?.published_at || new Date().toISOString().slice(0, 10)).slice(0, 10),
     isPublished: Boolean(post?.isPublished ?? post?.is_published ?? true),
     storageFolder: String(post?.storageFolder || post?.storage_folder || `arizone/posts/${safeSlug}`).trim(),
@@ -146,11 +148,13 @@ function normalizeArichuvadiDraft(post = {}) {
   return {
     id: post?.id ?? null,
     title,
+    titleEnglish: String(post?.titleEnglish || post?.title_english || '').trim(),
     slug: safeSlug,
     categoryLabel: String(post?.categoryLabel || post?.category_label || 'Ariyin Kavithaigal').trim() || 'Ariyin Kavithaigal',
     categorySlug: String(post?.categorySlug || post?.category_slug || 'kavithaigal').trim() || 'kavithaigal',
     coverImagePath: String(post?.coverImagePath || post?.cover_image_path || (safeSlug ? `arichuvadi/posts/${safeSlug}/images/cover.webp` : '')).trim(),
     contentMarkdown: String(post?.contentMarkdown || post?.content_markdown || ''),
+    translationReadme: String(post?.translationReadme || post?.translation_readme || ''),
     publishedAt: String(post?.publishedAt || post?.published_at || new Date().toISOString().slice(0, 10)).slice(0, 10),
     isPublished: Boolean(post?.isPublished ?? post?.is_published ?? true),
     storageFolder: String(post?.storageFolder || post?.storage_folder || (safeSlug ? `arichuvadi/posts/${safeSlug}` : '')).trim(),
@@ -394,6 +398,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
     const storagePrefix = blogStoragePrefix || 'arizone';
     const payload = {
       title: resolvedTitle,
+      titleEnglish: arizoneDraft.titleEnglish,
       slug,
       categoryLabel: arizoneDraft.categoryLabel || 'Deep Learning',
       categorySlug: arizoneDraft.categorySlug || 'deep-learning',
@@ -401,6 +406,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
       contentPath: `${storagePrefix}/posts/${slug}/content.md`,
       coverImagePath: arizoneDraft.coverImagePath || `${storagePrefix}/posts/${slug}/images/cover.webp`,
       contentMarkdown: arizoneDraft.contentMarkdown,
+      translationReadme: arizoneDraft.translationReadme,
       publishedAt: arizoneDraft.publishedAt,
       isPublished: Boolean(arizoneDraft.isPublished),
     };
@@ -535,7 +541,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
 
             <form className="contact-card" onSubmit={saveArizonePost}>
               <p className="contact-note" style={{ marginTop: 0 }}>
-                Add or edit a post. Give the post a Tamil title and an English name. The English name becomes the slug, folder, and endpoint.
+                Add or edit a post. Give the post a Tamil title and, optionally, an English display title. The English name becomes the slug, folder, and endpoint.
               </p>
               <label htmlFor="arizone-title">Post title</label>
               <input
@@ -557,6 +563,14 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                 })}
                 placeholder={isArichuvadiSection ? 'நிலவினும் அழகிய முகம்' : 'Post title'}
                 required
+              />
+              <label htmlFor="arizone-title-english">Post title in English (optional)</label>
+              <input
+                id="arizone-title-english"
+                type="text"
+                value={arizoneDraft.titleEnglish}
+                onChange={(event) => setArizoneDraft((prev) => ({ ...prev, titleEnglish: event.target.value }))}
+                placeholder="Anthi Virunthu"
               />
               <label htmlFor="arizone-slug">English name</label>
               <input
@@ -709,6 +723,15 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                     targetPath: `${blogStoragePrefix}/posts/${nextSlug}/images/${safeName}.webp`,
                   });
                 }}
+              />
+
+              <label htmlFor="translation-readme">Translation readme (optional)</label>
+              <textarea
+                id="translation-readme"
+                rows={8}
+                value={arizoneDraft.translationReadme}
+                onChange={(event) => setArizoneDraft((prev) => ({ ...prev, translationReadme: event.target.value }))}
+                placeholder="Add translation notes or a readme for this article..."
               />
 
               <div className="admin-item-actions">

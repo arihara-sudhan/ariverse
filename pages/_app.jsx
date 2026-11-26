@@ -24,7 +24,7 @@ export default function App({ Component, pageProps }) {
         return;
       }
 
-      if (nextUrl.startsWith('/projects/') || nextUrl.startsWith('/ari-xpands/')) {
+      if (nextUrl.startsWith('/projects/')) {
         let loaderMeta = null;
         let loaderLabel = 'PROJECT';
         if (typeof window !== 'undefined') {
@@ -32,21 +32,17 @@ export default function App({ Component, pageProps }) {
             const raw = window.sessionStorage.getItem('ariverse:route-loader');
             if (raw) {
               const parsed = JSON.parse(raw);
-              if (parsed && (parsed.type === 'project' || parsed.type === 'xpand')) {
+              if (parsed && parsed.type === 'project') {
                 loaderMeta = {
                   type: parsed.type,
-                  title: String(parsed.title || (parsed.type === 'xpand' ? 'XPand' : 'Project')).trim() || (parsed.type === 'xpand' ? 'XPand' : 'Project'),
+                  title: String(parsed.title || 'Project').trim() || 'Project',
                   imageUrl: String(parsed.imageUrl || '').trim(),
                 };
-                loaderLabel = parsed.type === 'xpand' ? 'XPAND' : 'PROJECT';
               }
             }
           } catch (_error) {
             loaderMeta = null;
           }
-        }
-        if (nextUrl.startsWith('/ari-xpands/') && !loaderMeta) {
-          loaderLabel = 'XPAND';
         }
         setRouteLoadingLabel(loaderLabel);
         setRouteLoadingMeta(loaderMeta);
@@ -152,13 +148,13 @@ export default function App({ Component, pageProps }) {
       </Head>
       {routeLoadingLabel ? (
         <div className="route-loading-screen" aria-live="polite" aria-label={`Loading ${routeLoadingLabel}`}>
-          {routeLoadingMeta?.type === 'project' || routeLoadingMeta?.type === 'xpand' ? (
+          {routeLoadingMeta?.type === 'project' ? (
             <div className="route-loading-project">
               {routeLoadingMeta.imageUrl ? (
                 <img
                   className="route-loading-project__image"
                   src={routeLoadingMeta.imageUrl}
-                  alt={routeLoadingMeta.title || (routeLoadingMeta?.type === 'xpand' ? 'XPand image' : 'Project image')}
+                  alt={routeLoadingMeta.title || 'Project image'}
                 />
               ) : (
                 <div className="route-loading-project__placeholder" aria-hidden="true">No Image</div>
@@ -166,7 +162,7 @@ export default function App({ Component, pageProps }) {
               <div className="route-loading-project__title">{routeLoadingMeta.title}</div>
               <div className="route-loading-project__status" aria-hidden="true">
                 <span className="route-loading-project__dot" />
-                <span>{routeLoadingMeta?.type === 'xpand' ? 'Loading xpand' : 'Loading project'}</span>
+                <span>Loading project</span>
               </div>
             </div>
           ) : (

@@ -1,5 +1,4 @@
 import { listProjectEntries } from '../lib/adminData';
-import { listXpands } from '../lib/ariXpands';
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.ariverse.in').replace(/\/+$/, '');
 
@@ -10,7 +9,6 @@ const STATIC_ROUTES = [
   '/ari-folio',
   '/ari-read-books',
   '/ari-resume',
-  '/ari-xpands',
   '/aris-books',
   '/aris-shelf',
   '/aris-xperiments',
@@ -62,7 +60,6 @@ function buildSitemapXml(urls) {
 
 export async function getServerSideProps({ res }) {
   let projectRoutes = [];
-  let xpandRoutes = [];
 
   try {
     const projects = await listProjectEntries();
@@ -75,16 +72,7 @@ export async function getServerSideProps({ res }) {
     projectRoutes = [];
   }
 
-  try {
-    const xpands = await listXpands({ includePrivate: false });
-    xpandRoutes = Array.isArray(xpands)
-      ? xpands.map((xpand) => `/ari-xpands/${xpand.slug}`).filter(Boolean)
-      : [];
-  } catch (_error) {
-    xpandRoutes = [];
-  }
-
-  const urls = Array.from(new Set([...STATIC_ROUTES, ...projectRoutes, ...xpandRoutes]));
+  const urls = Array.from(new Set([...STATIC_ROUTES, ...projectRoutes]));
   const xml = buildSitemapXml(urls);
 
   res.setHeader('Content-Type', 'text/xml; charset=utf-8');

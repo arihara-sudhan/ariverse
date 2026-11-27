@@ -2,13 +2,12 @@ import path from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { neon } from '@neondatabase/serverless';
 import { notifyAdminContactMessage } from '../../lib/formspree';
-import { checkRateLimit, enforceSameOriginWrite } from '../../lib/security';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../lib/security';
 
 loadEnv({ path: path.join(process.cwd(), '.env') });
 
 const databaseUrl = process.env.DATABASE_URL;
 const sql = databaseUrl ? neon(databaseUrl) : null;
-let contactTableReady = false;
 
 function cleanText(value, maxLength) {
   const text = typeof value === 'string' ? value.trim() : '';
@@ -29,22 +28,6 @@ function getClientIp(req) {
   return req.socket?.remoteAddress || 'unknown';
 }
 
-async function ensureContactTable() {
-  if (!sql || contactTableReady) return;
-  await sql`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id BIGSERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      subject TEXT NOT NULL,
-      message TEXT NOT NULL,
-      source_ip TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  contactTableReady = true;
-}
-
 export default async function handler(req, res) {
   if (!enforceSameOriginWrite(req, res)) {
     return;
@@ -55,11 +38,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const rate = checkRateLimit(req, 'contact-form', 8, 10 * 60 * 1000);
-  if (!rate.ok) {
-    res.status(429).json({ error: 'Too many requests. Please try again in a few minutes.' });
-    return;
-  }
+  if (!(await enforceRateLimit(req, res, 'contact-form', 8, 10 * 60 * 1000))) return;
 
   const name = cleanText(req.body?.name, 80);
   const email = cleanText(req.body?.email, 120).toLowerCase();
@@ -85,7 +64,6 @@ export default async function handler(req, res) {
   const ip = getClientIp(req);
 
   try {
-    await ensureContactTable();
     if (sql) {
       await sql`
         INSERT INTO contact_messages (name, email, subject, message, source_ip)

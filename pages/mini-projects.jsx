@@ -2,14 +2,14 @@ import { useMemo, useState } from 'react';
 import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listMiniProjectEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listContentEntryReactions, listMiniProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { toPublicStorageUrl } from '../lib/storage';
 
 const MINI_PROJECTS_HERO_URL = toPublicStorageUrl('assets/hero-images-of-modules/ari-projects.webp');
 
 export async function getStaticProps() {
-  const link = await getProfileLinkByLabel('Mini-Projects');
+  const link = await getProfileLinkBySectionKey('mini-projects');
   const hero = link ? await getSectionHero(link.id, 'Mini-Projects') : { heading: 'Mini-Projects', description: '', imageUrl: '' };
   const miniProjects = await listMiniProjectEntries();
   const likesByEntry = await listContentEntryReactions({

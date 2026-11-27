@@ -2,7 +2,7 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import LikeButton from '../src/components/LikeButton';
-import { getProfileLinkByLabel, getSectionHero, listClayPlayEntryReactions, listContentComments, listLinkItems } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listClayPlayEntryReactions, listContentComments, listLinkItems } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { useRef, useState } from 'react';
 
@@ -17,7 +17,7 @@ function normalizeCommentRow(row) {
 }
 
 export async function getStaticProps() {
-  const clayLink = await getProfileLinkByLabel('Clay Play');
+  const clayLink = await getProfileLinkBySectionKey('clay-play');
   if (!clayLink) {
     return {
       props: { entries: [], hero: { heading: 'Clay Play', imageUrl: '' }, initialCommentsByEntry: {} },

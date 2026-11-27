@@ -2,6 +2,7 @@ import { deleteTestimonial, listTestimonialsForAdmin, updateTestimonialForAdmin 
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { toCleanText, toPositiveInt } from '../../../lib/requestUtils';
 import { enforceSameOriginWrite } from '../../../lib/security';
+import { revalidatePublicPaths } from '../../../lib/publicRevalidation';
 
 export default async function handler(req, res) {
   try {
@@ -36,7 +37,8 @@ export default async function handler(req, res) {
         testimonial,
         status,
       });
-      res.status(200).json({ ok: true, testimonial: updated });
+      const refresh = await revalidatePublicPaths(res, ['/']);
+      res.status(200).json({ ok: true, testimonial: updated, refresh });
       return;
     }
 
@@ -48,7 +50,8 @@ export default async function handler(req, res) {
         return;
       }
       await deleteTestimonial({ id });
-      res.status(200).json({ ok: true });
+      const refresh = await revalidatePublicPaths(res, ['/']);
+      res.status(200).json({ ok: true, refresh });
       return;
     }
 

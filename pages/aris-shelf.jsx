@@ -1,13 +1,13 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import ShelfCard from '../src/components/ShelfCard';
-import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listShelfEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listContentEntryReactions, listShelfEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 async function resolveShelfHero() {
-  const shelfLink = await getProfileLinkByLabel('Shelf');
+  const shelfLink = await getProfileLinkBySectionKey('aris-shelf');
   const shelfHero = shelfLink ? await getSectionHero(shelfLink.id, 'Shelf') : null;
-  const booksLink = await getProfileLinkByLabel('My Books');
+  const booksLink = await getProfileLinkBySectionKey('aris-books');
   const booksHero = booksLink ? await getSectionHero(booksLink.id, 'My Books') : null;
 
   const hasShelfHero = Boolean(
@@ -34,7 +34,7 @@ async function resolveShelfHero() {
 export async function getStaticProps() {
   const items = await listShelfEntries();
   const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'shelf',
+    sectionKey: 'aris-shelf',
     entryIds: (Array.isArray(items) ? items : []).map((item) => item.id),
   });
   const hero = await resolveShelfHero();

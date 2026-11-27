@@ -1,11 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { del, put } from '@vercel/blob';
+import { put } from '@vercel/blob';
+import { randomUUID } from 'node:crypto';
 import formidable from 'formidable';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
+import { SUPABASE_IMAGE_MAX_BYTES } from '../../../lib/uploadPolicy';
 
-const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-const RESUME_BLOB_PATH = 'ari-resume/resume.pdf';
+const MAX_UPLOAD_BYTES = SUPABASE_IMAGE_MAX_BYTES;
 
 export const config = {
   api: {
@@ -18,7 +19,8 @@ function parseForm(req) {
     multiples: false,
     maxFiles: 1,
     maxFileSize: MAX_UPLOAD_BYTES,
-    filter: ({ mimetype }) => mimetype === 'application/pdf' || mimetype === 'application/octet-stream',
+    maxTotalFileSize: MAX_UPLOAD_BYTES,
+    filter: () => true,
   });
 
   return new Promise((resolve, reject) => {
@@ -27,29 +29,6 @@ function parseForm(req) {
       else resolve({ fields, files });
     });
   });
-}
-
-function normalizeBlobUrl(url) {
-  const input = String(url || '').trim();
-  if (!input) return '';
-  try {
-    const parsed = new URL(input);
-    parsed.search = '';
-    parsed.hash = '';
-    return parsed.toString();
-  } catch {
-    return '';
-  }
-}
-
-function normalizeBlobPath(url) {
-  const normalizedUrl = normalizeBlobUrl(url);
-  if (!normalizedUrl) return '';
-  try {
-    return decodeURIComponent(new URL(normalizedUrl).pathname.replace(/^\/+/, ''));
-  } catch {
-    return '';
-  }
 }
 
 export default async function handler(req, res) {
@@ -65,34 +44,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { files, fields } = await parseForm(req);
+    const { files } = await parseForm(req);
     const file = files?.pdf?.[0] || files?.pdf;
 
     if (!file) {
       res.status(400).json({ error: 'No PDF provided.' });
       return;
     }
+    if (file.mimetype !== 'application/pdf' && file.mimetype !== 'application/octet-stream') {
+      res.status(415).json({ error: 'Unsupported résumé file type. Choose a PDF file.' });
+      return;
+    }
 
-    const currentUrl = Array.isArray(fields?.currentUrl) ? fields.currentUrl[0] : fields?.currentUrl;
     const fileBuffer = await readFile(file.filepath);
-    const blob = await put(RESUME_BLOB_PATH, fileBuffer, {
+    const blob = await put(`ari-resume/pending/resume-${randomUUID()}.pdf`, fileBuffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
+      allowOverwrite: false,
       contentType: 'application/pdf',
     });
 
-    const normalizedCurrent = normalizeBlobUrl(currentUrl);
-    if (normalizedCurrent && normalizeBlobPath(normalizedCurrent) !== RESUME_BLOB_PATH) {
-      try {
-        await del(normalizedCurrent, {
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-        });
-      } catch (_deleteError) {
-      }
-    }
-
     res.status(200).json({ pdfUrl: blob.url });
   } catch (error) {
-    res.status(500).json({ error: error?.message || 'Could not upload resume PDF.' });
+    if (error?.code === 'ETOOBIG' || error?.httpCode === 413) {
+      res.status(413).json({ error: 'File too large for this legacy route. Use the admin direct-upload flow for résumé PDFs up to 20 MiB.' });
+      return;
+    }
+    res.status(500).json({ error: 'Could not upload resume PDF.' });
   }
 }

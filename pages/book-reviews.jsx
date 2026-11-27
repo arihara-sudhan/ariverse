@@ -2,14 +2,14 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import LikeButton from '../src/components/LikeButton';
 import { useMemo, useState } from 'react';
-import { getProfileLinkByLabel, getSectionHero, listBookReviewEntryReactions, listLinkItems } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
-import { isInstagramUrl } from '../lib/security';
+import { isInstagramUrl } from '../lib/urlValidation';
 
 const DEFAULT_BOOK_REVIEW_QUOTE = 'A good book stays with you long after the final page.';
 
 export async function getStaticProps() {
-  const link = await getProfileLinkByLabel('Book Reviews');
+  const { getProfileLinkBySectionKey, getSectionHero, listBookReviewEntryReactions, listLinkItems } = await import('../lib/adminData');
+  const link = await getProfileLinkBySectionKey('book-reviews');
   if (!link) {
     return {
       props: { entries: [], hero: { heading: 'Book Reviews', imageUrl: '' }, likesByEntry: {} },

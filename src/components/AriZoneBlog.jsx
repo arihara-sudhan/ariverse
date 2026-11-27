@@ -4,6 +4,7 @@ import Header from './Header';
 import LikeButton from './LikeButton';
 import DiscussionThread from './DiscussionThread';
 import { ARIZONE_SITE_LOGO_URL, ARIZONE_TOPIC_LOGO_URLS } from '../../lib/arizoneAssets';
+import { sanitizeRenderedMarkdown } from '../../lib/markdownRenderer';
 import { toPublicStorageUrl } from '../../lib/storage';
 
 const POSTS_PER_PAGE = 10;
@@ -652,7 +653,8 @@ export function AriZonePostView({ post, initialComments = [], initialLikesCount 
               id="post-content"
               className="post-content"
               dangerouslySetInnerHTML={{
-                __html: normalizedPost.html || '<p class="empty-state">This post has not been published yet.</p>',
+                __html: sanitizeRenderedMarkdown(normalizedPost.html)
+                  || '<p class="empty-state">This post has not been published yet.</p>',
               }}
             />
 

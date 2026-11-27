@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+const MAX_LIKE_BATCH_COUNT = 25;
+
 function toPositiveCount(value) {
   const number = Number(value || 0);
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
@@ -18,16 +20,40 @@ function readPendingMap(storageKey) {
   }
 }
 
+function normalizePendingRecord(value) {
+  if (typeof value === 'number') {
+    return { count: toPositiveCount(value), idempotencyKey: '' };
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { count: 0, idempotencyKey: '' };
+  }
+  return {
+    count: toPositiveCount(value.count),
+    idempotencyKey: typeof value.idempotencyKey === 'string' ? value.idempotencyKey.trim().slice(0, 120) : '',
+  };
+}
+
+function createIdempotencyKey() {
+  if (typeof window !== 'undefined' && typeof window.crypto?.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  return `like-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
 function writePendingMap(storageKey, map) {
   if (typeof window === 'undefined') return;
-  const keys = Object.keys(map).filter((key) => toPositiveCount(map[key]) > 0);
+  const keys = Object.keys(map).filter((key) => normalizePendingRecord(map[key]).count > 0);
   if (keys.length === 0) {
     window.localStorage.removeItem(storageKey);
     return;
   }
   const next = {};
   for (const key of keys) {
-    next[key] = toPositiveCount(map[key]);
+    const record = normalizePendingRecord(map[key]);
+    next[key] = {
+      count: record.count,
+      idempotencyKey: record.idempotencyKey || createIdempotencyKey(),
+    };
   }
   window.localStorage.setItem(storageKey, JSON.stringify(next));
 }
@@ -70,20 +96,33 @@ export default function LikeButton({
   const entryKey = String(entryId);
   const storageKey = `ariverse:like-pending:${storageNamespace}`;
   const pendingDeltaRef = useRef(0);
+  const pendingKeyRef = useRef('');
   const countRequestRef = useRef(0);
   const flushInFlightRef = useRef(false);
   const [count, setCount] = useState(() => {
     const pendingMap = readPendingMap(storageKey);
-    const pendingDelta = toPositiveCount(pendingMap[entryKey]);
+    const pendingRecord = normalizePendingRecord(pendingMap[entryKey]);
+    const pendingDelta = pendingRecord.count;
+    const idempotencyKey = pendingRecord.idempotencyKey || createIdempotencyKey();
     pendingDeltaRef.current = pendingDelta;
+    pendingKeyRef.current = idempotencyKey;
+    if (pendingDelta > 0 && !pendingRecord.idempotencyKey) {
+      writePendingMap(storageKey, { ...pendingMap, [entryKey]: { count: pendingDelta, idempotencyKey } });
+    }
     return toPositiveCount(initialCount) + pendingDelta;
   });
   const [isFlushing, setIsFlushing] = useState(false);
 
   useEffect(() => {
     const pendingMap = readPendingMap(storageKey);
-    const pendingDelta = toPositiveCount(pendingMap[entryKey]);
+    const pendingRecord = normalizePendingRecord(pendingMap[entryKey]);
+    const pendingDelta = pendingRecord.count;
+    const idempotencyKey = pendingRecord.idempotencyKey || createIdempotencyKey();
     pendingDeltaRef.current = pendingDelta;
+    pendingKeyRef.current = idempotencyKey;
+    if (pendingDelta > 0 && !pendingRecord.idempotencyKey) {
+      writePendingMap(storageKey, { ...pendingMap, [entryKey]: { count: pendingDelta, idempotencyKey } });
+    }
     setCount(toPositiveCount(initialCount) + pendingDelta);
   }, [entryKey, initialCount, storageKey]);
 
@@ -115,20 +154,37 @@ export default function LikeButton({
     };
   }, [endpoint, entryId, section]);
 
-  function clearPendingDelta() {
-    pendingDeltaRef.current = 0;
-    writePendingMap(storageKey, { ...readPendingMap(storageKey), [entryKey]: 0 });
+  function acknowledgePendingBatch(batchCount) {
+    const pendingMap = readPendingMap(storageKey);
+    const current = normalizePendingRecord(pendingMap[entryKey]);
+    const remaining = Math.max(0, current.count - batchCount);
+    pendingDeltaRef.current = remaining;
+    if (remaining > 0) {
+      const nextKey = createIdempotencyKey();
+      pendingKeyRef.current = nextKey;
+      writePendingMap(storageKey, {
+        ...pendingMap,
+        [entryKey]: { count: remaining, idempotencyKey: nextKey },
+      });
+      return;
+    }
+    pendingKeyRef.current = '';
+    writePendingMap(storageKey, { ...pendingMap, [entryKey]: 0 });
   }
 
   async function flushPending({ useBeacon = false } = {}) {
     const delta = pendingDeltaRef.current;
     if (!delta || flushInFlightRef.current) return;
+    const batchCount = Math.min(delta, MAX_LIKE_BATCH_COUNT);
+    const idempotencyKey = pendingKeyRef.current || createIdempotencyKey();
+    pendingKeyRef.current = idempotencyKey;
 
     const payload = {
       action: 'like',
       section,
       entryId: Number(entryId),
-      count: delta,
+      count: batchCount,
+      idempotencyKey,
     };
 
     flushInFlightRef.current = true;
@@ -140,7 +196,7 @@ export default function LikeButton({
           new Blob([JSON.stringify(payload)], { type: 'application/json' }),
         );
         if (queued) {
-          clearPendingDelta();
+          acknowledgePendingBatch(batchCount);
         }
         return;
       }
@@ -153,7 +209,7 @@ export default function LikeButton({
       });
 
       if (res.ok) {
-        clearPendingDelta();
+        acknowledgePendingBatch(batchCount);
       }
     } catch (_error) {
       // Keep the queued delta in session storage so it can be retried.
@@ -164,10 +220,17 @@ export default function LikeButton({
   }
 
   function handleLike() {
-    const nextDelta = pendingDeltaRef.current + 1;
+    const pendingMap = readPendingMap(storageKey);
+    const current = normalizePendingRecord(pendingMap[entryKey]);
+    const idempotencyKey = current.idempotencyKey || pendingKeyRef.current || createIdempotencyKey();
+    const nextDelta = current.count + 1;
     pendingDeltaRef.current = nextDelta;
+    pendingKeyRef.current = idempotencyKey;
     setCount((current) => current + 1);
-    writePendingMap(storageKey, { ...readPendingMap(storageKey), [entryKey]: nextDelta });
+    writePendingMap(storageKey, {
+      ...pendingMap,
+      [entryKey]: { count: nextDelta, idempotencyKey },
+    });
   }
 
   useEffect(() => {

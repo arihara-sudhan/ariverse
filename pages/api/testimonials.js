@@ -1,7 +1,7 @@
 import { addTestimonial, listTestimonialsForAdmin } from '../../lib/adminData';
 import { notifyAdminTestimonialApproval } from '../../lib/formspree';
 import { toCleanText } from '../../lib/requestUtils';
-import { checkRateLimit, enforceSameOriginWrite } from '../../lib/security';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../lib/security';
 
 export default async function handler(req, res) {
   try {
@@ -13,11 +13,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (!enforceSameOriginWrite(req, res)) return;
-      const limit = checkRateLimit(req, 'testimonials-form', 8, 10 * 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+    if (!(await enforceRateLimit(req, res, 'testimonials-form', 8, 10 * 60 * 1000))) return;
 
       const name = toCleanText(req.body?.name, 80);
       const relation = toCleanText(req.body?.relation, 80);

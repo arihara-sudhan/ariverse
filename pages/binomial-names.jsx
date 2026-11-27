@@ -2,8 +2,7 @@ import LikeButton from '../src/components/LikeButton';
 import DiscussionThread from '../src/components/DiscussionThread';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listLinkItems } from '../lib/adminData';
-import { isAllowedYouTubeUrl } from '../lib/security';
+import { isAllowedYouTubeUrl } from '../lib/urlValidation';
 
 function toEmbedUrl(value) {
   const text = typeof value === 'string' ? value.trim() : '';
@@ -30,7 +29,8 @@ function toEmbedUrl(value) {
 const DEFAULT_BINOMIAL_QUOTE = 'Names matter! They connect us to the incredible diversity of life';
 
 export async function getServerSideProps({ query }) {
-  const binomialLink = await getProfileLinkByLabel('Binomial Names');
+  const { getProfileLinkBySectionKey, getSectionHero, listContentComments, listContentEntryReactions, listLinkItems } = await import('../lib/adminData');
+  const binomialLink = await getProfileLinkBySectionKey('binomial-names');
   if (!binomialLink) {
     return { props: { selectedEntry: null, hero: { heading: 'Binomial Names', description: '', imageUrl: '' } } };
   }

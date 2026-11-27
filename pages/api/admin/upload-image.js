@@ -4,14 +4,13 @@ import { randomUUID } from 'node:crypto';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
 import { toPublicStorageUrl } from '../../../lib/storage';
+import { IMAGE_MIME_TYPES, SUPABASE_IMAGE_MAX_BYTES } from '../../../lib/uploadPolicy';
 
-const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-const ALLOWED_MIME_TO_EXT = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
+const MAX_UPLOAD_BYTES = SUPABASE_IMAGE_MAX_BYTES;
+const ALLOWED_MIME_TO_EXT = Object.fromEntries(IMAGE_MIME_TYPES.map((type) => [
+  type,
+  type === 'image/jpeg' ? '.jpg' : `.${type.slice('image/'.length)}`,
+]));
 
 export const config = {
   api: {
@@ -24,7 +23,8 @@ function parseForm(req) {
     multiples: false,
     maxFiles: 1,
     maxFileSize: MAX_UPLOAD_BYTES,
-    filter: ({ mimetype }) => Boolean(mimetype && ALLOWED_MIME_TO_EXT[mimetype]),
+    maxTotalFileSize: MAX_UPLOAD_BYTES,
+    filter: () => true,
   });
   return new Promise((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
@@ -281,6 +281,13 @@ function isCleanSectionPath(pathname, sectionFolder) {
   return !path.includes('/uploads/');
 }
 
+function makeUniqueObjectPath(pathname) {
+  const clean = String(pathname || '').replace(/^\/+/, '');
+  if (!clean) return '';
+  const match = clean.match(/^(.*?)(\.[^/.]+)?$/);
+  return `${match?.[1] || clean}-${randomUUID()}${match?.[2] || ''}`;
+}
+
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -301,6 +308,10 @@ export default async function handler(req, res) {
 
     if (!file) {
       res.status(400).json({ error: 'No image provided.' });
+      return;
+    }
+    if (!ALLOWED_MIME_TO_EXT[String(file.mimetype || '').trim().toLowerCase()]) {
+      res.status(415).json({ error: 'Unsupported image type. Use JPEG, PNG, WebP, or GIF.' });
       return;
     }
 
@@ -338,14 +349,16 @@ export default async function handler(req, res) {
 
     const supabaseUrl = getSupabaseBaseUrl();
     const bucket = getSupabaseBucket();
-    const objectPath = String(fileName || '').replace(/^\/+/, '');
+    // Never overwrite an object that may still be referenced by the live site.
+    // Metadata is saved separately, so a failed save leaves the old object usable.
+    const objectPath = makeUniqueObjectPath(fileName);
     const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${objectPath}`;
     const response = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${uploadKey}`,
         apikey: uploadKey,
-        'x-upsert': 'true',
+        'x-upsert': 'false',
         'content-type': file.mimetype || 'application/octet-stream',
       },
       body: fileBuffer,
@@ -359,7 +372,15 @@ export default async function handler(req, res) {
 
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${objectPath}`;
     res.status(200).json({ imageUrl: `${publicUrl}?v=${Date.now()}`, storageUrl: publicUrl });
-  } catch (_error) {
+  } catch (error) {
+    if (error?.code === 'ETOOBIG' || error?.httpCode === 413) {
+      res.status(413).json({ error: 'File too large. Images must be 4 MiB or smaller.' });
+      return;
+    }
+    if (error?.code === 'incorrect_header' || error?.code === 'EINVAL') {
+      res.status(415).json({ error: 'Unsupported image type. Use JPEG, PNG, WebP, or GIF.' });
+      return;
+    }
     res.status(500).json({ error: 'Upload failed.' });
   }
 }

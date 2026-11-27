@@ -3,6 +3,7 @@ import { AriZonePostView } from '../../src/components/AriZoneBlog';
 import { getArizonePostBySlug, listArizonePosts } from '../../lib/arizoneData';
 import { ARIZONE_SITE_LOGO_URL } from '../../lib/arizoneAssets';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../../lib/pageCache';
+import { loadPublicContent, PUBLIC_CONTENT_STATUS, throwIfPublicContentUnavailable } from '../../lib/publicContent';
 
 export async function getStaticPaths() {
   const posts = await listArizonePosts();
@@ -20,13 +21,14 @@ export async function getStaticPaths() {
 
 export async function getStaticProps(context) {
   const slug = context?.params?.slug;
-  const post = await getArizonePostBySlug(slug);
+  const result = throwIfPublicContentUnavailable(await loadPublicContent(() => getArizonePostBySlug(slug)));
 
-  if (!post) {
+  if (result.status === PUBLIC_CONTENT_STATUS.MISSING) {
     return {
       notFound: true,
     };
   }
+  const post = result.value;
 
   return {
     props: {

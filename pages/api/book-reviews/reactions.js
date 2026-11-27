@@ -1,6 +1,7 @@
 import { addBookReviewEntryLike, listBookReviewEntryReactions } from '../../../lib/adminData';
 import { toCleanText, toPositiveInt } from '../../../lib/requestUtils';
-import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
+import { getMutationErrorResponse, MAX_LIKE_BATCH_COUNT, normalizeLikeBatchCount } from '../../../lib/publicMutationPolicy';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../../lib/security';
 
 export default async function handler(req, res) {
   try {
@@ -27,24 +28,21 @@ export default async function handler(req, res) {
       if (!enforceSameOriginWrite(req, res)) {
         return;
       }
-      const limit = checkRateLimit(req, 'book-review-reactions', 60, 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'book-review-reactions', 60, 60 * 1000))) return;
 
       const action = toCleanText(req.body?.action, 20).toLowerCase();
       const entryId = toPositiveInt(req.body?.entryId);
       const name = toCleanText(req.body?.name, 80);
-      const count = Math.max(1, toPositiveInt(req.body?.count) || 1);
+      const count = normalizeLikeBatchCount(req.body?.count, 1);
+      const idempotencyKey = toCleanText(req.body?.idempotencyKey, 120);
 
-      if (!entryId) {
-        res.status(400).json({ error: 'Valid entryId is required.' });
+      if (!entryId || !count) {
+        res.status(400).json({ error: `Valid entryId and count (1-${MAX_LIKE_BATCH_COUNT}) are required.` });
         return;
       }
 
       if (action === 'like') {
-        const result = await addBookReviewEntryLike({ entryId, name, count });
+        const result = await addBookReviewEntryLike({ entryId, name, count, idempotencyKey });
         res.status(200).json({ ok: true, likesCount: result.likesCount || 0 });
         return;
       }
@@ -54,7 +52,12 @@ export default async function handler(req, res) {
     }
 
     res.status(405).json({ error: 'Method not allowed' });
-  } catch (_error) {
+  } catch (error) {
+    const response = getMutationErrorResponse(error);
+    if (response) {
+      res.status(response.status).json({ error: response.message });
+      return;
+    }
     res.status(500).json({ error: 'Unexpected server error.' });
   }
 }

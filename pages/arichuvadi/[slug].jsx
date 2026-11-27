@@ -3,6 +3,7 @@ import { ArichuvadiPostView } from '../../src/components/ArichuvadiBlog';
 import { getArichuvadiPostBySlug, listArichuvadiPosts } from '../../lib/arichuvadiData';
 import { ARICHUVADI_SITE_LOGO_URL } from '../../lib/arichuvadiAssets';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../../lib/pageCache';
+import { loadPublicContent, PUBLIC_CONTENT_STATUS, throwIfPublicContentUnavailable } from '../../lib/publicContent';
 
 export async function getStaticPaths() {
   const posts = await listArichuvadiPosts();
@@ -20,13 +21,14 @@ export async function getStaticPaths() {
 
 export async function getStaticProps(context) {
   const slug = context?.params?.slug;
-  const post = await getArichuvadiPostBySlug(slug);
+  const result = throwIfPublicContentUnavailable(await loadPublicContent(() => getArichuvadiPostBySlug(slug)));
 
-  if (!post) {
+  if (result.status === PUBLIC_CONTENT_STATUS.MISSING) {
     return {
       notFound: true,
     };
   }
+  const post = result.value;
 
   return {
     props: {

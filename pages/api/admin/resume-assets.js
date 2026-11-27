@@ -1,6 +1,45 @@
+import { del } from '@vercel/blob';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
-import { getProfileLinkByLabel, getResumeAssets, upsertResumeAssets } from '../../../lib/adminData';
+import { getProfileLinkBySectionKey, getResumeAssets, upsertResumeAssets } from '../../../lib/adminData';
+
+function normalizeBlobUrl(value) {
+  const input = String(value || '').trim();
+  if (!input) return '';
+  try {
+    const parsed = new URL(input);
+    parsed.search = '';
+    parsed.hash = '';
+    if (!parsed.hostname.endsWith('.public.blob.vercel-storage.com')) return '';
+    return parsed.toString();
+  } catch (_error) {
+    return '';
+  }
+}
+
+async function deleteReplacedBlob(url) {
+  const normalizedUrl = normalizeBlobUrl(url);
+  if (!normalizedUrl) return;
+  try {
+    await del(normalizedUrl, { token: process.env.BLOB_READ_WRITE_TOKEN });
+  } catch (_error) {
+    // Cleanup is best effort. The committed metadata remains authoritative.
+  }
+}
+
+async function deleteReplacedBlobs(previousAsset, nextAsset, field) {
+  const previous = field === 'pdfUrl'
+    ? [previousAsset?.pdfUrl]
+    : (Array.isArray(previousAsset?.pageImageUrls) ? previousAsset.pageImageUrls : []);
+  const next = field === 'pdfUrl'
+    ? [nextAsset?.pdfUrl]
+    : (Array.isArray(nextAsset?.pageImageUrls) ? nextAsset.pageImageUrls : []);
+  const nextSet = new Set(next.map((url) => normalizeBlobUrl(url)).filter(Boolean));
+  await Promise.all(previous
+    .map((url) => normalizeBlobUrl(url))
+    .filter((url) => url && !nextSet.has(url))
+    .map(deleteReplacedBlob));
+}
 
 export default async function handler(req, res) {
   if (!isAdminRequest(req)) {
@@ -9,7 +48,7 @@ export default async function handler(req, res) {
   }
   if (!enforceSameOriginWrite(req, res)) return;
 
-  const link = await getProfileLinkByLabel('Resume');
+  const link = await getProfileLinkBySectionKey('resume');
   if (!link) {
     res.status(404).json({ error: 'Resume section not found.' });
     return;
@@ -40,6 +79,8 @@ export default async function handler(req, res) {
             ? currentAsset.pageImageUrls
             : [],
       });
+      if (hasPdfUrl) await deleteReplacedBlobs(currentAsset, asset, 'pdfUrl');
+      if (hasPageImageUrls) await deleteReplacedBlobs(currentAsset, asset, 'pageImageUrls');
       res.status(200).json({ asset });
     } catch (_error) {
       res.status(500).json({ error: 'Could not save resume assets.' });

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listArisBooksEntries, listContentEntryReactions } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listArisBooksEntries, listContentEntryReactions } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function toWorkingBookUrl(url) {
@@ -52,11 +52,11 @@ function prettyCategoryLabel(category) {
 const DEFAULT_ARIS_BOOKS_QUOTE = 'Every page reflects a lesson learned, a story told, or a vision shared';
 
 export async function getStaticProps() {
-  const link = await getProfileLinkByLabel('My Books');
+  const link = await getProfileLinkBySectionKey('aris-books');
   const hero = link ? await getSectionHero(link.id, 'My Books') : { heading: 'Aris Books', description: '', imageUrl: '' };
   const books = await listArisBooksEntries();
   const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'my-books',
+    sectionKey: 'aris-books',
     entryIds: (Array.isArray(books) ? books : []).map((book) => book.id),
   });
   return { props: { hero, books, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };

@@ -164,6 +164,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error('Arichuvadi rename migration failed:', error?.code || error?.name || 'unknown error');
   process.exit(1);
 });

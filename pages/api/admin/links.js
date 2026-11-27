@@ -1,7 +1,8 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
-import { addProfileLink, listProfileLinks, setProfileLinkHidden } from '../../../lib/adminData';
+import { addProfileLink, getProfileLinkById, listProfileLinks, setProfileLinkHidden, updateProfileLinkLabel } from '../../../lib/adminData';
 import { toCleanText } from '../../../lib/requestUtils';
 import { enforceSameOriginWrite, isSafePublicHref } from '../../../lib/security';
+import { publicPathsForProfileLink, revalidatePublicPaths } from '../../../lib/publicRevalidation';
 
 const LINK_CATEGORIES = ['PROFESSIONAL', 'PASSIONAL', 'HOBBYAL'];
 
@@ -22,6 +23,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const label = toCleanText(req.body?.label);
     const href = toCleanText(req.body?.href);
+    const sectionKey = toCleanText(req.body?.sectionKey);
     const category = toCleanText(req.body?.category).toUpperCase();
 
     if (!label || !href) {
@@ -38,22 +40,39 @@ export default async function handler(req, res) {
       return;
     }
 
-    const link = await addProfileLink({ label, href, category });
-    res.status(201).json({ link });
+    const link = await addProfileLink({ label, href, category, sectionKey });
+    const refresh = await revalidatePublicPaths(res, publicPathsForProfileLink(link));
+    res.status(201).json({ link, refresh });
     return;
   }
 
   if (req.method === 'PATCH') {
     const id = Number(req.body?.id);
+    const hasLabel = typeof req.body?.label === 'string';
+    const hasHidden = typeof req.body?.hidden !== 'undefined';
     const hidden = Boolean(req.body?.hidden);
 
-    if (!Number.isInteger(id) || id <= 0) {
+    if (!Number.isInteger(id) || id <= 0 || (!hasLabel && !hasHidden)) {
       res.status(400).json({ error: 'Invalid link id.' });
       return;
     }
 
-    await setProfileLinkHidden(id, hidden);
-    res.status(200).json({ ok: true });
+    const previousLink = await getProfileLinkById(id);
+    let link = previousLink;
+    if (hasLabel) {
+      const label = toCleanText(req.body.label);
+      if (!label) {
+        res.status(400).json({ error: 'Label is required.' });
+        return;
+      }
+      link = await updateProfileLinkLabel(id, label);
+    }
+    if (hasHidden) {
+      await setProfileLinkHidden(id, hidden);
+      link = await getProfileLinkById(id);
+    }
+    const refresh = await revalidatePublicPaths(res, publicPathsForProfileLink(link || previousLink));
+    res.status(200).json({ ok: true, link, refresh });
     return;
   }
 

@@ -6,6 +6,8 @@
         "dev": "next dev --webpack",
         "build": "next build",
         "start": "next start",
+        "test": "node --test tests/*.test.mjs",
+        "db:migrate": "node scripts/db-migrate.mjs",
         "resume:images": "node scripts/generate-resume-images.mjs",
         "audit:media-urls": "node scripts/audit-media-urls.mjs",
         "dump:neon": "node scripts/dump-neon-all-tables.mjs",
@@ -27,7 +29,8 @@
         "react": "19.2.6",
         "react-dom": "19.2.6",
         "react-markdown": "^10.1.0",
-        "remark-gfm": "^4.0.1"
+        "remark-gfm": "^4.0.1",
+        "sanitize-html": "^2.18.2"
     },
     "devDependencies": {
         "sharp": "^0.34.5"

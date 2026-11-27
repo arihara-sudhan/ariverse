@@ -3,6 +3,8 @@ import { useState } from 'react';
 import Header from '../../src/components/Header';
 import { isAdminRequest } from '../../lib/adminAuth';
 import { listFeatureImages } from '../../lib/adminData';
+import { validateSupabaseImage } from '../../lib/uploadPolicy';
+import { UPLOAD_METADATA_FAILURE_MESSAGE } from '../../lib/uploadRecovery';
 
 export async function getServerSideProps({ req }) {
   const isAuthed = isAdminRequest(req);
@@ -33,6 +35,7 @@ export default function FeatureImagesAdminPage({ isAuthed, initialImages, initia
   const [images, setImages] = useState(initialImages);
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pendingImageUrls, setPendingImageUrls] = useState([]);
 
   async function loadImages() {
     const res = await fetch('/api/admin/feature-images');
@@ -75,45 +78,58 @@ export default function FeatureImagesAdminPage({ isAuthed, initialImages, initia
 
   async function uploadFiles(event) {
     event.preventDefault();
-    const fileInput = event.currentTarget.elements.namedItem('featureFiles');
+    const form = event.currentTarget;
+    const fileInput = form.elements.namedItem('featureFiles');
     const files = Array.from(fileInput?.files || []);
-    if (files.length === 0) return;
+    if (files.length === 0 && pendingImageUrls.length === 0) return;
 
     setUploading(true);
     setError('');
 
     try {
       const uploaded = [];
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('section', 'Homepage');
-        formData.append('sectionHref', '/');
-        formData.append('title', 'Feature Images');
-
-        const uploadRes = await fetch('/api/admin/upload-image', {
-          method: 'POST',
-          body: formData,
-        });
-        const uploadData = await uploadRes.json().catch(() => ({}));
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || 'Upload failed.');
+      const pending = [...pendingImageUrls];
+      const work = [
+        ...pending.map((imageUrl) => ({ imageUrl })),
+        ...files.map((file) => ({ file })),
+      ];
+      for (let index = 0; index < work.length; index += 1) {
+        const task = work[index];
+        let imageUrl = task.imageUrl || '';
+        if (!imageUrl) {
+          const validationError = validateSupabaseImage(task.file);
+          if (validationError) throw new Error(validationError.message);
+          const formData = new FormData();
+          formData.append('image', task.file);
+          formData.append('section', 'Homepage');
+          formData.append('sectionHref', '/');
+          formData.append('title', 'Feature Images');
+          const uploadRes = await fetch('/api/admin/upload-image', { method: 'POST', body: formData });
+          const uploadData = await uploadRes.json().catch(() => ({}));
+          if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed.');
+          imageUrl = String(uploadData.imageUrl || '').trim();
+          if (!imageUrl) throw new Error('Image upload did not return a URL.');
         }
-
-        const saveRes = await fetch('/api/admin/feature-images', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: uploadData.imageUrl }),
-        });
-        const saveData = await saveRes.json().catch(() => ({}));
-        if (!saveRes.ok) {
-          throw new Error(saveData.error || 'Could not save feature image.');
+        let saveData;
+        try {
+          const saveRes = await fetch('/api/admin/feature-images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl }),
+          });
+          saveData = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) throw new Error(saveData.error || 'Could not save feature image.');
+        } catch (_saveError) {
+          setPendingImageUrls([imageUrl]);
+          form.reset();
+          throw new Error(UPLOAD_METADATA_FAILURE_MESSAGE);
         }
         if (saveData.image) uploaded.push(saveData.image);
       }
 
+      setPendingImageUrls([]);
       setImages((prev) => [...uploaded, ...prev]);
-      event.currentTarget.reset();
+      form.reset();
     } catch (uploadError) {
       setError(uploadError?.message || 'Could not upload feature images.');
     } finally {
@@ -128,7 +144,7 @@ export default function FeatureImagesAdminPage({ isAuthed, initialImages, initia
         <section className="for-ai" aria-labelledby="feature-images-title">
           <p className="eyebrow">Admin</p>
           <h2 id="feature-images-title">Feature Images</h2>
-          <p className="contact-note">Upload images to feature. The homepage picks one at random on load.</p>
+          <p className="contact-note">Upload images to feature. JPEG, PNG, WebP, or GIF up to 4 MiB each. The homepage picks one at random on load.</p>
 
           {!authed ? (
             <form className="contact-card" onSubmit={login}>
@@ -146,7 +162,7 @@ export default function FeatureImagesAdminPage({ isAuthed, initialImages, initia
             <>
               <form className="contact-card" onSubmit={uploadFiles}>
                 <label htmlFor="feature-files">Upload images to feature</label>
-                <input id="feature-files" name="featureFiles" type="file" accept="image/*" multiple required />
+                <input id="feature-files" name="featureFiles" type="file" accept="image/*" multiple required={pendingImageUrls.length === 0} />
                 <button type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload Feature Images'}</button>
               </form>
 

@@ -1,9 +1,10 @@
-import { listFeatureImages, listVisibleProfileLinks } from '../lib/adminData';
+import { isRuntimeDatabaseConfigured, listFeatureImages, listVisibleProfileLinks } from '../lib/adminData';
 import Link from 'next/link';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { HOME_HERO_IMAGE_URL, toPublicStorageUrl } from '../lib/storage';
 import Header from '../src/components/Header';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sectionKeyForProfileLink } from '../lib/sectionRegistry';
 const HERO_FLOWER_URL = toPublicStorageUrl('assets/glory-lily.jpg');
 const AALKAATTI_URL = toPublicStorageUrl('assets/aalkaatti.png');
 const CYNODON_BLOB_URL = 'https://qbghhenrxoupaykgnxyj.supabase.co/storage/v1/object/public/ariverse/assets/cynodon-testimonial-image.webp';
@@ -62,7 +63,6 @@ const HOME_FALLBACK_LINKS = [
   { id: 'f-skillset', label: 'Skillset', href: '/skillset', category: 'PROFESSIONAL' },
   { id: 'f-resume', label: 'Resume', href: '/ari-resume', category: 'PROFESSIONAL' },
   { id: 'f-youtube', label: 'AI with ARI (YouTube)', href: '/ai-with-ari', category: 'PASSIONAL' },
-  { id: 'f-experiments', label: 'Experiments', href: '/aris-xperiments', category: 'PASSIONAL' },
   { id: 'f-mini-projects', label: 'Mini-Projects', href: '/mini-projects', category: 'PROFESSIONAL' },
   { id: 'f-my-books', label: 'My Books', href: '/aris-books', category: 'PASSIONAL' },
   { id: 'f-shelf', label: 'Shelf', href: '/aris-shelf', category: 'PASSIONAL' },
@@ -86,6 +86,10 @@ export async function getStaticProps() {
     listVisibleProfileLinks(),
     listFeatureImages(),
   ]);
+  if (isRuntimeDatabaseConfigured()) {
+    if (profileLinksResult.status === 'rejected') throw profileLinksResult.reason;
+    if (featureImagesResult.status === 'rejected') throw featureImagesResult.reason;
+  }
   const profileLinks = profileLinksResult.status === 'fulfilled' ? profileLinksResult.value : [];
   const featureImages = featureImagesResult.status === 'fulfilled' ? featureImagesResult.value : [];
 
@@ -711,7 +715,8 @@ export default function HomePage({ profileLinks, featureImages }) {
   }, safeLinks);
   const visibleLinks = normalizedLinks.filter((link) => {
     const label = String(link.label || '').trim();
-    return label !== 'Arichuvadu';
+    const section = sectionKeyForProfileLink(link);
+    return label !== 'Arichuvadu' && section.sectionKey !== 'xperiments';
   });
   const preferredOrder = [
     'Career',
@@ -722,7 +727,6 @@ export default function HomePage({ profileLinks, featureImages }) {
     'Projects',
     'Mini-Projects',
     'Resume',
-    'Experiments',
     'Guest Lectures',
     'AI with ARI (YouTube)',
     'My Books',
@@ -949,21 +953,21 @@ export default function HomePage({ profileLinks, featureImages }) {
                 <div className="category-links">
                   {group.items.map((link) => {
                     const resolvedHref =
-                      link.label === 'Skillset'
+                      link.sectionKey === 'skillset'
                         ? '/skillset'
-                      : link.label === 'Resume'
+                      : link.sectionKey === 'resume'
                         ? RESUME_PDF_URL
-                      : link.label === 'Books Read'
+                      : link.sectionKey === 'ari-read-books'
                         ? '/ari-read-books'
                         : link.href;
                     const safeHref = typeof resolvedHref === 'string' && (resolvedHref === '#' || resolvedHref.startsWith('/') || resolvedHref.startsWith('https://'))
                       ? resolvedHref
                       : '/';
                     const isExternal = safeHref.startsWith('http');
-                    const opensInNewTab = isExternal || link.label === 'Resume';
+                    const opensInNewTab = isExternal || link.sectionKey === 'resume';
 
                     const displayLabel =
-                      link.label === 'Works' || link.label === 'Experience'
+                      link.sectionKey === 'ari-career'
                         ? 'Career'
                         : link.label;
 

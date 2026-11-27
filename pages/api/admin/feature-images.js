@@ -1,6 +1,7 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { addFeatureImage, listFeatureImages } from '../../../lib/adminData';
 import { enforceSameOriginWrite } from '../../../lib/security';
+import { revalidatePublicPaths } from '../../../lib/publicRevalidation';
 
 export default async function handler(req, res) {
   try {
@@ -26,7 +27,8 @@ export default async function handler(req, res) {
       }
 
       const image = await addFeatureImage({ imageUrl });
-      res.status(201).json({ image });
+      const refresh = await revalidatePublicPaths(res, ['/']);
+      res.status(201).json({ image, refresh });
       return;
     }
 

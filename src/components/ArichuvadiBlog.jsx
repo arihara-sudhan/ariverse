@@ -5,6 +5,7 @@ import Header from './Header';
 import LikeButton from './LikeButton';
 import DiscussionThread from './DiscussionThread';
 import { ARICHUVADI_SITE_LOGO_URL, ARICHUVADI_TOPIC_LOGO_URLS } from '../../lib/arichuvadiAssets';
+import { sanitizeRenderedMarkdown } from '../../lib/markdownRenderer';
 import { toPublicStorageUrl } from '../../lib/storage';
 
 const POSTS_PER_PAGE = 10;
@@ -723,7 +724,8 @@ export function ArichuvadiPostView({ post, initialComments = [], initialLikesCou
               id="post-content"
               className="post-content"
               dangerouslySetInnerHTML={{
-                __html: articleHtml || '<p class="empty-state">இந்த பதிவு இன்னும் வெளியிடப்படவில்லை.</p>',
+                __html: sanitizeRenderedMarkdown(articleHtml)
+                  || '<p class="empty-state">இந்த பதிவு இன்னும் வெளியிடப்படவில்லை.</p>',
               }}
             />
 

@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../../src/components/Header';
 import MDCreatorComponent from '../../src/components/MDCreatorComponent';
 import { isAdminRequest } from '../../lib/adminAuth';
+import { renderMarkdownToSafeHtml } from '../../lib/markdownRenderer';
+import { validateSupabaseImage } from '../../lib/uploadPolicy';
 
 function formatDate(value) {
   if (!value) return '';
@@ -73,6 +75,14 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
   const selectedPost = useMemo(
     () => posts.find((post) => Number(post.id) === Number(selectedId)) || null,
     [posts, selectedId],
+  );
+
+  const previewHtml = useMemo(
+    () => renderMarkdownToSafeHtml(draft.contentMarkdown, `arizone/posts/${draft.slug || 'untitled'}`, {
+      section: 'arizone',
+      breaks: false,
+    }),
+    [draft.contentMarkdown, draft.slug],
   );
 
   useEffect(() => {
@@ -178,7 +188,8 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
       setSelectedId(nextPost.id);
       setDraft(normalizeDraft(nextPost));
     }
-    setInfo(hasExisting ? 'Post updated.' : 'Post created.');
+    const saveMessage = hasExisting ? 'Post updated.' : 'Post created.';
+    setInfo(data.refresh?.ok === false ? `${saveMessage} ${data.refresh.message}` : saveMessage);
     setSaving(false);
   }
 
@@ -204,7 +215,8 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
     setPosts(nextPosts);
     setSelectedId(null);
     setDraft(normalizeDraft());
-    setInfo('Post deleted.');
+    const deleteMessage = 'Post deleted.';
+    setInfo(data.refresh?.ok === false ? `${deleteMessage} ${data.refresh.message}` : deleteMessage);
     setSaving(false);
   }
 
@@ -232,6 +244,8 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
   }
 
   async function uploadArizoneAsset(file, title, targetPath) {
+    const validationError = validateSupabaseImage(file);
+    if (validationError) throw new Error(validationError.message);
     const formData = new FormData();
     formData.append('image', file);
     formData.append('section', 'AriZone');
@@ -265,6 +279,7 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
           <p className="contact-note">
             Manage AriZone metadata here. The markdown and images live in Supabase under `arizone/...`.
           </p>
+          <p className="contact-note">Images must be JPEG, PNG, WebP, or GIF and no larger than 4 MiB each.</p>
           <p className="contact-note">
             <Link href="/admin/arizone">Start a fresh draft</Link>
           </p>
@@ -348,6 +363,13 @@ export default function AriZoneAdminPage({ isAuthed, initialPosts }) {
                     return uploadArizoneAsset(file, safeName, `arizone/posts/${nextSlug}/images/${safeName}.webp`);
                   }}
                 />
+
+                <section className="contact-card" aria-labelledby="arizone-preview-title">
+                  <h3 id="arizone-preview-title">Preview</h3>
+                  <div className="markdown-preview">
+                    <div dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="empty-state">Nothing to preview yet.</p>' }} />
+                  </div>
+                </section>
 
                 <label htmlFor="arizone-published-at">Published date</label>
                 <input

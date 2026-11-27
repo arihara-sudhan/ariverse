@@ -1,16 +1,35 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
+import { upload as uploadBlob } from '@vercel/blob/client';
 import Header from '../../../src/components/Header';
 import MDCreatorComponent from '../../../src/components/MDCreatorComponent';
 import SectionHero from '../../../src/components/SectionHero';
-import { isAdminRequest } from '../../../lib/adminAuth';
-import { getProfileLinkById, getResumeAssets, getSectionHero, listLinkItems } from '../../../lib/adminData';
-import { listArizoneAdminPosts, listArizoneCategories } from '../../../lib/arizoneAdmin';
-import { listArichuvadiAdminPosts, listArichuvadiCategories } from '../../../lib/arichuvadiAdmin';
-import { isInstagramUrl } from '../../../lib/security';
+import { isInstagramUrl } from '../../../lib/urlValidation';
+import {
+  SUPABASE_IMAGE_MAX_BYTES,
+  validateResumePageFiles,
+  validateResumePdf,
+  validateSupabaseImage,
+} from '../../../lib/uploadPolicy';
+import {
+  UPLOAD_BATCH_PARTIAL_FAILURE_MESSAGE,
+  UPLOAD_METADATA_FAILURE_MESSAGE,
+  metadataSaveFailure,
+  retainSuccessfulBatchUploads,
+} from '../../../lib/uploadRecovery';
 
 const DEFAULT_CLAY_QUOTE = 'Clay can be dirt in the wrong hands, but clay can be art in the right hands.';
 const DEFAULT_PROJECT_CATEGORIES = ['Deep Learning', 'Product Engineering', 'AI Engineering', 'Robotic Process Automation'];
+
+function newUploadId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, '0').slice(-12)}`;
+}
+
+function resumePageExtension(file) {
+  const type = String(file?.type || '').toLowerCase();
+  return type === 'image/jpeg' ? 'jpg' : type.split('/')[1] || 'bin';
+}
 
 function slugifyImageName(input) {
   const cleaned = String(input || '')
@@ -62,6 +81,10 @@ function renderAdminLinkIcon(url) {
 }
 
 export async function getServerSideProps({ req, params }) {
+  const { isAdminRequest } = await import('../../../lib/adminAuth');
+  const { getProfileLinkById, getResumeAssets, getSectionHero, listLinkItems } = await import('../../../lib/adminData');
+  const { listArizoneAdminPosts, listArizoneCategories } = await import('../../../lib/arizoneAdmin');
+  const { listArichuvadiAdminPosts, listArichuvadiCategories } = await import('../../../lib/arichuvadiAdmin');
   if (!isAdminRequest(req)) {
     return {
       redirect: {
@@ -86,9 +109,9 @@ export async function getServerSideProps({ req, params }) {
     ...item,
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : item?.createdAt || '',
   }));
-  const initialResumeAssets = link.label === 'Resume' ? await getResumeAssets(linkId) : null;
-  const isArichuvadiSection = link.label === 'Arichuvadi (Blog)' || link.label === 'Arichuvadi' || link.label === 'Arichuvadu';
-  const isArizoneSection = link.label === 'AriZone (Blog)' || link.label === 'AriZone';
+  const initialResumeAssets = link.sectionKey === 'resume' ? await getResumeAssets(linkId) : null;
+  const isArichuvadiSection = link.sectionKey === 'arichuvadi';
+  const isArizoneSection = link.sectionKey === 'arizone';
   const initialArizonePosts = isArichuvadiSection
     ? await listArichuvadiAdminPosts()
     : isArizoneSection
@@ -222,6 +245,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   const [resumePageImageUrls, setResumePageImageUrls] = useState(initialResumeAssets?.pageImageUrls || []);
   const [resumePdfFile, setResumePdfFile] = useState(null);
   const [resumePageFiles, setResumePageFiles] = useState([]);
+  const [pendingResumePdfUrl, setPendingResumePdfUrl] = useState('');
+  const [pendingResumePageUrls, setPendingResumePageUrls] = useState([]);
   const [markdownText, setMarkdownText] = useState('');
   const [bigDescription, setBigDescription] = useState('');
   const [projectTags, setProjectTags] = useState([]);
@@ -788,6 +813,8 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   }
 
   async function uploadImage(file, title, meta = {}) {
+    const validationError = validateSupabaseImage(file);
+    if (validationError) throw new Error(validationError.message);
     const formData = new FormData();
     formData.append('image', file);
     formData.append('section', link.label || '');
@@ -1032,84 +1059,92 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
   }
 
   async function saveResumePdf(nextResumePdfFile) {
-    const formData = new FormData();
-    formData.append('pdf', nextResumePdfFile);
-    formData.append('currentUrl', resumePdfUrl || '');
-
-    const res = await fetch('/api/admin/upload-resume-pdf', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data.error || 'Could not upload resume PDF.');
-    }
-    const nextPdfUrl = String(data?.pdfUrl || '').trim();
+    const validationError = pendingResumePdfUrl ? null : validateResumePdf(nextResumePdfFile);
+    if (validationError) throw new Error(validationError.message);
+    let nextPdfUrl = pendingResumePdfUrl;
     if (!nextPdfUrl) {
-      throw new Error('Resume PDF upload did not return a URL.');
+      const blob = await uploadBlob(`ari-resume/pending/resume-${newUploadId()}.pdf`, nextResumePdfFile, {
+        access: 'public',
+        handleUploadUrl: '/api/admin/blob-upload',
+        clientPayload: JSON.stringify({ kind: 'resume-pdf' }),
+        contentType: 'application/pdf',
+        multipart: Number(nextResumePdfFile?.size || 0) > SUPABASE_IMAGE_MAX_BYTES,
+      });
+      nextPdfUrl = String(blob?.url || '').trim();
+      if (!nextPdfUrl) throw new Error('Resume PDF upload did not return a URL.');
+      setPendingResumePdfUrl(nextPdfUrl);
     }
-    const saveRes = await fetch('/api/admin/resume-assets', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        linkId: link.id,
-        pdfUrl: nextPdfUrl,
-      }),
-    });
-    const saveData = await saveRes.json().catch(() => ({}));
-    if (!saveRes.ok) {
-      throw new Error(saveData.error || 'Could not save resume PDF.');
+    try {
+      const saveRes = await fetch('/api/admin/resume-assets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkId: link.id, pdfUrl: nextPdfUrl }),
+      });
+      const saveData = await saveRes.json().catch(() => ({}));
+      if (!saveRes.ok) throw new Error(saveData.error || 'Could not save resume PDF.');
+      setResumePdfUrl(typeof saveData?.asset?.pdfUrl === 'string' ? saveData.asset.pdfUrl : nextPdfUrl);
+      setPendingResumePdfUrl('');
+      setResumePdfFile(null);
+      return saveData.asset || null;
+    } catch (error) {
+      const recovery = metadataSaveFailure(nextPdfUrl, error);
+      const wrapped = new Error(recovery.message);
+      wrapped.uploadedUrl = recovery.uploadedUrl;
+      throw wrapped;
     }
-    if (typeof saveData?.asset?.pdfUrl === 'string') {
-      setResumePdfUrl(saveData.asset.pdfUrl);
-    } else {
-      setResumePdfUrl(nextPdfUrl);
-    }
-    setResumePdfFile(null);
-    return saveData.asset || null;
   }
 
   async function saveResumePageImages(nextResumePageFiles) {
     const files = Array.isArray(nextResumePageFiles) ? nextResumePageFiles.filter(Boolean) : [];
     if (files.length === 0) return null;
-
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('images', file);
-    });
-    formData.append('currentUrls', JSON.stringify(resumePageImageUrls || []));
-
-    const res = await fetch('/api/admin/upload-resume-images', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data.error || 'Could not upload resume images.');
+    const validationError = validateResumePageFiles(files);
+    if (validationError) throw new Error(validationError.message);
+    const pending = files.length === pendingResumePageUrls.length
+      ? [...pendingResumePageUrls]
+      : Array(files.length).fill('');
+    const results = await Promise.allSettled(files.map(async (file, index) => {
+      if (pending[index]) return pending[index];
+      const blob = await uploadBlob(
+        `ari-resume/pending/pages-${newUploadId()}/page-${index + 1}-${newUploadId()}.${resumePageExtension(file)}`,
+        file,
+        {
+          access: 'public',
+          handleUploadUrl: '/api/admin/blob-upload',
+          clientPayload: JSON.stringify({ kind: 'resume-page' }),
+          contentType: file.type,
+          multipart: Number(file.size || 0) > SUPABASE_IMAGE_MAX_BYTES,
+        },
+      );
+      return String(blob?.url || '').trim();
+    }));
+    const nextPending = retainSuccessfulBatchUploads(results).map((url, index) => url || pending[index] || '');
+    setPendingResumePageUrls(nextPending);
+    if (results.some((result) => result.status === 'rejected')) {
+      throw new Error(UPLOAD_BATCH_PARTIAL_FAILURE_MESSAGE);
     }
-    const nextPageImageUrls = Array.isArray(data?.pageImageUrls) ? data.pageImageUrls : [];
-    if (nextPageImageUrls.length === 0) {
-      throw new Error('Resume image upload did not return any URLs.');
+    const nextPageImageUrls = nextPending.filter(Boolean);
+    if (nextPageImageUrls.length !== files.length) {
+      throw new Error('Resume image upload did not return all page URLs.');
     }
-    const saveRes = await fetch('/api/admin/resume-assets', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        linkId: link.id,
-        pageImageUrls: nextPageImageUrls,
-      }),
-    });
-    const saveData = await saveRes.json().catch(() => ({}));
-    if (!saveRes.ok) {
-      throw new Error(saveData.error || 'Could not save resume images.');
+    try {
+      const saveRes = await fetch('/api/admin/resume-assets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkId: link.id, pageImageUrls: nextPageImageUrls }),
+      });
+      const saveData = await saveRes.json().catch(() => ({}));
+      if (!saveRes.ok) throw new Error(saveData.error || 'Could not save resume images.');
+      setResumePageImageUrls(Array.isArray(saveData?.asset?.pageImageUrls) ? saveData.asset.pageImageUrls : nextPageImageUrls);
+      setPendingResumePageUrls([]);
+      setResumePageFiles([]);
+      return saveData.asset || null;
+    } catch (error) {
+      const recovery = metadataSaveFailure(nextPageImageUrls.join(','), error);
+      const wrapped = new Error(UPLOAD_METADATA_FAILURE_MESSAGE);
+      wrapped.uploadedUrls = nextPageImageUrls;
+      wrapped.uploadedUrl = recovery.uploadedUrl;
+      throw wrapped;
     }
-    if (Array.isArray(saveData?.asset?.pageImageUrls)) {
-      setResumePageImageUrls(saveData.asset.pageImageUrls);
-    } else {
-      setResumePageImageUrls(nextPageImageUrls);
-    }
-    setResumePageFiles([]);
-    return saveData.asset || null;
   }
 
   async function saveItem(item) {
@@ -1232,6 +1267,9 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
           <p className="eyebrow">Section Admin</p>
           <h2 id="link-admin-title">{link.label}</h2>
           <p className="contact-note"><Link href="/admin">Back to Admin</Link></p>
+          <p className="contact-note">
+            Images: JPEG, PNG, WebP, or GIF up to 4 MiB each. Résumé PDFs and page images may be up to 20 MiB per file; page batches contain at most 20 files and upload directly to Blob.
+          </p>
 
           <section className="contact-card">
             <p className="contact-note">Hero section (used in this page).</p>
@@ -1316,7 +1354,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
               <section className="contact-card">
                 <p className="contact-note">Resume PDF</p>
                 <p className="contact-note" style={{ marginTop: 0 }}>
-                  Upload the PDF people download from <code>/ari-resume</code>. Uploading a new file replaces the old one.
+                  Upload the PDF people download from <code>/ari-resume</code>. Maximum 20 MiB. Uploading a new file replaces the old one only after metadata is saved.
                 </p>
                 {resumePdfUrl ? (
                   <p className="contact-note" style={{ marginTop: 0 }}>
@@ -1331,15 +1369,16 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                   onChange={(event) => {
                     const file = event.target.files?.[0] || null;
                     setResumePdfFile(file);
+                    setPendingResumePdfUrl('');
                   }}
                 />
                 {resumePdfFile ? <p className="contact-note">Selected: {resumePdfFile.name}</p> : null}
                 <div className="admin-item-actions" style={{ marginTop: '0.8rem' }}>
                   <button
                     type="button"
-                    disabled={savingResumePdf || !resumePdfFile}
+                    disabled={savingResumePdf || (!resumePdfFile && !pendingResumePdfUrl)}
                     onClick={async () => {
-                      if (!resumePdfFile) return;
+                      if (!resumePdfFile && !pendingResumePdfUrl) return;
                       setSavingResumePdf(true);
                       setError('');
                       try {
@@ -1351,7 +1390,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                       }
                     }}
                   >
-                    {savingResumePdf ? 'Uploading...' : 'Upload PDF'}
+                    {savingResumePdf ? 'Uploading...' : pendingResumePdfUrl ? 'Retry Save PDF' : 'Upload PDF'}
                   </button>
                 </div>
               </section>
@@ -1359,7 +1398,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
               <section className="contact-card">
                 <p className="contact-note">Resume page images</p>
                 <p className="contact-note" style={{ marginTop: 0 }}>
-                  Upload the page images in order. Replacing them deletes the old set and updates <code>/ari-resume</code>.
+                  Upload the page images in order, up to 20 MiB each and 20 files per batch. Replacing them removes the old set only after the new metadata is saved and updates <code>/ari-resume</code>.
                 </p>
                 {Array.isArray(resumePageImageUrls) && resumePageImageUrls.length > 0 ? (
                   <div className="admin-upload-list" style={{ marginTop: '0.55rem' }}>
@@ -1386,6 +1425,7 @@ export default function LinkAdminPage({ link, initialItems, initialHero, initial
                   onChange={(event) => {
                     const files = Array.from(event.target.files || []);
                     setResumePageFiles(files);
+                    setPendingResumePageUrls([]);
                   }}
                 />
                 {resumePageFiles.length > 0 ? (

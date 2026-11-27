@@ -1,16 +1,15 @@
 import { readFile } from 'node:fs/promises';
-import { del, put } from '@vercel/blob';
+import { put } from '@vercel/blob';
 import formidable from 'formidable';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { enforceSameOriginWrite } from '../../../lib/security';
+import { IMAGE_MIME_TYPES, SUPABASE_IMAGE_MAX_BYTES } from '../../../lib/uploadPolicy';
 
-const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-const ALLOWED_MIME_TO_EXT = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
+const MAX_UPLOAD_BYTES = SUPABASE_IMAGE_MAX_BYTES;
+const ALLOWED_MIME_TO_EXT = Object.fromEntries(IMAGE_MIME_TYPES.map((type) => [
+  type,
+  type === 'image/jpeg' ? '.jpg' : `.${type.slice('image/'.length)}`,
+]));
 
 export const config = {
   api: {
@@ -23,7 +22,8 @@ function parseForm(req) {
     multiples: true,
     maxFiles: 20,
     maxFileSize: MAX_UPLOAD_BYTES,
-    filter: ({ mimetype }) => Boolean(mimetype && ALLOWED_MIME_TO_EXT[mimetype]),
+    maxTotalFileSize: MAX_UPLOAD_BYTES,
+    filter: () => true,
   });
 
   return new Promise((resolve, reject) => {
@@ -57,17 +57,6 @@ function normalizeFiles(files) {
   return Array.isArray(input) ? input : [input];
 }
 
-function normalizeCurrentUrls(fields) {
-  const raw = Array.isArray(fields?.currentUrls) ? fields.currentUrls[0] : fields?.currentUrls;
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(String(raw));
-    return Array.isArray(parsed) ? parsed.map((url) => String(url || '').trim()).filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-}
-
 function getFileExtension(file) {
   const mime = String(file?.mimetype || '').trim().toLowerCase();
   if (mime && ALLOWED_MIME_TO_EXT[mime]) {
@@ -96,14 +85,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { files, fields } = await parseForm(req);
+    const { files } = await parseForm(req);
     const imageFiles = normalizeFiles(files);
     if (imageFiles.length === 0) {
       res.status(400).json({ error: 'No images provided.' });
       return;
     }
+    const unsupported = imageFiles.find((file) => !ALLOWED_MIME_TO_EXT[String(file.mimetype || '').trim().toLowerCase()]);
+    if (unsupported) {
+      res.status(415).json({ error: 'Unsupported résumé page image type. Use JPEG, PNG, WebP, or GIF.' });
+      return;
+    }
 
-    const currentUrls = normalizeCurrentUrls(fields);
     const generationId = toGenerationId();
     const uploadedUrls = [];
 
@@ -122,21 +115,12 @@ export default async function handler(req, res) {
       uploadedUrls.push(blob.url);
     }
 
-    await Promise.all(
-      currentUrls.map(async (url) => {
-        try {
-          const normalizedUrl = normalizeBlobUrl(url);
-          if (!normalizedUrl) return;
-          await del(normalizedUrl, {
-            token: process.env.BLOB_READ_WRITE_TOKEN,
-          });
-        } catch (_deleteError) {
-        }
-      }),
-    );
-
     res.status(200).json({ pageImageUrls: uploadedUrls });
   } catch (error) {
-    res.status(500).json({ error: error?.message || 'Could not upload resume images.' });
+    if (error?.code === 'ETOOBIG' || error?.httpCode === 413) {
+      res.status(413).json({ error: 'This legacy batch route accepts at most 4 MiB total. Use the admin direct-upload flow for résumé pages up to 20 MiB each.' });
+      return;
+    }
+    res.status(500).json({ error: 'Could not upload resume images.' });
   }
 }

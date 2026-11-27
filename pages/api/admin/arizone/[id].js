@@ -1,6 +1,7 @@
 import { isAdminRequest } from '../../../../lib/adminAuth';
-import { checkRateLimit, enforceSameOriginWrite } from '../../../../lib/security';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../../../lib/security';
 import { deleteArizonePost, getArizoneAdminPostById, updateArizonePost } from '../../../../lib/arizoneAdmin';
+import { publicPathsForBlogPost, revalidatePublicPaths } from '../../../../lib/publicRevalidation';
 
 export default async function handler(req, res) {
   try {
@@ -26,19 +27,17 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Admin access required.' });
         return;
       }
-      const limit = checkRateLimit(req, 'admin-arizone-update', 30, 10 * 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'admin-arizone-update', 30, 10 * 60 * 1000))) return;
 
+      const existing = await getArizoneAdminPostById(id);
       const updated = await updateArizonePost(id, req.body || {});
       if (!updated) {
         res.status(404).json({ error: 'Post not found.' });
         return;
       }
 
-      res.status(200).json({ ok: true, post: updated });
+      const refresh = await revalidatePublicPaths(res, publicPathsForBlogPost('arizone', updated, existing?.slug));
+      res.status(200).json({ ok: true, post: updated, refresh });
       return;
     }
 
@@ -48,19 +47,17 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Admin access required.' });
         return;
       }
-      const limit = checkRateLimit(req, 'admin-arizone-delete', 12, 10 * 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'admin-arizone-delete', 12, 10 * 60 * 1000))) return;
 
+      const existing = await getArizoneAdminPostById(id);
       const deleted = await deleteArizonePost(id);
       if (!deleted) {
         res.status(404).json({ error: 'Post not found.' });
         return;
       }
 
-      res.status(200).json({ ok: true });
+      const refresh = await revalidatePublicPaths(res, publicPathsForBlogPost('arizone', existing || {}, existing?.slug));
+      res.status(200).json({ ok: true, post: existing || null, refresh });
       return;
     }
 

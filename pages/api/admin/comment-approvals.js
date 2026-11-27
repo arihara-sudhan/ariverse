@@ -9,6 +9,7 @@ import {
 } from '../../../lib/adminData';
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { toCleanText, toPositiveInt } from '../../../lib/requestUtils';
+import { getMutationErrorResponse } from '../../../lib/publicMutationPolicy';
 import { enforceSameOriginWrite } from '../../../lib/security';
 
 export default async function handler(req, res) {
@@ -89,7 +90,12 @@ export default async function handler(req, res) {
     }
 
     res.status(405).json({ error: 'Method not allowed' });
-  } catch (_error) {
+  } catch (error) {
+    const response = getMutationErrorResponse(error);
+    if (response) {
+      res.status(response.status).json({ error: response.message });
+      return;
+    }
     res.status(500).json({ error: 'Unexpected server error.' });
   }
 }

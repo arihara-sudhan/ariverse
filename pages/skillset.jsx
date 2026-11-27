@@ -1,6 +1,6 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, getSkillsetEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, getSkillsetEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { ICON_BRAND_COLORS, SKILL_ICONS, getSkillIconKey } from '../src/data/skillsetIcons';
 
@@ -9,7 +9,7 @@ const DEFAULT_SKILLSET_DESCRIPTION =
 const DEFAULT_SKILLSET_QUOTE = 'The more I learn, the more I can create';
 
 export async function getStaticProps() {
-  const link = await getProfileLinkByLabel('Skillset');
+  const link = await getProfileLinkBySectionKey('skillset');
   const skillCategories = await getSkillsetEntries();
   const hero = link
     ? await getSectionHero(link.id, '#AriSkills')

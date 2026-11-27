@@ -252,6 +252,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error('Arichuvadi storage migration failed:', error?.code || error?.name || 'unknown error');
   process.exit(1);
 });

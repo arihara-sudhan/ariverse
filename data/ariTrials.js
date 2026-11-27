@@ -1,4 +1,4 @@
-import { toPublicStorageUrl } from '../lib/storage';
+import { toPublicStorageUrl } from '../lib/storage.js';
 
 export const ariTrials = [
   {

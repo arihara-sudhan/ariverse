@@ -10,7 +10,8 @@ import {
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { notifyAdminCommentApproval } from '../../../lib/formspree';
 import { isTruthyQuery, toCleanText, toPositiveInt } from '../../../lib/requestUtils';
-import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
+import { getMutationErrorResponse } from '../../../lib/publicMutationPolicy';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../../lib/security';
 
 export default async function handler(req, res) {
   try {
@@ -34,11 +35,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (!enforceSameOriginWrite(req, res)) return;
-      const limit = checkRateLimit(req, 'content-comments', 60, 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'content-comments', 60, 60 * 1000))) return;
       const action = toCleanText(req.body?.action, 20).toLowerCase();
       if (action !== 'comment') {
         res.status(400).json({ error: 'Unsupported action.' });
@@ -75,6 +72,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'PATCH') {
       if (!enforceSameOriginWrite(req, res)) return;
+      if (!(await enforceRateLimit(req, res, 'content-comments', 60, 60 * 1000))) return;
       const section = toCleanText(req.body?.section, 80).toLowerCase();
       const entryId = toPositiveInt(req.body?.entryId);
       const commentId = toPositiveInt(req.body?.commentId);
@@ -110,6 +108,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'DELETE') {
       if (!enforceSameOriginWrite(req, res)) return;
+      if (!(await enforceRateLimit(req, res, 'content-comments', 60, 60 * 1000))) return;
       const section = toCleanText(req.body?.section, 80).toLowerCase();
       const entryId = toPositiveInt(req.body?.entryId);
       const commentId = toPositiveInt(req.body?.commentId);
@@ -128,7 +127,12 @@ export default async function handler(req, res) {
     }
 
     res.status(405).json({ error: 'Method not allowed' });
-  } catch (_error) {
+  } catch (error) {
+    const response = getMutationErrorResponse(error);
+    if (response) {
+      res.status(response.status).json({ error: response.message });
+      return;
+    }
     res.status(500).json({ error: 'Unexpected server error.' });
   }
 }

@@ -1,6 +1,7 @@
 import { isAdminRequest } from '../../../../lib/adminAuth';
-import { checkRateLimit, enforceSameOriginWrite } from '../../../../lib/security';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../../../lib/security';
 import { deleteArizoneCategory, getArizoneCategoryById, updateArizoneCategory } from '../../../../lib/arizoneAdmin';
+import { revalidatePublicPaths } from '../../../../lib/publicRevalidation';
 
 export default async function handler(req, res) {
   try {
@@ -26,11 +27,7 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Admin access required.' });
         return;
       }
-      const limit = checkRateLimit(req, 'admin-arizone-category-update', 30, 10 * 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'admin-arizone-category-update', 30, 10 * 60 * 1000))) return;
 
       const updated = await updateArizoneCategory(id, req.body || {});
       if (!updated) {
@@ -38,7 +35,8 @@ export default async function handler(req, res) {
         return;
       }
 
-      res.status(200).json({ ok: true, category: updated });
+      const refresh = await revalidatePublicPaths(res, ['/arizone']);
+      res.status(200).json({ ok: true, category: updated, refresh });
       return;
     }
 
@@ -48,11 +46,7 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Admin access required.' });
         return;
       }
-      const limit = checkRateLimit(req, 'admin-arizone-category-delete', 12, 10 * 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'admin-arizone-category-delete', 12, 10 * 60 * 1000))) return;
 
       const deleted = await deleteArizoneCategory(id);
       if (!deleted) {
@@ -60,7 +54,8 @@ export default async function handler(req, res) {
         return;
       }
 
-      res.status(200).json({ ok: true });
+      const refresh = await revalidatePublicPaths(res, ['/arizone']);
+      res.status(200).json({ ok: true, refresh });
       return;
     }
 

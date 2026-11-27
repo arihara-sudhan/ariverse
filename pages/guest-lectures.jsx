@@ -2,7 +2,7 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import LikeButton from '../src/components/LikeButton';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listLinkItems } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listContentComments, listContentEntryReactions, listLinkItems } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { useRef, useState } from 'react';
 
@@ -42,7 +42,7 @@ function normalizeCommentRow(row) {
 }
 
 export async function getStaticProps() {
-  const link = await getProfileLinkByLabel('Guest Lectures');
+  const link = await getProfileLinkBySectionKey('guest-lectures');
   if (!link) {
     return {
       props: { entries: [], hero: { heading: 'Guest Lectures', imageUrl: '' }, initialCommentsByEntry: {} },

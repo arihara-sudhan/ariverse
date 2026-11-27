@@ -1,6 +1,7 @@
 import { isAdminRequest } from '../../../lib/adminAuth';
-import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../../lib/security';
 import { createArichuvadiCategory, listArichuvadiCategories } from '../../../lib/arichuvadiAdmin';
+import { revalidatePublicPaths } from '../../../lib/publicRevalidation';
 
 export default async function handler(req, res) {
   try {
@@ -20,11 +21,7 @@ export default async function handler(req, res) {
         res.status(403).json({ error: 'Admin access required.' });
         return;
       }
-      const limit = checkRateLimit(req, 'admin-arichuvadi-category-create', 20, 10 * 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'admin-arichuvadi-category-create', 20, 10 * 60 * 1000))) return;
 
       const created = await createArichuvadiCategory(req.body || {});
       if (!created) {
@@ -32,7 +29,8 @@ export default async function handler(req, res) {
         return;
       }
 
-      res.status(201).json({ ok: true, category: created });
+      const refresh = await revalidatePublicPaths(res, ['/arichuvadi']);
+      res.status(201).json({ ok: true, category: created, refresh });
       return;
     }
 

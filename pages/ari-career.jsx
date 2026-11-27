@@ -1,7 +1,7 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import LikeButton from '../src/components/LikeButton';
-import { getProfileLinkByLabel, getSectionHero, listCareerEntries, listContentEntryReactions } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listCareerEntries, listContentEntryReactions } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function renderParagraphs(text) {
@@ -26,7 +26,7 @@ function getCareerDateLabel(item) {
 }
 
 export async function getStaticProps() {
-  const link = (await getProfileLinkByLabel('Career')) || (await getProfileLinkByLabel('Works'));
+  const link = await getProfileLinkBySectionKey('ari-career');
   const hero = link
     ? await getSectionHero(link.id, 'Career')
     : { heading: 'Career', description: '', quote: '', imageUrl: '' };
@@ -35,7 +35,7 @@ export async function getStaticProps() {
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : String(item?.createdAt || ''),
   }));
   const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'career',
+    sectionKey: 'ari-career',
     entryIds: items.map((item) => item.id),
   });
   return {

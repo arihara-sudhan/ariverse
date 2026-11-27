@@ -8,7 +8,7 @@ import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import DiscussionThread from '../src/components/DiscussionThread';
 import { ariTrials as fallbackAriTrials } from '../data/ariTrials';
-import { getProfileLinkByLabel, getSectionHero, listContentComments, listContentEntryReactions, listExperimentsEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listContentComments, listContentEntryReactions, listExperimentsEntries } from '../lib/adminData';
 import { toPublicStorageUrl } from '../lib/storage';
 
 const COLLAGE_HELP_DETAIL_HERO_URL = toPublicStorageUrl('ari-xperiments/collage-helps/collage-helps-hero.webp');
@@ -143,7 +143,7 @@ function normalizeExperimentImageUrl(url) {
 export async function getServerSideProps({ query }) {
   const fallbackExperiments = normalizeFallbackExperiments();
   const loadFromDb = (async () => {
-    const link = await getProfileLinkByLabel('Experiments');
+    const link = await getProfileLinkBySectionKey('xperiments');
     const hero = link ? await getSectionHero(link.id, 'Experiments') : FALLBACK_HERO;
     const experiments = await listExperimentsEntries();
     return { hero, experiments };

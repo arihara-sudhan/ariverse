@@ -3,11 +3,11 @@ import Link from 'next/link';
 import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkByLabel, getSectionHero, listContentEntryReactions, listProjectEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listContentEntryReactions, listProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 export async function getStaticProps() {
-  const link = await getProfileLinkByLabel('Projects');
+  const link = await getProfileLinkBySectionKey('projects');
   const hero = link ? await getSectionHero(link.id, "#Ari'sProjects") : { heading: "#Ari'sProjects", description: '', quote: '', imageUrl: '' };
   const projects = await listProjectEntries();
   const likesByEntry = await listContentEntryReactions({

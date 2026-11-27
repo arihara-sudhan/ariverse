@@ -1,4 +1,4 @@
-import { getProfileLinkByLabel, getResumeAssets } from '../../lib/adminData';
+import { getProfileLinkBySectionKey, getResumeAssets } from '../../lib/adminData';
 import { toPublicStorageUrl } from '../../lib/storage';
 
 const RESUME_PDF_FALLBACK_URL = toPublicStorageUrl('ari-resume/resume.pdf');
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const link = await getProfileLinkByLabel('Resume');
+  const link = await getProfileLinkBySectionKey('resume');
   if (!link) {
     res.status(404).json({ error: 'Resume section not found.' });
     return;

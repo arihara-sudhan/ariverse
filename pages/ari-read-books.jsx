@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import LikeButton from '../src/components/LikeButton';
-import { getProfileLinkByLabel, getSectionHero, listBooksReadEntries, listContentEntryReactions } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, isRuntimeDatabaseConfigured, listBooksReadEntries, listContentEntryReactions } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 const PAGE_SIZE = 10;
@@ -12,16 +12,17 @@ export async function getStaticProps() {
   let hero = { heading: 'Books Read', imageUrl: '' };
   let likesByEntry = {};
   try {
-    const booksReadLink = await getProfileLinkByLabel('Books Read');
+    const booksReadLink = await getProfileLinkBySectionKey('ari-read-books');
     if (booksReadLink) {
       hero = await getSectionHero(booksReadLink.id, 'Books Read');
     }
     entries = await listBooksReadEntries();
     likesByEntry = await listContentEntryReactions({
-      sectionKey: 'books-read',
+      sectionKey: 'ari-read-books',
       entryIds: (Array.isArray(entries) ? entries : []).map((entry) => entry.id),
     });
-  } catch (_error) {
+  } catch (error) {
+    if (isRuntimeDatabaseConfigured()) throw error;
     entries = [];
     likesByEntry = {};
   }

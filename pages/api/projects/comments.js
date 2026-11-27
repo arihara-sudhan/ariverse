@@ -10,7 +10,8 @@ import {
 import { isAdminRequest } from '../../../lib/adminAuth';
 import { notifyAdminCommentApproval } from '../../../lib/formspree';
 import { isTruthyQuery, toCleanText, toPositiveInt } from '../../../lib/requestUtils';
-import { checkRateLimit, enforceSameOriginWrite } from '../../../lib/security';
+import { getMutationErrorResponse } from '../../../lib/publicMutationPolicy';
+import { enforceRateLimit, enforceSameOriginWrite } from '../../../lib/security';
 
 export default async function handler(req, res) {
   try {
@@ -33,11 +34,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (!enforceSameOriginWrite(req, res)) return;
-      const limit = checkRateLimit(req, 'project-comments', 60, 60 * 1000);
-      if (!limit.ok) {
-        res.status(429).json({ error: 'Too many requests. Please try later.' });
-        return;
-      }
+      if (!(await enforceRateLimit(req, res, 'project-comments', 60, 60 * 1000))) return;
 
       const action = toCleanText(req.body?.action, 20).toLowerCase();
       if (action === 'comment') {
@@ -72,6 +69,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'PATCH') {
       if (!enforceSameOriginWrite(req, res)) return;
+      if (!(await enforceRateLimit(req, res, 'project-comments', 60, 60 * 1000))) return;
       const commentId = toPositiveInt(req.body?.commentId);
       const projectEntryId = toPositiveInt(req.body?.projectEntryId);
       const comment = typeof req.body?.comment === 'string' ? toCleanText(req.body.comment, 800) : null;
@@ -94,6 +92,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'DELETE') {
       if (!enforceSameOriginWrite(req, res)) return;
+      if (!(await enforceRateLimit(req, res, 'project-comments', 60, 60 * 1000))) return;
       const commentId = toPositiveInt(req.body?.commentId);
       const projectEntryId = toPositiveInt(req.body?.projectEntryId);
       const commenterToken = toCleanText(req.body?.commenterToken, 120);
@@ -111,7 +110,12 @@ export default async function handler(req, res) {
     }
 
     res.status(405).json({ error: 'Method not allowed' });
-  } catch (_error) {
+  } catch (error) {
+    const response = getMutationErrorResponse(error);
+    if (response) {
+      res.status(response.status).json({ error: response.message });
+      return;
+    }
     res.status(500).json({ error: 'Unexpected server error.' });
   }
 }

@@ -3,6 +3,11 @@ import { useState } from 'react';
 import Header from '../src/components/Header';
 import { isAdminRequest } from '../lib/adminAuth';
 import { getAdminPendingModerationCount, listProfileLinks } from '../lib/adminData';
+import { sectionKeyForProfileLink } from '../lib/sectionRegistry';
+
+function visibleAdminLinks(links) {
+  return (Array.isArray(links) ? links : []).filter((link) => sectionKeyForProfileLink(link).sectionKey !== 'xperiments');
+}
 
 export async function getServerSideProps({ req }) {
   const isAuthed = isAdminRequest(req);
@@ -13,7 +18,7 @@ export async function getServerSideProps({ req }) {
   return {
     props: {
       isAuthed,
-      initialLinks,
+      initialLinks: visibleAdminLinks(initialLinks),
       awaitingApprovalsCount,
     },
   };
@@ -60,7 +65,7 @@ export default function AdminPage({ isAuthed, initialLinks, awaitingApprovalsCou
       .then(async ([linksRes]) => {
         if (!linksRes.ok) throw new Error('Could not load admin links.');
         const linksData = await linksRes.json();
-        setLinks(linksData.links || []);
+        setLinks(visibleAdminLinks(linksData.links));
       })
       .catch((loadError) => {
         setError(loadError?.message || 'Could not load admin data.');
@@ -109,6 +114,22 @@ export default function AdminPage({ isAuthed, initialLinks, awaitingApprovalsCou
     }
 
     setLinks((prev) => prev.map((link) => (link.id === id ? { ...link, isHidden: hidden ? 0 : 1 } : link)));
+  }
+
+  async function renameLink(link) {
+    const nextLabel = String(window.prompt('Display label', link.label || '') || '').trim();
+    if (!nextLabel || nextLabel === link.label) return;
+    const res = await fetch('/api/admin/links', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: link.id, label: nextLabel }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || 'Could not rename link.');
+      return;
+    }
+    setLinks((prev) => prev.map((item) => (item.id === link.id ? { ...item, ...data.link } : item)));
   }
 
   async function logout() {
@@ -189,6 +210,9 @@ export default function AdminPage({ isAuthed, initialLinks, awaitingApprovalsCou
                       <p>{hidden ? 'Hidden on homepage' : 'Visible on homepage'}</p>
                       <button type="button" className="playlist-watch-btn" onClick={() => toggleHidden(link.id, hidden)}>
                         {hidden ? 'Unhide' : 'Hide'}
+                      </button>
+                      <button type="button" className="playlist-watch-btn" onClick={() => renameLink(link)}>
+                        Rename label
                       </button>
                     </article>
                   );

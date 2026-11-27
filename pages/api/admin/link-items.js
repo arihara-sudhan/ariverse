@@ -4,12 +4,15 @@ import {
   addLinkItem,
   deleteLinkItem,
   getLinkItemById,
-  getProfileLinkByLabel,
+  getProfileLinkById,
+  getProfileLinkBySectionKey,
   listLinkItems,
   updateLinkItem,
 } from '../../../lib/adminData';
 import { toCleanText, toCleanTextArray } from '../../../lib/requestUtils';
-import { enforceSameOriginWrite, isAllowedYouTubeUrl, isSafePublicHref } from '../../../lib/security';
+import { enforceSameOriginWrite, isSafePublicHref } from '../../../lib/security';
+import { isAllowedYouTubeUrl } from '../../../lib/urlValidation';
+import { publicPathsForLinkItem, revalidatePublicPaths } from '../../../lib/publicRevalidation';
 
 function toImageUrls(value) {
   return toCleanTextArray(value);
@@ -31,9 +34,9 @@ function isValidBooksSubcategory(category, subcategory) {
 
 async function getSpecialLinkIds() {
   const [binomialLink, clayPlayLink, booksReadLink] = await Promise.all([
-    getProfileLinkByLabel('Binomial Names'),
-    getProfileLinkByLabel('Clay Play'),
-    getProfileLinkByLabel('Books Read'),
+    getProfileLinkBySectionKey('binomial-names'),
+    getProfileLinkBySectionKey('clay-play'),
+    getProfileLinkBySectionKey('ari-read-books'),
   ]);
   return {
     binomialId: binomialLink?.id || null,
@@ -122,6 +125,7 @@ export default async function handler(req, res) {
       return;
     }
 
+    const link = await getProfileLinkById(linkId);
     const item = isBinomial
       ? await addBinomialItem({ linkId, name: kavithaiFrom, youtubeUrl, caption: markdownText })
       : await addLinkItem({
@@ -140,7 +144,8 @@ export default async function handler(req, res) {
           category: isBooksRead ? booksCategory : category,
           subcategory,
         });
-    res.status(201).json({ item });
+    const refresh = await revalidatePublicPaths(res, publicPathsForLinkItem(link, item));
+    res.status(201).json({ item, refresh });
     return;
   }
 
@@ -223,7 +228,9 @@ export default async function handler(req, res) {
       category: isBooksRead ? booksCategory : category,
       subcategory,
     });
-    res.status(200).json({ ok: true });
+    const link = await getProfileLinkById(existing?.linkId || linkId);
+    const refresh = await revalidatePublicPaths(res, publicPathsForLinkItem(link, { kavithaiFrom }, existing));
+    res.status(200).json({ ok: true, refresh });
     return;
   }
 
@@ -236,8 +243,11 @@ export default async function handler(req, res) {
       return;
     }
 
+    const existing = await getLinkItemById(id, Number.isInteger(linkId) && linkId > 0 ? linkId : undefined);
     await deleteLinkItem(id, Number.isInteger(linkId) && linkId > 0 ? linkId : undefined);
-    res.status(200).json({ ok: true });
+    const link = await getProfileLinkById(existing?.linkId || linkId);
+    const refresh = await revalidatePublicPaths(res, publicPathsForLinkItem(link, {}, existing));
+    res.status(200).json({ ok: true, refresh });
     return;
   }
 

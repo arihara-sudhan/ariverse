@@ -2,22 +2,9 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../../src/components/Header';
 import MDCreatorComponent from '../../src/components/MDCreatorComponent';
-import { isAdminRequest } from '../../lib/adminAuth';
-import {
-  buildArichuvadiDraft,
-  buildArichuvadiPathsFromDraft,
-  createArichuvadiPost,
-  deleteArichuvadiPost,
-  listArichuvadiAdminPosts,
-  updateArichuvadiPost,
-} from '../../lib/arichuvadiAdmin';
-import {
-  createArichuvadiCategory,
-  deleteArichuvadiCategory,
-  getArichuvadiCategoryById,
-  listArichuvadiCategories,
-  updateArichuvadiCategory,
-} from '../../lib/arichuvadiAdmin';
+import { buildArichuvadiDraft, buildArichuvadiPathsFromDraft } from '../../lib/arichuvadiDraft';
+import { renderMarkdownToSafeHtml } from '../../lib/markdownRenderer';
+import { validateSupabaseImage } from '../../lib/uploadPolicy';
 
 function formatDate(value) {
   if (!value) return '';
@@ -55,6 +42,7 @@ function normalizeDraft(post = {}) {
 }
 
 export async function getServerSideProps({ req }) {
+  const { isAdminRequest } = await import('../../lib/adminAuth');
   const isAuthed = isAdminRequest(req);
   const initialPosts = [];
 
@@ -81,6 +69,15 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
   const selectedPost = useMemo(
     () => posts.find((post) => Number(post.id) === Number(selectedId)) || null,
     [posts, selectedId],
+  );
+
+  const previewHtml = useMemo(
+    () => renderMarkdownToSafeHtml(draft.contentMarkdown, `arichuvadi/posts/${draft.slug || 'untitled'}`, {
+      section: 'arichuvadi',
+      categorySlug: draft.categorySlug,
+      slug: draft.slug,
+    }),
+    [draft.contentMarkdown, draft.slug, draft.categorySlug],
   );
 
   useEffect(() => {
@@ -202,7 +199,8 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
       setSelectedId(nextPost.id);
       setDraft(normalizeDraft(nextPost));
     }
-    setInfo(hasExisting ? 'Post updated.' : 'Post created.');
+    const saveMessage = hasExisting ? 'Post updated.' : 'Post created.';
+    setInfo(data.refresh?.ok === false ? `${saveMessage} ${data.refresh.message}` : saveMessage);
     setSaving(false);
   }
 
@@ -228,7 +226,8 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
     setPosts(nextPosts);
     setSelectedId(null);
     setDraft(normalizeDraft());
-    setInfo('Post deleted.');
+    const deleteMessage = 'Post deleted.';
+    setInfo(data.refresh?.ok === false ? `${deleteMessage} ${data.refresh.message}` : deleteMessage);
     setSaving(false);
   }
 
@@ -280,6 +279,8 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
   }
 
   async function uploadArichuvadiAsset(file, title, targetPath) {
+    const validationError = validateSupabaseImage(file);
+    if (validationError) throw new Error(validationError.message);
     const formData = new FormData();
     formData.append('image', file);
     formData.append('section', 'Arichuvadi');
@@ -321,6 +322,7 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
           <p className="contact-note">
             Manage Arichuvadi metadata here. The markdown and images live in Supabase under `arichuvadi/...`.
           </p>
+          <p className="contact-note">Images must be JPEG, PNG, WebP, or GIF and no larger than 4 MiB each.</p>
 
           {!authed ? (
             <form className="contact-card" onSubmit={login}>
@@ -410,6 +412,13 @@ export default function ArichuvadiAdminPage({ isAuthed, initialPosts }) {
                     return uploadArichuvadiAsset(file, resolvedTitle, `arichuvadi/posts/${nextSlug}/images/${safeName}.webp`);
                   }}
                 />
+
+                <section className="contact-card" aria-labelledby="arichuvadi-preview-title">
+                  <h3 id="arichuvadi-preview-title">Preview</h3>
+                  <div className="markdown-preview">
+                    <div dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="empty-state">Nothing to preview yet.</p>' }} />
+                  </div>
+                </section>
 
                 <label htmlFor="arichuvadi-published-at">Published date</label>
                 <input

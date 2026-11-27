@@ -1,7 +1,7 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
 import ShelfCard from '../src/components/ShelfCard';
-import { getProfileLinkBySectionKey, getSectionHero, listContentEntryReactions, listShelfEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listShelfEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 async function resolveShelfHero() {
@@ -33,23 +33,18 @@ async function resolveShelfHero() {
 
 export async function getStaticProps() {
   const items = await listShelfEntries();
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'aris-shelf',
-    entryIds: (Array.isArray(items) ? items : []).map((item) => item.id),
-  });
   const hero = await resolveShelfHero();
 
   return {
     props: {
       hero,
       items,
-      likesByEntry,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function ArisShelfPage({ hero, items, likesByEntry }) {
+export default function ArisShelfPage({ hero, items }) {
   const shelfItems = Array.isArray(items) ? items : [];
 
   return (
@@ -79,7 +74,6 @@ export default function ArisShelfPage({ hero, items, likesByEntry }) {
                 <ShelfCard
                   key={item.id}
                   item={item}
-                  likesCount={likesByEntry?.[item.id]?.likesCount || 0}
                 />
               ))}
             </div>

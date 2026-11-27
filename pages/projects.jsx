@@ -1,23 +1,18 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkBySectionKey, getSectionHero, listContentEntryReactions, listProjectEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 export async function getStaticProps() {
   const link = await getProfileLinkBySectionKey('projects');
   const hero = link ? await getSectionHero(link.id, "#Ari'sProjects") : { heading: "#Ari'sProjects", description: '', quote: '', imageUrl: '' };
   const projects = await listProjectEntries();
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'projects',
-    entryIds: projects.map((project) => project.id),
-  });
-  return { props: { hero, projects, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  return { props: { hero, projects }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
-export default function ProjectsPage({ hero, projects, likesByEntry }) {
+export default function ProjectsPage({ hero, projects }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const heroHeading = String(hero?.heading || '').trim() || "#Ari'sProjects";
   const heroDescription = String(hero?.description || '').trim() || 'Lorem ipsum as description';
@@ -121,13 +116,6 @@ export default function ProjectsPage({ hero, projects, likesByEntry }) {
                         </div>
                       ) : null}
                       <div className="projects-card-actions">
-                        <LikeButton
-                          endpoint="/api/content/reactions"
-                          entryId={project.id}
-                          initialCount={likesByEntry?.[project.id]?.likesCount || 0}
-                          storageNamespace="projects"
-                          className="projects-like"
-                        />
                         <Link
                           className="projects-open-btn"
                           href={`/projects/${slugify(project.title)}`}

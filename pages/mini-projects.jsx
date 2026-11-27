@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkBySectionKey, getSectionHero, listContentEntryReactions, listMiniProjectEntries } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listMiniProjectEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 import { toPublicStorageUrl } from '../lib/storage';
 
@@ -12,10 +11,6 @@ export async function getStaticProps() {
   const link = await getProfileLinkBySectionKey('mini-projects');
   const hero = link ? await getSectionHero(link.id, 'Mini-Projects') : { heading: 'Mini-Projects', description: '', imageUrl: '' };
   const miniProjects = await listMiniProjectEntries();
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'mini-projects',
-    entryIds: (Array.isArray(miniProjects) ? miniProjects : []).map((project) => project.id),
-  });
   return {
     props: {
       hero: {
@@ -23,13 +18,12 @@ export async function getStaticProps() {
         imageUrl: MINI_PROJECTS_HERO_URL,
       },
       miniProjects,
-      likesByEntry,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
+export default function MiniProjectsPage({ hero, miniProjects }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [brokenImageByTitle, setBrokenImageByTitle] = useState({});
@@ -124,13 +118,6 @@ export default function MiniProjectsPage({ hero, miniProjects, likesByEntry }) {
                     <h3>{project.title}</h3>
                     <p>{project.caption || project.category}</p>
                     <div className="mini-project-actions">
-                      <LikeButton
-                        endpoint="/api/content/reactions"
-                        entryId={project.id}
-                        initialCount={likesByEntry?.[project.id]?.likesCount || 0}
-                        storageNamespace="mini-projects"
-                        className="mini-project-like"
-                      />
                       <a
                         href={viewerHref}
                         target="_blank"

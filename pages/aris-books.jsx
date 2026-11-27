@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import LikeButton from '../src/components/LikeButton';
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import { getProfileLinkBySectionKey, getSectionHero, listArisBooksEntries, listContentEntryReactions } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listArisBooksEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function toWorkingBookUrl(url) {
@@ -55,14 +54,10 @@ export async function getStaticProps() {
   const link = await getProfileLinkBySectionKey('aris-books');
   const hero = link ? await getSectionHero(link.id, 'My Books') : { heading: 'Aris Books', description: '', imageUrl: '' };
   const books = await listArisBooksEntries();
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'aris-books',
-    entryIds: (Array.isArray(books) ? books : []).map((book) => book.id),
-  });
-  return { props: { hero, books, likesByEntry }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
+  return { props: { hero, books }, revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS };
 }
 
-export default function ArisBooksPage({ hero, books, likesByEntry }) {
+export default function ArisBooksPage({ hero, books }) {
   const safeBooks = Array.isArray(books) ? books : [];
   const heroQuote = String(hero?.quote || '').trim() || DEFAULT_ARIS_BOOKS_QUOTE;
   const categories = useMemo(() => {
@@ -122,13 +117,6 @@ export default function ArisBooksPage({ hero, books, likesByEntry }) {
                 </a>
                 <div className="aris-books-title-row">
                   <h3>{book.name || 'Untitled Book'}</h3>
-                  <LikeButton
-                    endpoint="/api/content/reactions"
-                    entryId={book.id}
-                    initialCount={likesByEntry?.[book.id]?.likesCount || 0}
-                    storageNamespace="my-books"
-                    className="aris-books-like"
-                  />
                 </div>
               </article>
             ))}

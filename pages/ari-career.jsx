@@ -1,7 +1,6 @@
 import Header from '../src/components/Header';
 import SectionHero from '../src/components/SectionHero';
-import LikeButton from '../src/components/LikeButton';
-import { getProfileLinkBySectionKey, getSectionHero, listCareerEntries, listContentEntryReactions } from '../lib/adminData';
+import { getProfileLinkBySectionKey, getSectionHero, listCareerEntries } from '../lib/adminData';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '../lib/pageCache';
 
 function renderParagraphs(text) {
@@ -34,21 +33,16 @@ export async function getStaticProps() {
     ...item,
     createdAt: item?.createdAt instanceof Date ? item.createdAt.toISOString() : String(item?.createdAt || ''),
   }));
-  const likesByEntry = await listContentEntryReactions({
-    sectionKey: 'ari-career',
-    entryIds: items.map((item) => item.id),
-  });
   return {
     props: {
       hero,
       items,
-      likesByEntry,
     },
     revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
   };
 }
 
-export default function CareerPage({ hero, items, likesByEntry }) {
+export default function CareerPage({ hero, items }) {
   const safeItems = Array.isArray(items) ? [...items].reverse() : [];
 
   return (
@@ -96,13 +90,6 @@ export default function CareerPage({ hero, items, likesByEntry }) {
                       {getCareerDateLabel(item) ? (
                         <span className="career-post-date">{getCareerDateLabel(item)}</span>
                       ) : null}
-                      <LikeButton
-                        endpoint="/api/content/reactions"
-                        entryId={item.id}
-                        initialCount={likesByEntry?.[item.id]?.likesCount || 0}
-                        storageNamespace="career"
-                        className="career-post-like"
-                      />
                     </div>
                   </div>
                 </article>

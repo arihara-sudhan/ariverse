@@ -1,7 +1,6 @@
 import Header from '../../src/components/Header';
-import LikeButton from '../../src/components/LikeButton';
 import DiscussionThread from '../../src/components/DiscussionThread';
-import { getProjectEntryBySlug, listContentEntryReactions, listProjectComments } from '../../lib/adminData';
+import { getProjectEntryBySlug, listProjectComments } from '../../lib/adminData';
 
 function toLines(text) {
   return String(text || '')
@@ -63,17 +62,11 @@ export async function getServerSideProps({ params }) {
   const slug = String(params?.slug || '');
   const project = await getProjectEntryBySlug(slug);
   if (!project) return { notFound: true };
-  const [comments, likesByEntry] = await Promise.all([
-    listProjectComments(project.id),
-    listContentEntryReactions({
-      sectionKey: 'projects',
-      entryIds: [project.id],
-    }),
-  ]);
-  return { props: { project, comments, likesByEntry } };
+  const comments = await listProjectComments(project.id);
+  return { props: { project, comments } };
 }
 
-export default function ProjectDetailPage({ project, comments, likesByEntry }) {
+export default function ProjectDetailPage({ project, comments }) {
   const shortLines = toLines(project?.caption);
   const readmeContent = String(project?.bigDescription || project?.caption || '');
   const summary = shortLines.slice(0, 3);
@@ -108,13 +101,6 @@ export default function ProjectDetailPage({ project, comments, likesByEntry }) {
           <div className="project-legend-full">
             <hr className="project-legend-rule" />
             {legendNodes.length > 0 ? legendNodes : <p>More learnings will be added soon.</p>}
-            <LikeButton
-              endpoint="/api/content/reactions"
-              entryId={project.id}
-              initialCount={likesByEntry?.[project.id]?.likesCount || 0}
-              storageNamespace="projects"
-              className="project-detail-like"
-            />
             <DiscussionThread
               title="Comments"
               endpoint="/api/projects/comments"

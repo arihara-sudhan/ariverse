@@ -1712,15 +1712,6 @@ footer {
   flex-wrap: wrap;
 }
 
-.career-post-like {
-  margin: 0;
-}
-
-.career-post-like .like-button {
-  padding: 0.22rem 0.46rem;
-  font-size: 0.8rem;
-}
-
 .career-post-desc p {
   margin: 0;
   font-size: 0.92rem;
@@ -1992,43 +1983,6 @@ footer {
   border-radius: 12px;
   background: #ffffff;
   overflow: hidden;
-}
-
-.aris-shelf-like-badge {
-  position: absolute;
-  top: 0.55rem;
-  left: 0.55rem;
-  z-index: 2;
-  border-radius: 999px;
-  overflow: visible;
-  padding: 0;
-}
-
-.aris-shelf-like {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(17, 17, 17, 0.28);
-  border-radius: 999px;
-  margin: 0;
-  background: transparent;
-  padding: 0;
-}
-
-.aris-shelf-like .like-button {
-  min-width: 0;
-  padding: 0.16rem 0.38rem;
-  border: none;
-  background: transparent;
-  border-radius: 999px;
-}
-
-.aris-shelf-like .like-button:hover {
-  background: rgba(17, 17, 17, 0.04);
-}
-
-.aris-shelf-like .like-button-icon,
-.aris-shelf-like .like-button-count {
-  font-size: 0.66rem;
 }
 
 .aris-shelf-cover {
@@ -2347,12 +2301,10 @@ body.mini-project-open-body::-webkit-scrollbar {
   margin: 0;
 }
 
-.aris-books-like,
 .ariyin-poem-like {
   margin: 0;
 }
 
-.aris-books-like .like-button,
 .ariyin-poem-like .like-button {
   padding: 0.22rem 0.46rem;
   font-size: 0.8rem;
